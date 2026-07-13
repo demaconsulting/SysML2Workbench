@@ -1,0 +1,58 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.MainWindowView"
+        Title="SysML2Workbench"
+        Width="1280" Height="800">
+
+  <DockPanel>
+
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem Name="OpenWorkspaceMenuItem" Header="_Open Workspace..." />
+      </MenuItem>
+    </Menu>
+
+    <Border DockPanel.Dock="Bottom" Height="180" BorderThickness="0,1,0,0" BorderBrush="Gray">
+      <DockPanel Margin="4">
+        <TextBlock DockPanel.Dock="Top" Text="Diagnostics" FontWeight="Bold" />
+        <ListBox Name="DiagnosticsListBox" />
+      </DockPanel>
+    </Border>
+
+    <Border DockPanel.Dock="Left" Width="260" BorderThickness="0,0,1,0" BorderBrush="Gray">
+      <DockPanel Margin="4">
+        <TextBlock DockPanel.Dock="Top" Text="Predefined Views" FontWeight="Bold" />
+        <ListBox Name="PredefinedViewsListBox" />
+      </DockPanel>
+    </Border>
+
+    <Border DockPanel.Dock="Right" Width="320" BorderThickness="1,0,0,0" BorderBrush="Gray">
+      <StackPanel Margin="8" Spacing="6">
+        <TextBlock Text="Custom View Builder" FontWeight="Bold" />
+
+        <TextBlock Text="View Kind" />
+        <ComboBox Name="ViewKindComboBox" HorizontalAlignment="Stretch" />
+
+        <TextBlock Text="Expose Targets (multi-select)" />
+        <ListBox Name="ExposeTargetsListBox" SelectionMode="Multiple" Height="220" />
+
+        <TextBlock Text="Filter Expression (optional)" />
+        <TextBox Name="FilterExpressionTextBox" PlaceholderText="e.g. @Safety" />
+
+        <TextBlock Text="View Name (optional)" />
+        <TextBox Name="DisplayNameTextBox" PlaceholderText="CustomView" />
+
+        <Button Name="PreviewCustomViewButton" Content="Preview" HorizontalAlignment="Stretch" />
+        <Button Name="CopyAsSysmlButton" Content="Copy as SysML" HorizontalAlignment="Stretch" />
+
+        <TextBlock Name="BuilderStatusTextBlock" TextWrapping="Wrap" Foreground="Red" />
+      </StackPanel>
+    </Border>
+
+    <Border Name="DiagramBorder" Background="White" ClipToBounds="True">
+      <Image Name="DiagramImage" Stretch="Uniform" />
+    </Border>
+
+  </DockPanel>
+
+</Window>

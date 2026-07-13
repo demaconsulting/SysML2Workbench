@@ -1,0 +1,26 @@
+---
+includes:
+  - docs/reqstream/sysml2-workbench.yaml
+  - docs/reqstream/sysml2-workbench/platform-requirements.yaml
+  - docs/reqstream/sysml2-workbench/workspace-subsystem.yaml
+  - docs/reqstream/sysml2-workbench/workspace-subsystem/workspace-model.yaml
+  - docs/reqstream/sysml2-workbench/workspace-subsystem/file-watcher.yaml
+  - docs/reqstream/sysml2-workbench/workspace-subsystem/diagnostics-aggregator.yaml
+  - docs/reqstream/sysml2-workbench/view-catalog-subsystem.yaml
+  - docs/reqstream/sysml2-workbench/view-catalog-subsystem/view-catalog-presenter.yaml
+  - docs/reqstream/sysml2-workbench/view-builder-subsystem.yaml
+  - docs/reqstream/sysml2-workbench/view-builder-subsystem/view-definition-model.yaml
+  - docs/reqstream/sysml2-workbench/view-builder-subsystem/sysml-snippet-generator.yaml
+  - docs/reqstream/sysml2-workbench/layout-rendering-subsystem.yaml
+  - docs/reqstream/sysml2-workbench/layout-rendering-subsystem/layout-invoker.yaml
+  - docs/reqstream/sysml2-workbench/layout-rendering-subsystem/svg-canvas-host.yaml
+  - docs/reqstream/sysml2-workbench/diagnostics-panel-subsystem.yaml
+  - docs/reqstream/sysml2-workbench/diagnostics-panel-subsystem/diagnostics-list-view.yaml
+  - docs/reqstream/sysml2-workbench/logging-subsystem.yaml
+  - docs/reqstream/sysml2-workbench/logging-subsystem/rolling-file-logger.yaml
+  - docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml
+  - docs/reqstream/sysml2-workbench/app-shell-subsystem/main-window-shell.yaml
+  - docs/reqstream/ots/sysml2-tools.yaml
+  - docs/reqstream/ots/rendering.yaml
+  - docs/reqstream/ots/avalonia.yaml
+  - docs/reqstream/ots/xunit.yaml

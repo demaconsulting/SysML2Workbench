@@ -1,0 +1,23 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'LoggingSubsystem Requirements'
+        requirements:
+          - id: 'SysML2Workbench-LoggingSubsystem-PersistOperationalEvents'
+            title: 'The LoggingSubsystem shall persist application events and failures to a local log that users can attach to bug reports.'
+            justification: |
+              The architecture calls for user-attachable local logs to support troubleshooting of desktop application behavior.
+            children:
+              - 'SysML2Workbench-LoggingSubsystem-RollingFileLogger-WriteTimestampedEntries'
+            tests:
+              - 'LoggingSubsystemTests.LogEvent_WritesLocalEntry'
+
+          - id: 'SysML2Workbench-LoggingSubsystem-RetainRecentLogHistory'
+            title: 'The LoggingSubsystem shall retain recent operational history by rotating log files without unbounded growth.'
+            justification: |
+              Rolling retention keeps enough troubleshooting history for bug reports while respecting the local desktop application footprint.
+            children:
+              - 'SysML2Workbench-LoggingSubsystem-RollingFileLogger-RotateLogFiles'
+            tests:
+              - 'LoggingSubsystemTests.LogGrowth_RotatesRetainedFiles'

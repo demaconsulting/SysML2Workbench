@@ -1,0 +1,21 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'WorkspaceSubsystem Requirements'
+        sections:
+          - title: 'DiagnosticsAggregator Requirements'
+            requirements:
+              - id: 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-CollectWorkspaceDiagnostics'
+                title: 'The DiagnosticsAggregator shall combine diagnostics from all tracked workspace files into one workspace-level collection.'
+                justification: |
+                  The diagnostics panel depends on a unified diagnostic source instead of separate per-file error lists.
+                tests:
+                  - 'DiagnosticsAggregatorTests.WorkspaceState_CombinesAllFileDiagnostics'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-PublishDeterministicDiagnostics'
+                title: 'The DiagnosticsAggregator shall publish diagnostics in a deterministic order that preserves source location details for UI consumers.'
+                justification: |
+                  Stable diagnostic ordering reduces UI churn during reloads and keeps source context available for future navigation features.
+                tests:
+                  - 'DiagnosticsAggregatorTests.WorkspaceState_PublishesDeterministicDiagnosticOrder'

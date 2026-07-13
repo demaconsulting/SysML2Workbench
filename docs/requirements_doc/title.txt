@@ -1,0 +1,13 @@
+---
+title: "SysML2Workbench Requirements Document"
+subtitle: "Cross-platform desktop viewer and IDE for SysML v2 models"
+author: "DEMA Consulting"
+description: "Requirements Document for SysML2Workbench"
+lang: en-US
+keywords:
+  - Requirements
+  - .NET
+  - Avalonia
+  - SysML v2
+  - SysML2Tools
+---

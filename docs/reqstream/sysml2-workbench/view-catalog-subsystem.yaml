@@ -1,0 +1,24 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'ViewCatalogSubsystem Requirements'
+        requirements:
+          - id: 'SysML2Workbench-ViewCatalogSubsystem-EnumeratePredefinedViews'
+            title: 'The ViewCatalogSubsystem shall enumerate the supported predefined views defined in the loaded SysML model.'
+            justification: |
+              Users need a discoverable catalog of model-defined views before they can select a diagram to render in the desktop shell.
+            children:
+              - 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-ListDefinedViews'
+              - 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-DescribeViewKinds'
+            tests:
+              - 'ViewCatalogSubsystemTests.LoadedModel_ListsSupportedViews'
+
+          - id: 'SysML2Workbench-ViewCatalogSubsystem-SignalActiveViewSelection'
+            title: 'The ViewCatalogSubsystem shall publish the user-selected predefined view for downstream rendering and shell presentation.'
+            justification: |
+              Selecting a predefined view is the handoff point between view discovery and actual diagram rendering.
+            children:
+              - 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-TrackSelectedView'
+            tests:
+              - 'ViewCatalogSubsystemTests.SelectView_PublishesActiveSelection'

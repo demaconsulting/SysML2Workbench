@@ -1,0 +1,21 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'DiagnosticsPanelSubsystem Requirements'
+        sections:
+          - title: 'DiagnosticsListView Requirements'
+            requirements:
+              - id: 'SysML2Workbench-DiagnosticsPanelSubsystem-DiagnosticsListView-DisplayDiagnosticDetails'
+                title: 'The DiagnosticsListView shall display each diagnostic''s severity, message text, file path, line, and column when available.'
+                justification: |
+                  Users need enough structured detail in the diagnostics list to understand and act on workspace problems.
+                tests:
+                  - 'DiagnosticsListViewTests.BindDiagnostics_ShowsSeverityMessageAndLocation'
+
+              - id: 'SysML2Workbench-DiagnosticsPanelSubsystem-DiagnosticsListView-RefreshDiagnosticCollection'
+                title: 'The DiagnosticsListView shall refresh its displayed collection when workspace diagnostics change.'
+                justification: |
+                  The live workspace model requires the UI list to update as diagnostics are added, removed, or reordered.
+                tests:
+                  - 'DiagnosticsListViewTests.DiagnosticsChanged_RefreshesVisibleList'

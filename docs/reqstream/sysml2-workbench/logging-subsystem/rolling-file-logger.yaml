@@ -1,0 +1,21 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'LoggingSubsystem Requirements'
+        sections:
+          - title: 'RollingFileLogger Requirements'
+            requirements:
+              - id: 'SysML2Workbench-LoggingSubsystem-RollingFileLogger-WriteTimestampedEntries'
+                title: 'The RollingFileLogger shall write timestamped local log entries for application events and failures.'
+                justification: |
+                  Troubleshooting desktop sessions requires a readable local event history that can be attached to bug reports.
+                tests:
+                  - 'RollingFileLoggerTests.LogEvent_WritesTimestampedEntry'
+
+              - id: 'SysML2Workbench-LoggingSubsystem-RollingFileLogger-RotateLogFiles'
+                title: 'The RollingFileLogger shall rotate retained log files according to the configured retention policy.'
+                justification: |
+                  The logger must keep recent history available without allowing the on-disk log footprint to grow indefinitely.
+                tests:
+                  - 'RollingFileLoggerTests.RetentionLimit_RotatesLogFiles'

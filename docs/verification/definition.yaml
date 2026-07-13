@@ -1,0 +1,34 @@
+---
+resource-path:
+  - docs/verification
+  - docs/template
+input-files:
+  - docs/verification/title.txt
+  - docs/verification/introduction.md
+  - docs/verification/sysml2-workbench.md
+  - docs/verification/sysml2-workbench/workspace-subsystem.md
+  - docs/verification/sysml2-workbench/workspace-subsystem/workspace-model.md
+  - docs/verification/sysml2-workbench/workspace-subsystem/file-watcher.md
+  - docs/verification/sysml2-workbench/workspace-subsystem/diagnostics-aggregator.md
+  - docs/verification/sysml2-workbench/view-catalog-subsystem.md
+  - docs/verification/sysml2-workbench/view-catalog-subsystem/view-catalog-presenter.md
+  - docs/verification/sysml2-workbench/view-builder-subsystem.md
+  - docs/verification/sysml2-workbench/view-builder-subsystem/view-definition-model.md
+  - docs/verification/sysml2-workbench/view-builder-subsystem/sysml-snippet-generator.md
+  - docs/verification/sysml2-workbench/layout-rendering-subsystem.md
+  - docs/verification/sysml2-workbench/layout-rendering-subsystem/layout-invoker.md
+  - docs/verification/sysml2-workbench/layout-rendering-subsystem/svg-canvas-host.md
+  - docs/verification/sysml2-workbench/diagnostics-panel-subsystem.md
+  - docs/verification/sysml2-workbench/diagnostics-panel-subsystem/diagnostics-list-view.md
+  - docs/verification/sysml2-workbench/logging-subsystem.md
+  - docs/verification/sysml2-workbench/logging-subsystem/rolling-file-logger.md
+  - docs/verification/sysml2-workbench/app-shell-subsystem.md
+  - docs/verification/sysml2-workbench/app-shell-subsystem/main-window-shell.md
+  - docs/verification/ots.md
+  - docs/verification/ots/sysml2-tools.md
+  - docs/verification/ots/rendering.md
+  - docs/verification/ots/avalonia.md
+  - docs/verification/ots/xunit.md
+template: template.html
+table-of-contents: true
+number-sections: true

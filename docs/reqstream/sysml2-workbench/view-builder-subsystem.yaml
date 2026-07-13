@@ -1,0 +1,26 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'ViewBuilderSubsystem Requirements'
+        requirements:
+          - id: 'SysML2Workbench-ViewBuilderSubsystem-CaptureCustomViewDefinition'
+            title: 'The ViewBuilderSubsystem shall capture a custom view definition consisting of a view kind, one or more expose targets, and an optional filter expression.'
+            justification: |
+              The GUI builder is a distinct Phase 0 feature and must preserve the same major semantic choices that users would express in SysML view syntax.
+            children:
+              - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreSelectedViewKind'
+              - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeTargets'
+              - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-ReportDefinitionReadiness'
+            tests:
+              - 'ViewBuilderSubsystemTests.EditDefinition_TracksCustomViewInputs'
+
+          - id: 'SysML2Workbench-ViewBuilderSubsystem-GenerateCustomViewSnippet'
+            title: 'The ViewBuilderSubsystem shall generate copy-pasteable SysML text from the current custom view definition.'
+            justification: |
+              The architecture explicitly uses generated standard SysML text as the persistence path for GUI-authored custom views.
+            children:
+              - 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-EmitViewSnippet'
+              - 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-PreserveDefinitionSemantics'
+            tests:
+              - 'ViewBuilderSubsystemTests.ExportDefinition_GeneratesSysmlSnippet'

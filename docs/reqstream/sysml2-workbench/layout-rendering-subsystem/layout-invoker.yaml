@@ -1,0 +1,21 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'LayoutRenderingSubsystem Requirements'
+        sections:
+          - title: 'LayoutInvoker Requirements'
+            requirements:
+              - id: 'SysML2Workbench-LayoutRenderingSubsystem-LayoutInvoker-BuildPredefinedViewLayout'
+                title: 'The LayoutInvoker shall request layout data for a selected predefined view from the loaded SysML model.'
+                justification: |
+                  Rendering predefined diagrams depends on translating the current model view into the layout engine's input and output contract.
+                tests:
+                  - 'LayoutInvokerTests.RenderPredefinedView_DisplaysSvgDiagram'
+
+              - id: 'SysML2Workbench-LayoutRenderingSubsystem-LayoutInvoker-BuildCustomViewLayout'
+                title: 'The LayoutInvoker shall request layout data for a GUI-defined custom view using the same workspace model context as predefined views.'
+                justification: |
+                  Custom views must be previewed through the same rendering pipeline as persisted model views to keep user results consistent.
+                tests:
+                  - 'LayoutInvokerTests.RenderCustomView_SupportsPanAndZoom'

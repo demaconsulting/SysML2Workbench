@@ -1,0 +1,25 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'LayoutRenderingSubsystem Requirements'
+        requirements:
+          - id: 'SysML2Workbench-LayoutRenderingSubsystem-RenderSelectedView'
+            title: 'The LayoutRenderingSubsystem shall transform a selected predefined view into rendered SVG output for display in the application window.'
+            justification: |
+              Rendering existing model views is one of the primary product outcomes and depends on translating model view selections into visible diagrams.
+            children:
+              - 'SysML2Workbench-LayoutRenderingSubsystem-LayoutInvoker-BuildPredefinedViewLayout'
+              - 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-DisplayRenderedSvg'
+            tests:
+              - 'LayoutRenderingSubsystemTests.RenderPredefinedView_DisplaysSvgDiagram'
+
+          - id: 'SysML2Workbench-LayoutRenderingSubsystem-RenderCustomView'
+            title: 'The LayoutRenderingSubsystem shall render GUI-defined custom views and support pan-and-zoom navigation over the resulting diagram.'
+            justification: |
+              Users must be able to interactively inspect custom view results before exporting the equivalent SysML text.
+            children:
+              - 'SysML2Workbench-LayoutRenderingSubsystem-LayoutInvoker-BuildCustomViewLayout'
+              - 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-SupportPanAndZoom'
+            tests:
+              - 'LayoutRenderingSubsystemTests.RenderCustomView_SupportsPanAndZoom'

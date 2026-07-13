@@ -1,0 +1,33 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'Platform Support'
+        requirements:
+          - id: 'SysML2Workbench-Platform-Windows'
+            title: 'The SysML2Workbench shall run as a desktop application on Windows operating systems.'
+            justification: |
+              Windows is an explicitly supported desktop target for the shared Avalonia shell and must be verifiable independently from other operating systems.
+            tests:
+              - 'windows@SysML2WorkbenchTests.StartSession_OpensShellAndWritesOperationalLogs'
+
+          - id: 'SysML2Workbench-Platform-Ubuntu'
+            title: 'The SysML2Workbench shall run as a desktop application on Ubuntu Linux operating systems.'
+            justification: |
+              Linux desktop support is part of the project scope, and Ubuntu-based validation provides explicit evidence for that platform family.
+            tests:
+              - 'ubuntu@SysML2WorkbenchTests.StartSession_OpensShellAndWritesOperationalLogs'
+
+          - id: 'SysML2Workbench-Platform-MacOS'
+            title: 'The SysML2Workbench shall run as a desktop application on macOS operating systems.'
+            justification: |
+              macOS is one of the intended desktop targets for the Avalonia-based application and requires platform-specific verification evidence.
+            tests:
+              - 'macos@SysML2WorkbenchTests.StartSession_OpensShellAndWritesOperationalLogs'
+
+          - id: 'SysML2Workbench-Platform-DotNet9'
+            title: 'The SysML2Workbench shall support the .NET 9.0 runtime.'
+            justification: |
+              The project is expected to run on modern .NET desktop runtimes, and explicit runtime requirements keep compatibility evidence separate from operating-system support evidence.
+            tests:
+              - 'net9.0@SysML2WorkbenchTests.OpenWorkspace_LoadsAndRefreshesWorkspace'

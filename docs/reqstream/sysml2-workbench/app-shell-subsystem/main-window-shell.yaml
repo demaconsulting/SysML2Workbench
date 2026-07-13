@@ -1,0 +1,28 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'AppShellSubsystem Requirements'
+        sections:
+          - title: 'MainWindowShell Requirements'
+            requirements:
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ArrangePrimaryRegions'
+                title: 'The MainWindowShell shall arrange the primary workspace, view selection, diagram, custom-view, and diagnostics regions within the desktop window.'
+                justification: |
+                  The shell unit is responsible for turning the subsystem's capabilities into a usable desktop layout.
+                tests:
+                  - 'MainWindowShellTests.Startup_ArrangesPrimaryWorkspaceAndDiagramRegions'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ManageViewTabs'
+                title: 'The MainWindowShell shall manage tabbed view presentation for rendered diagrams during a user session.'
+                justification: |
+                  The architecture calls out tabbed views as part of the desktop shell experience.
+                tests:
+                  - 'MainWindowShellTests.OpenViews_ManagesTabbedPresentation'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SynchronizeSessionState'
+                title: 'The MainWindowShell shall synchronize active workspace, view selection, custom-view state, and diagnostics across the visible shell regions.'
+                justification: |
+                  Users need shell regions to stay in sync as they browse the workspace and interact with rendered or custom views.
+                tests:
+                  - 'MainWindowShellTests.SessionStateChanges_SynchronizeVisibleRegions'

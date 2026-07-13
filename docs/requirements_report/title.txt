@@ -1,0 +1,14 @@
+---
+title: "SysML2Workbench Trace Matrix"
+subtitle: "Cross-platform desktop viewer and IDE for SysML v2 models"
+author: "DEMA Consulting"
+description: "Trace Matrix for SysML2Workbench"
+lang: en-US
+keywords:
+  - Requirements
+  - Trace Matrix
+  - .NET
+  - Avalonia
+  - SysML v2
+  - SysML2Tools
+---

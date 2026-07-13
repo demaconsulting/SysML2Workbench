@@ -1,0 +1,21 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'LayoutRenderingSubsystem Requirements'
+        sections:
+          - title: 'SvgCanvasHost Requirements'
+            requirements:
+              - id: 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-DisplayRenderedSvg'
+                title: 'The SvgCanvasHost shall display rendered SVG diagram output inside the application''s diagram canvas.'
+                justification: |
+                  The diagram viewer is the user-facing result of the layout and rendering pipeline.
+                tests:
+                  - 'SvgCanvasHostTests.LoadSvgDocument_DisplaysDiagramCanvas'
+
+              - id: 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-SupportPanAndZoom'
+                title: 'The SvgCanvasHost shall support pan and zoom interaction over the displayed diagram.'
+                justification: |
+                  Pan-and-zoom navigation is part of the defined Phase 0 scope for working with rendered diagrams.
+                tests:
+                  - 'SvgCanvasHostTests.UserInteraction_PansAndZoomsDiagram'

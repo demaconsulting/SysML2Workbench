@@ -1,0 +1,34 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'AppShellSubsystem Requirements'
+        requirements:
+          - id: 'SysML2Workbench-AppShellSubsystem-PresentSelectedView'
+            title: 'The AppShellSubsystem shall host the main desktop window regions needed to present the workspace, selected view, custom-view workflow, and diagnostics together.'
+            justification: |
+              The desktop shell is responsible for turning the individual Phase 0 capabilities into a cohesive user experience.
+            children:
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ArrangePrimaryRegions'
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ManageViewTabs'
+            tests:
+              - 'AppShellSubsystemTests.Startup_ShowsWorkspaceDiagramAndDiagnosticsRegions'
+
+          - id: 'SysML2Workbench-AppShellSubsystem-CoordinateSessionWorkspace'
+            title: 'The AppShellSubsystem shall coordinate active workspace, view-selection, custom-view, and diagnostics state across the main window session.'
+            justification: |
+              Navigation across tabs and panels requires the shell to keep the current session context synchronized for the user.
+            children:
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SynchronizeSessionState'
+            tests:
+              - 'AppShellSubsystemTests.SessionChanges_SynchronizeShellState'
+
+          - id: 'SysML2Workbench-AppShellSubsystem-HostCustomViewWorkflow'
+            title: 'The AppShellSubsystem shall expose commands and surfaces that let users preview and export custom views without leaving the main window.'
+            justification: |
+              The GUI custom-view feature must be reachable and usable from the same shell session as workspace browsing and diagram viewing.
+            children:
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ArrangePrimaryRegions'
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SynchronizeSessionState'
+            tests:
+              - 'AppShellSubsystemTests.CustomViewWorkflow_PreviewsAndExportsFromShell'
