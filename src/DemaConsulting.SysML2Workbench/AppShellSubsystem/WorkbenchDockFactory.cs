@@ -10,6 +10,12 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 ///     legacy fixed-<c>DockPanel</c> arrangement's default proportions (left ~260px, right ~320px, bottom ~180px
 ///     against the window's default 1280x800 size) as initial <see cref="Dock.Model.Core.IDockable" />
 ///     proportions, while leaving every panel user-resizable, floatable, and closable through Dock's own chrome.
+///     <c>HideToolsOnClose</c> is set so that closing a <see cref="Dock.Model.Mvvm.Controls.Tool" /> hides it
+///     (tracked in <see cref="Dock.Model.Controls.IRootDock.HiddenDockables" /> and restorable via
+///     <c>RestoreDockable</c>) rather than permanently removing it, so the "View" menu can bring a closed panel
+///     back without losing its in-progress state. This setting applies factory-wide, so any future
+///     <see cref="Dock.Model.Mvvm.Controls.Tool" /> panel added to this factory will also hide-not-destroy on
+///     close.
 /// </summary>
 public sealed class WorkbenchDockFactory : Factory
 {
@@ -35,6 +41,8 @@ public sealed class WorkbenchDockFactory : Factory
         _customViewBuilderViewModel = customViewBuilderViewModel ?? throw new ArgumentNullException(nameof(customViewBuilderViewModel));
         _diagnosticsViewModel = diagnosticsViewModel ?? throw new ArgumentNullException(nameof(diagnosticsViewModel));
         _diagramViewModel = diagramViewModel ?? throw new ArgumentNullException(nameof(diagramViewModel));
+
+        HideToolsOnClose = true;
     }
 
     /// <inheritdoc />

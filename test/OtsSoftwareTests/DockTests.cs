@@ -1,3 +1,4 @@
+using System.Linq;
 using Avalonia.Headless.XUnit;
 using DemaConsulting.SysML2Workbench.AppShellSubsystem;
 using DemaConsulting.SysML2Workbench.DiagnosticsPanelSubsystem;
@@ -100,6 +101,59 @@ public sealed class DockTests : IDisposable
 
         // Assert
         Assert.NotNull(window.Content);
+
+        window.Close();
+    }
+
+    /// <summary>
+    ///     Validates that closing a Tool panel through <see cref="WorkbenchDockFactory" />'s
+    ///     <c>HideToolsOnClose = true</c> setting hides it (rather than destroying it) and that
+    ///     <c>RestoreDockable</c> then brings the exact same view model instance back to its original
+    ///     <see cref="IToolDock" />, proving the "View" menu's close/restore round-trip is genuinely backed by
+    ///     Dock's own hide/restore API rather than reconstructing a new panel instance.
+    /// </summary>
+    [AvaloniaFact]
+    public void RestoreDockable_ReopensClosedToolInOriginalDock()
+    {
+        // Arrange
+        using var shell = CreateShell();
+        var diagramViewModel = new DiagramDocumentViewModel(shell);
+        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell, diagramViewModel);
+        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell, diagramViewModel);
+        var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, diagramViewModel);
+        var layout = factory.CreateLayout();
+        factory.InitLayout(layout);
+
+        var window = new Avalonia.Controls.Window
+        {
+            Content = new DockControl { Layout = layout },
+        };
+        window.Show();
+
+        var originalOwner = Assert.IsAssignableFrom<IToolDock>(predefinedViewsViewModel.Owner);
+        Assert.Contains(predefinedViewsViewModel, originalOwner.VisibleDockables!);
+
+        // Act - close the panel through the same public API Dock's own chrome invokes.
+        factory.CloseDockable(predefinedViewsViewModel);
+
+        // Assert - the panel is hidden, not destroyed: removed from its owner's VisibleDockables and tracked
+        // in the root dock's HiddenDockables, with the same view model instance still intact.
+        Assert.DoesNotContain(predefinedViewsViewModel, originalOwner.VisibleDockables ?? Enumerable.Empty<IDockable>());
+        Assert.Contains(predefinedViewsViewModel, layout.HiddenDockables!);
+
+        // Act - restore the panel via the same API the View menu's Click handler calls.
+        factory.RestoreDockable(predefinedViewsViewModel);
+        factory.SetActiveDockable(predefinedViewsViewModel);
+        if (predefinedViewsViewModel.Owner is IDock restoredOwnerDock)
+        {
+            factory.SetFocusedDockable(restoredOwnerDock, predefinedViewsViewModel);
+        }
+
+        // Assert - the exact same instance is back in its original dock, and no longer tracked as hidden.
+        Assert.DoesNotContain(predefinedViewsViewModel, layout.HiddenDockables ?? Enumerable.Empty<IDockable>());
+        Assert.Contains(predefinedViewsViewModel, originalOwner.VisibleDockables!);
+        Assert.Same(originalOwner, predefinedViewsViewModel.Owner);
 
         window.Close();
     }

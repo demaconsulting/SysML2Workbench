@@ -52,6 +52,8 @@ environment.
    views, custom view builder, diagnostics, diagram) as a resizable,
    floatable, closable Dock layout, composed by a Dock factory from thin
    panel views and view models that hold no logic beyond forwarding to
-   MainWindowShell and binding its state; MainWindowShell itself has no
-   dependency on Avalonia or Dock and is unaware of how its panels are
-   arranged on screen.
+   MainWindowShell and binding its state; a closed panel is restorable via a
+   View menu, which reuses the same long-lived panel view model instance so
+   its in-progress state survives the close/restore cycle; MainWindowShell
+   itself has no dependency on Avalonia or Dock and is unaware of how its
+   panels are arranged on screen.

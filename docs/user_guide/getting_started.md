@@ -21,7 +21,11 @@ for setup prerequisites.
    every view usage declared in the workspace, and the **Diagnostics** panel
    (bottom) lists any parser or reference-resolution problems found across
    the whole workspace. Panels are docked in this default arrangement but can
-   be resized, floated, or closed like any other dockable panel.
+   be resized, floated, or closed like any other dockable panel. If you
+   close the **Predefined Views**, **Custom View Builder**, or
+   **Diagnostics** panel, reopen it from the **View** menu - selecting it
+   there restores the panel to its original dock without losing any
+   in-progress state (for example, a partially-built custom view).
 
 While a workspace is open, SysML2Workbench watches the folder for external
 changes. If you edit a `.sysml` file in another editor, or `git pull` new

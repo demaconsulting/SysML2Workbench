@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:dock="using:Dock.Avalonia.Controls"
+        xmlns:dockControls="using:Dock.Model.Mvvm.Controls"
         x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.MainWindowView"
         Title="SysML2Workbench"
         Width="1280" Height="800">
@@ -10,6 +11,11 @@
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File">
         <MenuItem Name="OpenWorkspaceMenuItem" Header="_Open Workspace..." />
+      </MenuItem>
+      <MenuItem Header="_View">
+        <MenuItem Name="PredefinedViewsMenuItem" Header="_Predefined Views" Click="OnPredefinedViewsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
+        <MenuItem Name="CustomViewBuilderMenuItem" Header="_Custom View Builder" Click="OnCustomViewBuilderMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
+        <MenuItem Name="DiagnosticsMenuItem" Header="_Diagnostics" Click="OnDiagnosticsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
       </MenuItem>
     </Menu>
 

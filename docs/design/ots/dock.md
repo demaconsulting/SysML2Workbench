@@ -35,3 +35,26 @@ fixed layout's default proportions. `MainWindowView` builds this layout once
 per window and binds it to a `DockControl`; `MainWindowShell` itself has no
 Dock dependency, preserving its existing zero-Avalonia-dependency design.
 Layout serialization/persistence is out of scope for this phase.
+
+### Restoring Closed Tools
+
+`WorkbenchDockFactory` sets `HideToolsOnClose = true` (a `FactoryBase`
+setting), so closing a `Tool` through Dock's own chrome (the tab's "x"
+button) calls `HideDockable` instead of permanently removing it: the
+dockable is taken out of its owning `ToolDock`'s `VisibleDockables`, its
+`OriginalOwner` is recorded, and it is tracked in `IRootDock.HiddenDockables`
+without the view model instance ever being destroyed or recreated. `Tool`
+exposes this as a normal, bindable `IsOpen` bool that Dock keeps in sync in
+both directions.
+
+`MainWindowView`'s "View" menu is the UI entry point for bringing a hidden
+`Tool` back: each menu item's `Click` handler calls, on the same
+`WorkbenchDockFactory` instance, `RestoreDockable(tool)` (a safe no-op if the
+tool isn't currently hidden) followed by `SetActiveDockable(tool)` and
+`SetFocusedDockable(ownerDock, tool)`. `RestoreDockable` re-adds the exact
+existing dockable instance to its original `ToolDock`, so any in-progress
+panel state (for example, an unsaved custom-view-builder definition) is
+preserved across a close/restore cycle. Each menu item's `IsChecked` is
+bound one-way to the panel's `IsOpen` property purely as a visual indicator;
+the `Click` handler never hides an already-open panel, so clicking the
+menu item for a visible panel only (re)focuses it.
