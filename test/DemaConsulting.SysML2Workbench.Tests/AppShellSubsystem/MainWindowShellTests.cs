@@ -62,11 +62,15 @@ public sealed class MainWindowShellTests : IDisposable
     /// <summary>
     ///     Builds a shell wired with real (non-mocked) subsystem units.
     /// </summary>
-    private MainWindowShell CreateShell()
+    /// <param name="fileWatcher">
+    ///     File watcher to wire into the shell. Defaults to a freshly created watcher when not supplied, matching
+    ///     every existing test's expectations.
+    /// </param>
+    private MainWindowShell CreateShell(FileWatcher? fileWatcher = null)
     {
         return new MainWindowShell(
             new WorkspaceModel(),
-            new FileWatcher(TimeSpan.FromMilliseconds(1)),
+            fileWatcher ?? new FileWatcher(TimeSpan.FromMilliseconds(1)),
             new DiagnosticsAggregator(),
             new ViewCatalogPresenter(),
             new LayoutInvoker(),
@@ -404,5 +408,47 @@ public sealed class MainWindowShellTests : IDisposable
         // Assert: the first tab's zoom is unaffected
         Assert.Equal(1.0, canvas1.ZoomLevel);
         Assert.Equal(2.5, canvas2.ZoomLevel);
+    }
+
+    /// <summary>
+    ///     Validates that opening a second workspace with a different root retargets the shell's file watcher to
+    ///     the newly opened root - not just the first-ever opened one - and discards any pending change state
+    ///     that had accumulated against the previously watched root.
+    /// </summary>
+    [Fact]
+    public async Task OpenWorkspaceAsync_ReopenedWithDifferentRoot_RetargetsFileWatcherAndDiscardsStalePendingChanges()
+    {
+        // Arrange: a second, distinct temporary workspace root, and a locally held file watcher reference so its
+        // watched root and pending state can be inspected directly.
+        var secondRoot = Directory.CreateTempSubdirectory("sysml2workbench-tests-").FullName;
+        try
+        {
+            await WriteSampleWorkspaceAsync();
+            await File.WriteAllTextAsync(
+                Path.Combine(secondRoot, "Other.sysml"),
+                "package Other {\n    part def Bracket;\n}\n",
+                TestContext.Current.CancellationToken);
+
+            var fileWatcher = new FileWatcher(TimeSpan.FromMilliseconds(1));
+            using var shell = CreateShell(fileWatcher);
+
+            // Act: open workspace A, queue a pending change against A directly on the watcher, then open
+            // workspace B.
+            await shell.OpenWorkspaceAsync(_tempRoot);
+            Assert.Equal(Path.GetFullPath(_tempRoot), fileWatcher.WatchedRootPath);
+            var stalePathUnderA = Path.Combine(_tempRoot, "Stale.sysml");
+            fileWatcher.QueueChange(stalePathUnderA);
+            Assert.Contains(stalePathUnderA, fileWatcher.PendingChanges);
+
+            await shell.OpenWorkspaceAsync(secondRoot);
+
+            // Assert: the watcher is retargeted to B (the second root), not left on A (the first)
+            Assert.Equal(Path.GetFullPath(secondRoot), fileWatcher.WatchedRootPath);
+            Assert.DoesNotContain(stalePathUnderA, fileWatcher.PendingChanges);
+        }
+        finally
+        {
+            Directory.Delete(secondRoot, recursive: true);
+        }
     }
 }

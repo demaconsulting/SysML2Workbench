@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using DemaConsulting.SysML2Workbench.AppShellSubsystem;
 using DemaConsulting.SysML2Workbench.DiagnosticsPanelSubsystem;
@@ -37,7 +38,7 @@ public sealed class DockTests : IDisposable
         }
     }
 
-    private MainWindowShell CreateShell()
+    private MainWindowShell CreateShell(IUiDispatcher? dispatcher = null)
     {
         return new MainWindowShell(
             new WorkspaceModel(),
@@ -47,7 +48,8 @@ public sealed class DockTests : IDisposable
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(_tempLogRoot));
+            new RollingFileLogger(_tempLogRoot),
+            uiDispatcher: dispatcher);
     }
 
     /// <summary>
@@ -384,6 +386,85 @@ public sealed class DockTests : IDisposable
 
         // Avalonia's software bitmap surface is BGRA8888.
         return Avalonia.Media.Color.FromArgb(buffer[3], buffer[2], buffer[1], buffer[0]);
+    }
+
+    /// <summary>
+    ///     Regression test for the crash reported after opening a second workspace: proves that
+    ///     <see cref="MainWindowShell.TabsChanged" /> notifications reaching <see cref="MainWindowView" /> are
+    ///     marshaled onto the UI thread via the injected <see cref="AvaloniaUiDispatcher" />, even when
+    ///     <see cref="MainWindowShell.OpenWorkspaceAsync" /> itself resumes on a background thread pool thread
+    ///     (simulated here by driving the second open through <see cref="Task.Run(Action)" />, which guarantees
+    ///     <c>TabsChanged</c> would be raised off the UI thread if it were not marshaled).
+    /// </summary>
+    /// <remarks>
+    ///     Honesty caveat: headless Avalonia has no live pointer-input pipeline, so this test cannot reproduce the
+    ///     exact reported <c>Avalonia.Controls.Selection.InternalSelectionModel</c>/<c>TabStrip</c> crash stack
+    ///     trace verbatim. What it does prove directly: (1) before the fix's <c>Dispatcher.UIThread.RunJobs()</c>
+    ///     pump runs, a Dock mutation driven by a background-thread-raised <c>TabsChanged</c> has not yet been
+    ///     applied - i.e. it is queued via <see cref="IUiDispatcher.Post" /> rather than applied synchronously
+    ///     on the background thread that raised it; and (2) once pumped, the handler is confirmed (via
+    ///     <c>Dispatcher.UIThread.CheckAccess()</c> captured at the moment it runs) to execute on the UI thread.
+    ///     This is the same thread-affinity contract Avalonia's <c>TabStrip</c>/<c>SelectionModel</c> requires and
+    ///     that the reported crash violates, even though the literal race condition itself is not reproduced.
+    /// </remarks>
+    [AvaloniaFact]
+    public async Task MainWindowView_TabsChangedFromBackgroundThread_MarshalsDiagramDockMutationsOntoUiThread()
+    {
+        var firstRoot = Directory.CreateTempSubdirectory("sysml2workbench-ots-dock-first-").FullName;
+        var secondRoot = Directory.CreateTempSubdirectory("sysml2workbench-ots-dock-second-").FullName;
+        try
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(firstRoot, "First.sysml"),
+                "package First {\n    part def Engine;\n}\n",
+                TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(
+                Path.Combine(secondRoot, "Second.sysml"),
+                "package Second {\n    part def Wheel;\n}\n",
+                TestContext.Current.CancellationToken);
+
+            // Arrange: a shell wired with the real Avalonia dispatcher, hosted in a real MainWindowView, with one
+            // diagram tab already open against the first workspace.
+            using var shell = CreateShell(new AvaloniaUiDispatcher());
+            var window = new MainWindowView(shell);
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            await shell.OpenWorkspaceAsync(firstRoot);
+            Dispatcher.UIThread.RunJobs();
+
+            var dockControl = window.GetVisualDescendants().OfType<DockControl>().First();
+            var dockFactory = (WorkbenchDockFactory)dockControl.Layout!.Factory!;
+            shell.OpenNewCustomPreviewTab();
+            Dispatcher.UIThread.RunJobs();
+            Assert.Single(dockFactory.DiagramDock.VisibleDockables!);
+
+            var handlerRanOnUiThread = false;
+            shell.TabsChanged += (_, _) => handlerRanOnUiThread = Dispatcher.UIThread.CheckAccess();
+
+            // Act: open a second, different workspace entirely from a background thread, so TabsChanged is
+            // guaranteed to be raised off the UI thread if it is not marshaled through the injected dispatcher.
+            await Task.Run(() => shell.OpenWorkspaceAsync(secondRoot));
+
+            // Assert (pre-pump): the Dock mutation has not happened yet - it is queued via the dispatcher, not
+            // applied inline on the background thread that raised TabsChanged.
+            Assert.Single(dockFactory.DiagramDock.VisibleDockables!);
+
+            // Act: pump the UI thread's queued work.
+            Dispatcher.UIThread.RunJobs();
+
+            // Assert (post-pump): the marshaled handler ran on the UI thread, and Dock now reflects the new
+            // (empty, since ApplyWorkspaceSnapshot clears tabs) workspace state.
+            Assert.True(handlerRanOnUiThread);
+            Assert.Empty(dockFactory.DiagramDock.VisibleDockables!);
+
+            window.Close();
+        }
+        finally
+        {
+            Directory.Delete(firstRoot, recursive: true);
+            Directory.Delete(secondRoot, recursive: true);
+        }
     }
 
     /// <summary>

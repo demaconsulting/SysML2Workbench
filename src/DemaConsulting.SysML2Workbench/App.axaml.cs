@@ -47,7 +47,8 @@ public sealed class App : Application
                 new LayoutInvoker(),
                 new DiagnosticsListView(),
                 new SysmlSnippetGenerator(),
-                new RollingFileLogger(logDirectory));
+                new RollingFileLogger(logDirectory),
+                uiDispatcher: new AvaloniaUiDispatcher());
 
             desktop.MainWindow = new MainWindowView(shell);
             desktop.ShutdownRequested += (_, _) => shell.Dispose();

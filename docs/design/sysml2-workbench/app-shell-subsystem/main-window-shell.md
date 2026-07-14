@@ -39,7 +39,10 @@ own focus-change signal via `NotifyActiveDiagramTab`.
 - *Postconditions*: WorkspaceSubsystem is initialized, the view catalog is
   refreshed, diagnostics are displayed, and every open tab is closed
   (`ActiveTabId` becomes `null`) since a reloaded workspace invalidates every
-  currently-rendered diagram.
+  currently-rendered diagram. The file watcher is retargeted to `rootPath` on
+  every call, not only the first: any previously watched root is torn down and
+  its pending change state discarded, so a second or later workspace open
+  never leaves the watcher bound to a stale folder.
 
 **SelectPredefinedView**: Renders a predefined view selected by the user.
 
@@ -110,7 +113,12 @@ active, changes - a tab is opened, closed, re-rendered in place, or the
 workspace is reloaded (which clears every tab). The Avalonia-aware UI layer
 (`MainWindowView`) subscribes to this to reconcile Dock's `DocumentDock` with
 `OpenTabs`, since `MainWindowShell` itself has no Dock dependency and cannot
-add or remove Dock dockables directly.
+add or remove Dock dockables directly. The notification is raised through an
+injected `IUiDispatcher`, so subscribers are guaranteed to observe it on the
+dispatcher's target thread even though methods that trigger it - most notably
+`OpenWorkspace`, which awaits workspace loading with `ConfigureAwait(false)` -
+may themselves resume on a background thread pool thread once the load
+completes.
 
 #### Dependencies
 
@@ -122,6 +130,9 @@ add or remove Dock dockables directly.
 - **SvgCanvasHost** — displays the active diagram.
 - **DiagnosticsListView** — displays workspace diagnostics.
 - **RollingFileLogger** — records shell-level operational failures.
+- **IUiDispatcher** — marshals `TabsChanged` notifications onto the thread
+  required by UI-facing subscribers; defaults to an immediate, synchronous
+  dispatcher when none is supplied.
 - **Avalonia** — provides the window, tab, and application-lifetime framework.
 
 #### Callers

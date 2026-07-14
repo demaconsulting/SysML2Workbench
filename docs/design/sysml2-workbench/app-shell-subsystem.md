@@ -22,7 +22,10 @@ actions across subsystems.
   failures to the user.
 - *Constraints*: The shell must preserve UI responsiveness and must keep
   subsystem orchestration deterministic even when the workspace reloads
-  mid-session.
+  mid-session. Notifications the Avalonia UI layer consumes (`TabsChanged`)
+  are marshaled onto the UI thread regardless of which thread raises them,
+  since shell operations such as opening a workspace may complete on a
+  background continuation after an asynchronous workspace load.
 
 **Application Lifetime Host**: The platform-specific startup and shutdown
 environment.

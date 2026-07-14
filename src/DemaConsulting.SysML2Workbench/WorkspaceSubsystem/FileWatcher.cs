@@ -94,12 +94,15 @@ public sealed class FileWatcher : IDisposable
     public IReadOnlySet<string> PendingChanges => new HashSet<string>(_pending.Keys, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    ///     Begins monitoring the current workspace root.
+    ///     Begins monitoring the given workspace root. Calling this while already watching a (possibly
+    ///     different) root retargets monitoring to <paramref name="rootPath" /> instead of throwing: the
+    ///     previous <see cref="FileSystemWatcher" /> is disposed and any pending change state accumulated
+    ///     against the previous root is discarded, so no stale path can leak into the newly watched root's
+    ///     pending set.
     /// </summary>
     /// <param name="rootPath">Folder to observe.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="rootPath" /> is null or whitespace.</exception>
     /// <exception cref="DirectoryNotFoundException">Thrown when <paramref name="rootPath" /> does not exist.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when a watcher is already active.</exception>
     public void StartWatching(string rootPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(rootPath);
@@ -108,10 +111,9 @@ public sealed class FileWatcher : IDisposable
             throw new DirectoryNotFoundException($"Workspace root folder was not found: {rootPath}");
         }
 
-        if (_watcher is not null)
-        {
-            throw new InvalidOperationException("FileWatcher is already watching a workspace root.");
-        }
+        _watcher?.Dispose();
+        _watcher = null;
+        _pending.Clear();
 
         WatchedRootPath = Path.GetFullPath(rootPath);
         _watcher = new FileSystemWatcher(WatchedRootPath)

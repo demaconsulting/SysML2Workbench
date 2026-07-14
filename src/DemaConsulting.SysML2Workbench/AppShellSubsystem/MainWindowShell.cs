@@ -126,7 +126,19 @@ public sealed class MainWindowShell : IDisposable
     ///     re-rendered in place, or the workspace is reloaded (which clears every tab). The Avalonia-aware UI
     ///     layer subscribes to this to reconcile Dock's <c>DocumentDock</c> with <see cref="OpenTabs" />.
     /// </summary>
+    /// <remarks>
+    ///     Raised via the constructor-injected <see cref="IUiDispatcher" /> (see <see cref="RaiseTabsChanged" />),
+    ///     so subscribers are guaranteed to observe it on the dispatcher's target thread even though the shell
+    ///     methods that trigger it - most notably <see cref="OpenWorkspaceAsync" />, which awaits workspace
+    ///     loading with <c>ConfigureAwait(false)</c> - may themselves resume on a background thread pool thread.
+    /// </remarks>
     public event EventHandler? TabsChanged;
+
+    /// <summary>
+    ///     Dispatcher used to marshal <see cref="TabsChanged" /> notifications onto whatever thread the shell's
+    ///     UI-facing consumers require.
+    /// </summary>
+    private readonly IUiDispatcher _uiDispatcher;
 
     /// <summary>
     ///     Creates the shell from its constituent subsystem units.
@@ -139,7 +151,14 @@ public sealed class MainWindowShell : IDisposable
     /// <param name="diagnosticsListView">Displays workspace diagnostics.</param>
     /// <param name="snippetGenerator">Exports custom-view definitions as SysML text.</param>
     /// <param name="logger">Records shell-level operational events and failures.</param>
-    /// <exception cref="ArgumentNullException">Thrown when any dependency is null.</exception>
+    /// <param name="uiDispatcher">
+    ///     Dispatcher used to marshal <see cref="TabsChanged" /> notifications. Defaults to
+    ///     <see cref="ImmediateUiDispatcher" />, which runs the notification synchronously on the calling thread;
+    ///     production wiring should pass a real UI-thread-aware implementation (for example
+    ///     <c>AvaloniaUiDispatcher</c>) so notifications reach Avalonia-aware subscribers on the UI thread even
+    ///     when raised from a background continuation.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when any required dependency is null.</exception>
     public MainWindowShell(
         WorkspaceModel workspaceModel,
         FileWatcher fileWatcher,
@@ -148,7 +167,8 @@ public sealed class MainWindowShell : IDisposable
         LayoutInvoker layoutInvoker,
         DiagnosticsListView diagnosticsListView,
         SysmlSnippetGenerator snippetGenerator,
-        RollingFileLogger logger)
+        RollingFileLogger logger,
+        IUiDispatcher? uiDispatcher = null)
     {
         ArgumentNullException.ThrowIfNull(workspaceModel);
         ArgumentNullException.ThrowIfNull(fileWatcher);
@@ -167,14 +187,34 @@ public sealed class MainWindowShell : IDisposable
         _diagnosticsListView = diagnosticsListView;
         _snippetGenerator = snippetGenerator;
         _logger = logger;
+        _uiDispatcher = uiDispatcher ?? new ImmediateUiDispatcher();
+    }
+
+    /// <summary>
+    ///     Raises <see cref="TabsChanged" /> via the injected <see cref="IUiDispatcher" />, so the notification
+    ///     always reaches subscribers on the dispatcher's target thread, regardless of which thread this method
+    ///     is called from.
+    /// </summary>
+    private void RaiseTabsChanged()
+    {
+        _uiDispatcher.Post(() => TabsChanged?.Invoke(this, EventArgs.Empty));
     }
 
     /// <summary>
     ///     Loads a new workspace into the shell, refreshes the view catalog and diagnostics, resets active
-    ///     selections, and begins live-watching the folder for external changes.
+    ///     selections, and (re)targets live-watching to the newly opened folder.
     /// </summary>
     /// <param name="rootPath">User-selected folder.</param>
     /// <returns>The freshly loaded workspace snapshot.</returns>
+    /// <remarks>
+    ///     The file watcher is retargeted to <paramref name="rootPath" /> on every call, not just the first: any
+    ///     previously watched root is torn down and any of its pending change state is discarded, so a second or
+    ///     later workspace open never leaves the watcher bound to a stale folder. Because workspace loading is
+    ///     awaited with <c>ConfigureAwait(false)</c>, this method's continuation - including the
+    ///     <see cref="TabsChanged" /> notification raised by <see cref="ApplyWorkspaceSnapshot" /> - may resume on
+    ///     a background thread; <see cref="TabsChanged" /> is nonetheless delivered via the injected
+    ///     <see cref="IUiDispatcher" />, so UI-facing subscribers still observe it on their required thread.
+    /// </remarks>
     /// <exception cref="ArgumentException">Thrown when <paramref name="rootPath" /> is null or whitespace.</exception>
     /// <exception cref="DirectoryNotFoundException">Thrown when <paramref name="rootPath" /> does not exist.</exception>
     public async Task<WorkspaceSnapshot> OpenWorkspaceAsync(string rootPath)
@@ -186,10 +226,7 @@ public sealed class MainWindowShell : IDisposable
             var snapshot = await _workspaceModel.LoadWorkspaceAsync(rootPath).ConfigureAwait(false);
             ApplyWorkspaceSnapshot(snapshot);
 
-            if (_fileWatcher.WatchedRootPath is null)
-            {
-                _fileWatcher.StartWatching(snapshot.RootPath);
-            }
+            _fileWatcher.StartWatching(snapshot.RootPath);
 
             _logger.Log(LogLevel.Info, $"Workspace opened: {snapshot.RootPath}");
             return snapshot;
@@ -256,7 +293,7 @@ public sealed class MainWindowShell : IDisposable
             ActivePredefinedView = descriptor;
             ActiveCustomView = null;
             ActiveTabId = tab.Id;
-            TabsChanged?.Invoke(this, EventArgs.Empty);
+            RaiseTabsChanged();
             return svg;
         }
         catch (Exception ex)
@@ -317,7 +354,7 @@ public sealed class MainWindowShell : IDisposable
             ActiveCustomView = definition;
             ActivePredefinedView = null;
             ActiveTabId = tab.Id;
-            TabsChanged?.Invoke(this, EventArgs.Empty);
+            RaiseTabsChanged();
             return svg;
         }
         catch (Exception ex)
@@ -339,7 +376,7 @@ public sealed class MainWindowShell : IDisposable
         var tab = CreateTab(NextCustomPreviewTabId(), "Custom View", WorkbenchTabKind.CustomViewPreview);
         _openTabs.Add(tab);
         ActiveTabId = tab.Id;
-        TabsChanged?.Invoke(this, EventArgs.Empty);
+        RaiseTabsChanged();
         return tab;
     }
 
@@ -364,7 +401,7 @@ public sealed class MainWindowShell : IDisposable
             ActiveTabId = _openTabs.Count == 0 ? null : _openTabs[Math.Min(index, _openTabs.Count - 1)].Id;
         }
 
-        TabsChanged?.Invoke(this, EventArgs.Empty);
+        RaiseTabsChanged();
     }
 
     /// <summary>
@@ -435,7 +472,7 @@ public sealed class MainWindowShell : IDisposable
         ActiveCustomView = null;
         _openTabs.Clear();
         ActiveTabId = null;
-        TabsChanged?.Invoke(this, EventArgs.Empty);
+        RaiseTabsChanged();
     }
 
     /// <summary>

@@ -24,14 +24,17 @@ next incremental refresh cycle.
 
 #### Key Methods
 
-**StartWatching**: Begins monitoring the current workspace root.
+**StartWatching**: Begins monitoring the given workspace root, retargeting an
+already-active watcher if one exists.
 
 - *Parameters*: `string rootPath` — folder to observe.
 - *Returns*: `void` — watcher state is updated in place.
-- *Preconditions*: `rootPath` exists and no incompatible watcher is currently
-  active.
+- *Preconditions*: `rootPath` exists.
 - *Postconditions*: File-system notifications are subscribed and queued into the
-  local debounce buffer.
+  local debounce buffer. If a watcher was already active for a different (or
+  the same) root, it is disposed and any pending change state accumulated
+  against that previous root is discarded first, so calling `StartWatching`
+  again retargets monitoring to the new root instead of throwing.
 
 **QueueChange**: Records a changed path from an operating-system event.
 
