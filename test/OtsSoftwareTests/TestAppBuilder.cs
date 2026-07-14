@@ -20,6 +20,8 @@ public static class TestAppBuilder
     /// <returns>An <see cref="AppBuilder" /> configured for headless rendering.</returns>
     public static AppBuilder BuildAvaloniaApp()
     {
-        return AppBuilder.Configure<App>().UseHeadless(new AvaloniaHeadlessPlatformOptions());
+        return AppBuilder.Configure<App>()
+            .UseSkia()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
     }
 }

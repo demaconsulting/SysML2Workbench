@@ -19,7 +19,31 @@
       </MenuItem>
     </Menu>
 
-    <dock:DockControl Name="WorkbenchDockControl" />
+    <dock:DockControl Name="WorkbenchDockControl">
+      <dock:DockControl.Styles>
+        <!--
+          The Fluent Dock theme's DocumentControl template unconditionally draws a 1px
+          DockDocumentContentBorderBrush/Thickness ring around its content area
+          (Dock.Avalonia.Themes.Fluent/Controls/DocumentControl.axaml, Style Selector
+          "^/template/ Border#PART_Border"), whether or not the dock has any visible
+          document tabs. Headless-rendered pixel capture (test/OtsSoftwareTests/DockTests.cs,
+          DiagramDock_EmptyArea_HasNoVisibleBorder) confirmed this same 1px gray ring is drawn
+          identically in both states - it is not conditionally hidden or masked by tab content;
+          it is simply imperceptible against a busy/opaque diagram once a tab is open, but stands
+          out sharply around the otherwise-blank area when zero diagram tabs are open (the
+          EmptyContent = null state - see WorkbenchDockFactory.CreateLayout). DocumentControl
+          exposes its own "HasVisibleDockables" styled property (bound by the template itself to
+          toggle PART_ContentPresenter/PART_EmptyContentHost visibility), which this style reuses
+          to zero the border's thickness only when the dock has zero visible documents, leaving
+          the with-tab-open appearance completely untouched. Scoped to this single DockControl
+          (the only one in the app today, hosting only DiagramDock) rather than the global
+          Dock.Avalonia.Themes.Fluent theme dictionary, so it cannot affect any other/future dock.
+        -->
+        <Style Selector="dock|DocumentControl[HasVisibleDockables=False] /template/ Border#PART_Border">
+          <Setter Property="BorderThickness" Value="0" />
+        </Style>
+      </dock:DockControl.Styles>
+    </dock:DockControl>
 
   </DockPanel>
 

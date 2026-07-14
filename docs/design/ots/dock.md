@@ -87,6 +87,36 @@ the ones the Tool panels use:
   dockables. Cleared to `null` on `DiagramDock` so the diagram area with
   zero open tabs is a plain blank area (matching Visual Studio's editor
   region with no files open), not a placeholder message.
+- **`MainWindowView.axaml`'s `DockControl.Styles` override for the empty-state
+  border** — the Fluent Dock theme's `DocumentControl` control template
+  (`Dock.Avalonia.Themes.Fluent/Controls/DocumentControl.axaml`) draws its
+  content area inside a `Border` named `PART_Border`, whose 1px
+  `DockDocumentContentBorderBrush`/`DockDocumentContentBorderThickness` is
+  applied unconditionally by that template, regardless of whether the dock
+  has any visible documents. Headless-rendered pixel capture
+  (`test/OtsSoftwareTests/DockTests.cs`,
+  `DiagramDock_EmptyArea_HasNoVisibleBorder`) confirmed this border is
+  genuinely drawn identically in both states - it is not conditionally
+  hidden or masked by tab content - it is simply imperceptible once a
+  diagram tab's opaque content fills the area, but stands out sharply as a
+  visible gray box around the otherwise-blank area once `EmptyContent =
+  null` leaves zero open tabs with nothing else painted there. Since Dock's
+  model classes (`DocumentDock`/`IDockable`) expose no per-instance hook for
+  overriding template-level border resources (unlike `EmptyContent`, a
+  bindable model property), the fix lives in the Avalonia control layer:
+  `MainWindowView.axaml`'s single `dock:DockControl` declares a
+  `DockControl.Styles` override targeting
+  `DocumentControl[HasVisibleDockables=False] /template/ Border#PART_Border`
+  (`HasVisibleDockables` is `DocumentControl`'s own styled property, the same
+  one its template already uses to toggle `PART_ContentPresenter`/
+  `PART_EmptyContentHost` visibility) and sets that border's
+  `BorderThickness` to `0` only in the zero-visible-documents state. Because
+  there is exactly one `DockControl` (and therefore exactly one
+  `DocumentDock`/`DiagramDock`) in the app today, this is scoped as narrowly
+  as `DiagramDock`-only without needing any change to
+  `WorkbenchDockFactory.cs`, and it leaves the with-tab-open appearance
+  completely untouched (verified by the same headless test's pixel
+  comparison against the with-tab-open state).
 - **`IFactory.FocusedDockableChanged`/`OnDockableClosed`** — `MainWindowView`
   subscribes to `WorkbenchDockFactory`'s inherited `FocusedDockableChanged`
   event to forward Dock's own tab-focus tracking to

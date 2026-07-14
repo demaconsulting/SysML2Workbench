@@ -1,5 +1,9 @@
 using System.Linq;
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.VisualTree;
 using DemaConsulting.SysML2Workbench.AppShellSubsystem;
 using DemaConsulting.SysML2Workbench.DiagnosticsPanelSubsystem;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
@@ -274,6 +278,112 @@ public sealed class DockTests : IDisposable
         // Assert
         Assert.NotNull(received);
         Assert.Same(secondDocument, received.Dockable);
+    }
+
+    /// <summary>
+    ///     Validates the empty-diagram-area border fix via real headless bitmap rendering (not XAML-only
+    ///     reasoning): renders <see cref="MainWindowView" />'s real Dock layout in both the zero-diagram-tab
+    ///     state and the one-tab-open state, and samples pixel colors at the diagram <c>DocumentControl</c>'s
+    ///     <c>PART_Border</c> ring location in each. The Fluent Dock theme's <c>DocumentControl</c> template
+    ///     unconditionally draws a 1px <c>DockDocumentContentBorderBrush</c>/<c>Thickness</c> ring around its
+    ///     content area regardless of whether any documents are open; prior to this fix, headless pixel sampling
+    ///     confirmed that ring rendered identically (same gray tone) in both states - it was not conditionally
+    ///     hidden or masked by tab content, just imperceptible against a busy diagram once a tab is open, while
+    ///     standing out sharply around the otherwise-blank area when zero diagram tabs are open (the
+    ///     <c>EmptyContent = null</c> state - see <see cref="WorkbenchDockFactory.CreateLayout" />). This test
+    ///     asserts that, with <see cref="MainWindowView" />'s <c>DocumentControl[HasVisibleDockables=False]</c>
+    ///     style fix applied, the border pixel is indistinguishable from the surrounding blank content when zero
+    ///     tabs are open, while remaining visibly distinct from its content when a tab is open (matching the
+    ///     pre-fix, still-correct with-tab-open appearance).
+    /// </summary>
+    [AvaloniaFact]
+    public void DiagramDock_EmptyArea_HasNoVisibleBorder()
+    {
+        // Arrange
+        using var shell = CreateShell();
+        var window = new MainWindowView(shell);
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        var emptyBorder = FindDiagramDocumentControlBorder(window);
+        var emptyTopLeft = emptyBorder.TranslatePoint(new Point(0, 0), window) ?? default;
+        var emptySize = emptyBorder.Bounds.Size;
+
+        // Act - capture the rendered frame with zero diagram tabs open
+        using var emptyFrame = RenderWindow(window);
+        var emptyBorderPixel = SamplePixel(emptyFrame, (int)emptyTopLeft.X, (int)(emptyTopLeft.Y + emptySize.Height / 2));
+        var emptyInteriorPixel = SamplePixel(emptyFrame, (int)(emptyTopLeft.X + emptySize.Width / 2), (int)(emptyTopLeft.Y + emptySize.Height / 2));
+
+        // Act - open one diagram tab with trivial content and re-render
+        var dockControl = window.GetVisualDescendants().OfType<DockControl>().First();
+        var dockFactory = (WorkbenchDockFactory)dockControl.Layout!.Factory!;
+        dockFactory.AddDockable(dockFactory.DiagramDock, new DiagramDocumentViewModel(shell, "tab-1"));
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        var openBorder = FindDiagramDocumentControlBorder(window);
+        var openTopLeft = openBorder.TranslatePoint(new Point(0, 0), window) ?? default;
+        var openSize = openBorder.Bounds.Size;
+
+        using var openFrame = RenderWindow(window);
+        var openBorderPixel = SamplePixel(openFrame, (int)openTopLeft.X, (int)(openTopLeft.Y + openSize.Height / 2));
+        var openInteriorPixel = SamplePixel(openFrame, (int)(openTopLeft.X + openSize.Width / 2), (int)(openTopLeft.Y + openSize.Height / 2));
+
+        window.Close();
+
+        // Assert - the empty diagram area has no visible border: the pixel at the border's location is
+        // indistinguishable from the blank content it surrounds.
+        Assert.Equal(emptyInteriorPixel, emptyBorderPixel);
+
+        // Assert - the with-tab-open appearance is unchanged: the border remains visibly distinct from its
+        // content, exactly as it was before this fix.
+        Assert.NotEqual(openInteriorPixel, openBorderPixel);
+    }
+
+    /// <summary>
+    ///     Finds the <c>PART_Border</c> control belonging to the diagram <c>DocumentDock</c>'s
+    ///     <c>DocumentControl</c> template, anywhere in <paramref name="window" />'s visual tree.
+    /// </summary>
+    private static Border FindDiagramDocumentControlBorder(Window window)
+    {
+        var border = window.GetVisualDescendants()
+            .OfType<Border>()
+            .FirstOrDefault(b => b.Name == "PART_Border" && b.FindAncestorOfType<DocumentControl>() is not null);
+        Assert.NotNull(border);
+        return border!;
+    }
+
+    /// <summary>
+    ///     Renders <paramref name="window" />'s current visual tree to an in-memory bitmap the same pixel size
+    ///     as the window, using Avalonia's <c>RenderTargetBitmap</c> so a real Skia-rendered frame can be pixel-
+    ///     sampled without depending on the headless compositor's own render-timer/frame-capture pipeline.
+    /// </summary>
+    private static Avalonia.Media.Imaging.RenderTargetBitmap RenderWindow(Window window)
+    {
+        var size = new PixelSize((int)window.Bounds.Width, (int)window.Bounds.Height);
+        var rtb = new Avalonia.Media.Imaging.RenderTargetBitmap(size);
+        rtb.Render(window);
+        return rtb;
+    }
+
+    /// <summary>
+    ///     Reads the color of a single pixel at (<paramref name="x" />, <paramref name="y" />) out of
+    ///     <paramref name="bitmap" />, for headless visual-regression pixel assertions.
+    /// </summary>
+    private static Avalonia.Media.Color SamplePixel(Avalonia.Media.Imaging.Bitmap bitmap, int x, int y)
+    {
+        var buffer = new byte[4];
+        var handle = System.Runtime.InteropServices.GCHandle.Alloc(buffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+        try
+        {
+            bitmap.CopyPixels(new PixelRect(x, y, 1, 1), handle.AddrOfPinnedObject(), 4, 4);
+        }
+        finally
+        {
+            handle.Free();
+        }
+
+        // Avalonia's software bitmap surface is BGRA8888.
+        return Avalonia.Media.Color.FromArgb(buffer[3], buffer[2], buffer[1], buffer[0]);
     }
 
     /// <summary>
