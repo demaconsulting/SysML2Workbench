@@ -11,6 +11,7 @@ sections:
             children:
               - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreSelectedViewKind'
               - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeTargets'
+              - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeRecursionAndFilter'
               - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-ReportDefinitionReadiness'
             tests:
               - 'ViewBuilderSubsystemTests.EditDefinition_TracksCustomViewInputs'
@@ -22,5 +23,6 @@ sections:
             children:
               - 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-EmitViewSnippet'
               - 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-PreserveDefinitionSemantics'
+              - 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-EmitRecursionKindForms'
             tests:
               - 'ViewBuilderSubsystemTests.ExportDefinition_GeneratesSysmlSnippet'

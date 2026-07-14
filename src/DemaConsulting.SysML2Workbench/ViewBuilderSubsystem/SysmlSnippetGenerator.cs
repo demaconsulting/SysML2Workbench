@@ -1,4 +1,5 @@
 using System.Text;
+using DemaConsulting.SysML2Tools.Semantic.Model;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
 
 namespace DemaConsulting.SysML2Workbench.ViewBuilderSubsystem;
@@ -86,9 +87,9 @@ public sealed class SysmlSnippetGenerator
         var builder = new StringBuilder();
         builder.Append("view ").Append(name).Append(" {").Append(LineEnding);
 
-        foreach (var target in definition.ExposeTargets)
+        foreach (var selection in definition.ExposeTargets)
         {
-            builder.Append(FormatExposeClause(target)).Append(LineEnding);
+            builder.Append(FormatExposeClause(selection)).Append(LineEnding);
         }
 
         builder.Append(Indentation).Append("render ").Append(definition.ViewKind.Value.ToRenderTargetName()).Append(';').Append(LineEnding);
@@ -103,18 +104,43 @@ public sealed class SysmlSnippetGenerator
     }
 
     /// <summary>
-    ///     Emits one <c>expose</c> statement.
+    ///     Emits one <c>expose</c> statement, choosing among the four SysML v2 textual forms based on the
+    ///     selection's recursion kind and optional bracket-filter expression.
     /// </summary>
-    /// <param name="target">Selected package or element qualified name.</param>
-    /// <returns>Formatted clause for the target.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is null or whitespace.</exception>
-    public string FormatExposeClause(string target)
+    /// <param name="selection">Selected target, recursion kind, and optional bracket-filter expression.</param>
+    /// <returns>
+    ///     Formatted clause for the target: <c>expose {Target};</c> for
+    ///     <see cref="ExposeRecursionKind.MembershipExact" />; <c>expose {Target}::**;</c> (or
+    ///     <c>expose {Target}::**[{Expr}];</c> with a bracket filter) for
+    ///     <see cref="ExposeRecursionKind.MembershipRecursive" />; <c>expose {Target}::*;</c> for
+    ///     <see cref="ExposeRecursionKind.NamespaceDirectChildren" />; and
+    ///     <c>expose {Target}::*::**;</c> (or <c>expose {Target}::*::**[{Expr}];</c> with a bracket filter) for
+    ///     <see cref="ExposeRecursionKind.NamespaceRecursive" />.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="selection" /> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when the selection's qualified name is null or whitespace.</exception>
+    public string FormatExposeClause(ExposeTargetSelection selection)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(target);
+        ArgumentNullException.ThrowIfNull(selection);
+        ArgumentException.ThrowIfNullOrWhiteSpace(selection.QualifiedName);
 
         // Qualified names are preserved verbatim: SysML2Tools resolves expose targets by qualified name, and
         // inventing a proprietary alias format here would violate this unit's documented purpose
-        return $"{Indentation}expose {target};";
+        var target = selection.QualifiedName;
+        var suffix = selection.RecursionKind switch
+        {
+            ExposeRecursionKind.MembershipExact => string.Empty,
+            ExposeRecursionKind.MembershipRecursive => selection.BracketFilterExpression is null
+                ? "::**"
+                : $"::**[{selection.BracketFilterExpression}]",
+            ExposeRecursionKind.NamespaceDirectChildren => "::*",
+            ExposeRecursionKind.NamespaceRecursive => selection.BracketFilterExpression is null
+                ? "::*::**"
+                : $"::*::**[{selection.BracketFilterExpression}]",
+            _ => throw new ArgumentOutOfRangeException(nameof(selection), selection.RecursionKind, "Unsupported expose recursion kind."),
+        };
+
+        return $"{Indentation}expose {target}{suffix};";
     }
 
     /// <summary>

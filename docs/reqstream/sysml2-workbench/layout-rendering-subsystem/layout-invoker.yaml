@@ -19,3 +19,4 @@ sections:
                   Custom views must be previewed through the same rendering pipeline as persisted model views to keep user results consistent.
                 tests:
                   - 'LayoutInvokerTests.RenderCustomView_SupportsPanAndZoom'
+                  - 'LayoutInvokerTests.RenderCustomView_ScopesOutputToSelectedTargetsOnly'

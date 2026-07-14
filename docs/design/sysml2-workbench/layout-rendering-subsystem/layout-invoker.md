@@ -27,6 +27,15 @@ will be displayed by SvgCanvasHost.
 > `SysmlEdge` pair per selected target, and adds it to a shallow clone of the
 > workspace so the ephemeral preview node never mutates the live loaded
 > workspace.
+>
+> As of SysML2Tools 0.1.0-beta.8, the constructed `SysmlViewNode` also
+> populates `ResolvedExposeMembers` (one `(ExposeMember, ResolvedQualifiedName)`
+> pair per selected target) alongside `ExposeMembers`: `ExposeScopeResolver`
+> treats a view node with no `ResolvedExposeMembers` as unscoped and renders
+> the entire workspace rather than just the selected targets, so this is
+> required, not merely additive. Each target's recursion kind and optional
+> bracket-filter expression are passed through to the corresponding
+> `ExposeMember` unchanged.
 
 #### Data Model
 
@@ -61,8 +70,9 @@ scale) applied when the caller does not supply its own.
 - *Preconditions*: `definition.IsReadyToRender` is true (a view kind and at
   least one expose target are set).
 - *Postconditions*: An ephemeral `SysmlViewNode` (name prefixed `$WorkbenchPreview_`)
-  is built and rendered against a shallow clone of the workspace; the live
-  workspace's declarations are left untouched.
+  is built and rendered against a shallow clone of the workspace, with
+  `ResolvedExposeMembers` populated so rendering is correctly scoped to the
+  selected targets; the live workspace's declarations are left untouched.
 
 #### Error Handling
 

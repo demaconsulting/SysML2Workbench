@@ -32,3 +32,7 @@ snippet. Verified by `SysmlSnippetGeneratorTests.ExportDefinition_EmitsSysmlView
 **ExportDefinition_PreservesKindTargetsAndFilter**: The generated snippet preserves the selected view kind, every expose
 target, and the optional filter expression. Verified by
 `SysmlSnippetGeneratorTests.ExportDefinition_PreservesKindTargetsAndFilter`.
+
+**FormatExposeClause_EachRecursionKind_EmitsCorrectExposeStatement**: Formatting a single expose clause emits the
+correct textual form for each of the four recursion kinds, with and without a bracket-filter expression (six textual
+forms in total). Verified by `SysmlSnippetGeneratorTests.FormatExposeClause_EachRecursionKind_EmitsCorrectExposeStatement`.

@@ -122,7 +122,8 @@ public sealed class SysML2WorkbenchTests : IDisposable
 
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.Interconnection);
-        definition.SetExposeTargets(["Sample::Engine", "Sample::Wheel"]);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.AddExposeTarget("Sample::Wheel");
         definition.SetDisplayName("EngineOverview");
 
         // Act
@@ -132,8 +133,8 @@ public sealed class SysML2WorkbenchTests : IDisposable
         // Assert
         Assert.Contains("<svg", svg, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("view EngineOverview {", snippet);
-        Assert.Contains("expose Sample::Engine;", snippet);
-        Assert.Contains("expose Sample::Wheel;", snippet);
+        Assert.Contains("expose Sample::Engine::**;", snippet);
+        Assert.Contains("expose Sample::Wheel::**;", snippet);
         Assert.Contains("render asInterconnectionDiagram;", snippet);
     }
 

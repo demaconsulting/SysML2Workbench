@@ -33,8 +33,29 @@
         <TextBlock Text="View Kind" />
         <ComboBox Name="ViewKindComboBox" HorizontalAlignment="Stretch" />
 
-        <TextBlock Text="Expose Targets (multi-select)" />
-        <ListBox Name="ExposeTargetsListBox" SelectionMode="Multiple" Height="220" />
+        <TextBlock Text="Expose Targets" FontWeight="Bold" />
+
+        <TextBlock Text="Available (select, then Add)" />
+        <ListBox Name="AvailableExposeTargetsListBox" Height="90" />
+        <Button Name="AddExposeTargetButton" Content="Add →" HorizontalAlignment="Stretch" />
+
+        <StackPanel Orientation="Horizontal" Spacing="4">
+          <TextBlock Text="Selected" />
+          <TextBlock Text="&#x24D8;" FontWeight="Bold" Foreground="SteelBlue" Cursor="Hand">
+            <ToolTip.Tip>
+              <StackPanel Spacing="4" MaxWidth="360">
+                <TextBlock Text="Each selected target's recursion kind controls which SysML v2 'expose' textual form is generated and rendered." TextWrapping="Wrap" FontWeight="Bold" />
+                <TextBlock Text="This element only - exposes just the named element (expose Target;)." TextWrapping="Wrap" />
+                <TextBlock Text="This element + everything below (::**) - exposes the element and its full nested membership." TextWrapping="Wrap" />
+                <TextBlock Text="Direct children only (::*) - exposes only the element's immediate namespace members." TextWrapping="Wrap" />
+                <TextBlock Text="All descendants, not itself (::*::**) - exposes every namespace descendant, excluding the element itself." TextWrapping="Wrap" />
+              </StackPanel>
+            </ToolTip.Tip>
+          </TextBlock>
+        </StackPanel>
+        <ScrollViewer Height="200">
+          <StackPanel Name="SelectedExposeTargetsPanel" Spacing="4" />
+        </ScrollViewer>
 
         <StackPanel Orientation="Horizontal" Spacing="4">
           <TextBlock Text="Filter Expression (optional)" />

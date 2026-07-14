@@ -31,3 +31,8 @@ output. No external services are required.
 **RenderCustomView_SupportsPanAndZoom**: A GUI-built custom view with multiple expose targets renders to SVG suitable
 for display with pan and zoom (i.e. loadable into SvgCanvasHost). Verified by
 `LayoutInvokerTests.RenderCustomView_SupportsPanAndZoom`.
+
+**RenderCustomView_ScopesOutputToSelectedTargetsOnly**: Regression coverage for the SysML2Tools 0.1.0-beta.8
+`ResolvedExposeMembers` requirement - selecting only one of two workspace elements produces SVG that does not contain
+the unselected element, proving the ephemeral preview node is correctly scoped rather than rendering the entire
+workspace. Verified by `LayoutInvokerTests.RenderCustomView_ScopesOutputToSelectedTargetsOnly`.

@@ -119,7 +119,7 @@ public sealed class AppShellSubsystemTests : IDisposable
         await shell.OpenWorkspaceAsync(_tempRoot);
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
-        definition.SetExposeTargets(["Sample::Engine"]);
+        definition.AddExposeTarget("Sample::Engine");
 
         // Act
         var svg = shell.PreviewCustomView(definition);
@@ -127,6 +127,6 @@ public sealed class AppShellSubsystemTests : IDisposable
 
         // Assert
         Assert.Contains("<svg", svg, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("expose Sample::Engine;", snippet);
+        Assert.Contains("expose Sample::Engine::**;", snippet);
     }
 }

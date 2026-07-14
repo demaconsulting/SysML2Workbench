@@ -7,16 +7,38 @@ using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
 namespace DemaConsulting.SysML2Workbench.ViewBuilderSubsystem;
 
 /// <summary>
+///     One selected <c>expose</c> target together with its recursion kind and optional bracket-filter expression.
+/// </summary>
+/// <param name="QualifiedName">Qualified name of the selected package or element.</param>
+/// <param name="RecursionKind">
+///     Which of the four SysML v2 <c>expose</c> textual forms this target should be emitted/rendered as. Defaults
+///     to <see cref="ExposeRecursionKind.MembershipRecursive" />, matching this unit's prior de-facto behavior
+///     before per-target recursion kinds existed.
+/// </param>
+/// <param name="BracketFilterExpression">
+///     Optional bracket-filter expression (the <c>[...]</c> suffix on a recursive <c>expose</c> clause). Only
+///     meaningful when <paramref name="RecursionKind" /> is <see cref="ExposeRecursionKind.MembershipRecursive" />
+///     or <see cref="ExposeRecursionKind.NamespaceRecursive" />; <see cref="ViewDefinitionModel.ValidateAgainstWorkspace" />
+///     reports an error diagnostic if set on either non-recursive kind.
+/// </param>
+public sealed record ExposeTargetSelection(
+    string QualifiedName,
+    ExposeRecursionKind RecursionKind = ExposeRecursionKind.MembershipRecursive,
+    string? BracketFilterExpression = null);
+
+/// <summary>
 ///     ViewDefinitionModel captures the complete session-only definition of a custom view so the same normalized
 ///     state can be used both for live preview rendering and for SysML snippet generation.
 /// </summary>
 /// <remarks>
-///     Deviation from the original design sketch: expose targets are plain qualified-name strings rather than a
-///     dedicated <c>QualifiedName</c> value type. The real SysML2Tools semantic model
-///     (<see cref="DemaConsulting.SysML2Tools.Semantic.Model.ExposeMember" />,
-///     <see cref="DemaConsulting.SysML2Tools.Semantic.Model.SysmlNode.QualifiedName" />) represents qualified
-///     names as plain <see cref="string" /> throughout, so introducing a wrapper type here would add ceremony
-///     without a corresponding real-API contract to justify it.
+///     Deviation from the original design sketch: expose targets were originally modeled as plain qualified-name
+///     strings. That rationale is now partly superseded - each expose target is represented by
+///     <see cref="ExposeTargetSelection" />, a 3-field record mirroring the real SysML2Tools semantic model's own
+///     <see cref="DemaConsulting.SysML2Tools.Semantic.Model.ExposeMember" /> shape (qualified name, recursion
+///     kind, optional bracket-filter expression) rather than a bare string. The qualified name itself is still a
+///     plain <see cref="string" />, matching
+///     <see cref="DemaConsulting.SysML2Tools.Semantic.Model.SysmlNode.QualifiedName" />'s representation, so no
+///     dedicated <c>QualifiedName</c> value type was introduced for that inner field.
 /// </remarks>
 public sealed class ViewDefinitionModel
 {
@@ -40,9 +62,9 @@ public sealed class ViewDefinitionModel
     ];
 
     /// <summary>
-    ///     Ordered, duplicate-free expose targets.
+    ///     Ordered, duplicate-free expose targets, keyed by <see cref="ExposeTargetSelection.QualifiedName" />.
     /// </summary>
-    private List<string> _exposeTargets = [];
+    private List<ExposeTargetSelection> _exposeTargets = [];
 
     /// <summary>
     ///     Selected custom-view rendering style, constrained to the supported SysML view kinds exposed by the UI.
@@ -50,9 +72,10 @@ public sealed class ViewDefinitionModel
     public ViewKind? ViewKind { get; private set; }
 
     /// <summary>
-    ///     Ordered set of packages or elements selected for <c>expose</c> clauses.
+    ///     Ordered set of packages or elements selected for <c>expose</c> clauses, each with its own recursion
+    ///     kind and optional bracket-filter expression.
     /// </summary>
-    public IReadOnlyList<string> ExposeTargets => _exposeTargets;
+    public IReadOnlyList<ExposeTargetSelection> ExposeTargets => _exposeTargets;
 
     /// <summary>
     ///     Optional filter text applied to narrow the rendered content within the selected targets.
@@ -90,17 +113,92 @@ public sealed class ViewDefinitionModel
     }
 
     /// <summary>
-    ///     Replaces the current <c>expose</c> target set.
+    ///     Adds a qualified name to the <c>expose</c> target set, defaulting to
+    ///     <see cref="ExposeRecursionKind.MembershipRecursive" /> (matching this unit's prior de-facto behavior).
     /// </summary>
-    /// <param name="targets">Selected packages or elements.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="targets" /> is null.</exception>
-    public void SetExposeTargets(IReadOnlyList<string> targets)
+    /// <remarks>
+    ///     If <paramref name="qualifiedName" /> is already selected, this is a no-op: the existing selection
+    ///     (including any previously-set recursion kind or bracket filter) is preserved rather than reset, so
+    ///     re-adding an already-present target from the UI never silently discards prior configuration.
+    /// </remarks>
+    /// <param name="qualifiedName">Qualified name of the package or element to expose.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="qualifiedName" /> is null or whitespace.</exception>
+    public void AddExposeTarget(string qualifiedName)
     {
-        ArgumentNullException.ThrowIfNull(targets);
+        ArgumentException.ThrowIfNullOrWhiteSpace(qualifiedName);
 
-        // Preserve requested order while removing exact duplicates, per the unit's documented contract
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        _exposeTargets = targets.Where(t => !string.IsNullOrWhiteSpace(t) && seen.Add(t)).ToList();
+        if (_exposeTargets.Any(t => t.QualifiedName == qualifiedName))
+        {
+            return;
+        }
+
+        _exposeTargets.Add(new ExposeTargetSelection(qualifiedName));
+    }
+
+    /// <summary>
+    ///     Removes a qualified name from the <c>expose</c> target set.
+    /// </summary>
+    /// <remarks>
+    ///     A no-op when <paramref name="qualifiedName" /> is not currently selected, so callers do not need to
+    ///     guard the call with a prior existence check.
+    /// </remarks>
+    /// <param name="qualifiedName">Qualified name of the previously-added target to remove.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="qualifiedName" /> is null or whitespace.</exception>
+    public void RemoveExposeTarget(string qualifiedName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(qualifiedName);
+
+        _exposeTargets.RemoveAll(t => t.QualifiedName == qualifiedName);
+    }
+
+    /// <summary>
+    ///     Changes the recursion kind of a previously-added expose target.
+    /// </summary>
+    /// <remarks>
+    ///     A no-op when <paramref name="qualifiedName" /> is not currently selected.
+    /// </remarks>
+    /// <param name="qualifiedName">Qualified name of the previously-added target.</param>
+    /// <param name="kind">New recursion kind for the target.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="qualifiedName" /> is null or whitespace.</exception>
+    public void SetExposeRecursionKind(string qualifiedName, ExposeRecursionKind kind)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(qualifiedName);
+
+        var index = _exposeTargets.FindIndex(t => t.QualifiedName == qualifiedName);
+        if (index < 0)
+        {
+            return;
+        }
+
+        _exposeTargets[index] = _exposeTargets[index] with { RecursionKind = kind };
+    }
+
+    /// <summary>
+    ///     Sets or clears the optional bracket-filter expression of a previously-added expose target.
+    /// </summary>
+    /// <remarks>
+    ///     A no-op when <paramref name="qualifiedName" /> is not currently selected. Setting a bracket-filter
+    ///     expression on a target whose recursion kind is <see cref="ExposeRecursionKind.MembershipExact" /> or
+    ///     <see cref="ExposeRecursionKind.NamespaceDirectChildren" /> is permitted by this mutator (it does not
+    ///     validate the combination) but is reported as an error diagnostic by
+    ///     <see cref="ValidateAgainstWorkspace" />, since bracket filters are only valid SysML v2 syntax on the
+    ///     two recursive expose forms.
+    /// </remarks>
+    /// <param name="qualifiedName">Qualified name of the previously-added target.</param>
+    /// <param name="expression">Bracket-filter expression text, or <see langword="null" />/whitespace to clear it.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="qualifiedName" /> is null or whitespace.</exception>
+    public void SetExposeBracketFilter(string qualifiedName, string? expression)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(qualifiedName);
+
+        var index = _exposeTargets.FindIndex(t => t.QualifiedName == qualifiedName);
+        if (index < 0)
+        {
+            return;
+        }
+
+        var normalized = string.IsNullOrWhiteSpace(expression) ? null : expression;
+        _exposeTargets[index] = _exposeTargets[index] with { BracketFilterExpression = normalized };
     }
 
     /// <summary>
@@ -152,8 +250,10 @@ public sealed class ViewDefinitionModel
             diagnostics.Add(Diagnostic("At least one expose target is required."));
         }
 
-        foreach (var target in _exposeTargets)
+        foreach (var selection in _exposeTargets)
         {
+            var target = selection.QualifiedName;
+
             if (!workspace.Declarations.TryGetValue(target, out var node))
             {
                 diagnostics.Add(Diagnostic($"Target '{target}' does not resolve in the current workspace."));
@@ -169,6 +269,21 @@ public sealed class ViewDefinitionModel
             if (DisallowedTargetNodeTypes.Contains(node.GetType()))
             {
                 diagnostics.Add(Diagnostic($"Target '{target}' is a {node.GetType().Name} and cannot be exposed."));
+            }
+
+            if (selection.BracketFilterExpression is not null)
+            {
+                if (selection.RecursionKind is ExposeRecursionKind.MembershipExact or ExposeRecursionKind.NamespaceDirectChildren)
+                {
+                    diagnostics.Add(Diagnostic(
+                        $"Target '{target}' has a bracket-filter expression but its recursion kind '{selection.RecursionKind}' does not support one; only the two recursive kinds do."));
+                }
+
+                var targetParseResult = FilterExpressionParser.Parse(selection.BracketFilterExpression);
+                if (targetParseResult.Expression is null)
+                {
+                    diagnostics.AddRange(targetParseResult.Diagnostics);
+                }
             }
         }
 

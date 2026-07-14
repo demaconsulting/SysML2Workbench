@@ -116,7 +116,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Act: preview a custom view, opening a second, distinct tab
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
-        definition.SetExposeTargets(["Sample::Engine"]);
+        definition.AddExposeTarget("Sample::Engine");
         shell.PreviewCustomView(definition);
 
         // Assert
@@ -166,7 +166,8 @@ public sealed class MainWindowShellTests : IDisposable
 
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.Interconnection);
-        definition.SetExposeTargets(["Sample::Engine", "Sample::Wheel"]);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.AddExposeTarget("Sample::Wheel");
         definition.SetDisplayName("EngineOverview");
 
         // Act: preview, then export
@@ -176,8 +177,8 @@ public sealed class MainWindowShellTests : IDisposable
         // Assert
         Assert.Contains("<svg", svg, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("view EngineOverview {", snippet);
-        Assert.Contains("expose Sample::Engine;", snippet);
-        Assert.Contains("expose Sample::Wheel;", snippet);
+        Assert.Contains("expose Sample::Engine::**;", snippet);
+        Assert.Contains("expose Sample::Wheel::**;", snippet);
         Assert.True(shell.Canvas.IsContentLoaded);
     }
 

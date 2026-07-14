@@ -32,6 +32,14 @@ namespace DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
 ///         so the ephemeral preview node never mutates the live loaded workspace - verified empirically that
 ///         <c>AddDeclaration</c> on the clone leaves the original workspace's <c>Declarations</c> untouched.
 ///     </para>
+///     <para>
+///         As of SysML2Tools 0.1.0-beta.8, populating <c>ResolvedExposeMembers</c> alongside
+///         <c>ExposeMembers</c> is required, not merely additive: <c>ExposeScopeResolver</c> treats a view
+///         node with no <c>ResolvedExposeMembers</c> as unscoped and renders the entire workspace instead of
+///         just the selected targets. This unit sets one <c>(ExposeMember, string)</c> pair per selected
+///         target, with each per-target recursion kind and optional bracket-filter expression passed through
+///         to the corresponding <see cref="ExposeMember" /> unchanged.
+///     </para>
 /// </remarks>
 public sealed class LayoutInvoker
 {
@@ -130,14 +138,25 @@ public sealed class LayoutInvoker
         // names - the same convention SysML2Tools' own synthesizer uses for its generated view names
         var previewName = $"$WorkbenchPreview_{Guid.NewGuid():N}";
 
+        var exposeMembers = definition.ExposeTargets
+            .Select(selection => new ExposeMember(selection.QualifiedName, selection.BracketFilterExpression, selection.RecursionKind))
+            .ToList();
+
         return new SysmlViewNode
         {
             Name = previewName,
             QualifiedName = previewName,
             RenderTargetName = definition.ViewKind!.Value.ToRenderTargetName(),
-            ExposeMembers = definition.ExposeTargets.Select(target => new ExposeMember(target, null)).ToList(),
+            ExposeMembers = exposeMembers,
+            // Already resolved here (the workbench selects concrete qualified names directly, with no alias
+            // indirection to resolve), so ResolvedQualifiedName is always identical to the member's own
+            // QualifiedName. Populating this is required as of SysML2Tools 0.1.0-beta.8: ExposeScopeResolver
+            // treats a view node with no ResolvedExposeMembers as unscoped and falls back to rendering the
+            // entire workspace instead of just the selected targets - leaving it unset here silently regressed
+            // custom-view preview/export to "render everything."
+            ResolvedExposeMembers = exposeMembers.Select(member => (member, member.QualifiedName)).ToList(),
             ResolvedEdges = definition.ExposeTargets
-                .Select(target => new SysmlEdge(previewName, target, SysmlEdgeKind.Expose))
+                .Select(selection => new SysmlEdge(previewName, selection.QualifiedName, SysmlEdgeKind.Expose))
                 .ToList<SysmlEdge>(),
             FilterExpressionText = definition.FilterExpression,
         };

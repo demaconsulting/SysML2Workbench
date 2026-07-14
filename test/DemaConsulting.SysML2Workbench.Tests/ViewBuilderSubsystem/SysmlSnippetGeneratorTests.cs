@@ -1,3 +1,4 @@
+using DemaConsulting.SysML2Tools.Semantic.Model;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
 using DemaConsulting.SysML2Workbench.ViewBuilderSubsystem;
 
@@ -17,7 +18,7 @@ public sealed class SysmlSnippetGeneratorTests
         // Arrange: a definition with a kind and one expose target
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
-        definition.SetExposeTargets(["Sample::Engine"]);
+        definition.AddExposeTarget("Sample::Engine");
         var generator = new SysmlSnippetGenerator();
 
         // Act: generate the snippet
@@ -25,7 +26,7 @@ public sealed class SysmlSnippetGeneratorTests
 
         // Assert: the snippet declares a named view usage with an expose and render statement
         Assert.Contains("view CustomView {", snippet);
-        Assert.Contains("expose Sample::Engine;", snippet);
+        Assert.Contains("expose Sample::Engine::**;", snippet);
         Assert.Contains("render asGeneralDiagram;", snippet);
         Assert.EndsWith("}\n", snippet);
     }
@@ -40,7 +41,8 @@ public sealed class SysmlSnippetGeneratorTests
         // Arrange: a definition with multiple expose targets, a filter, and a display name
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.Interconnection);
-        definition.SetExposeTargets(["Sample::Engine", "Sample::Wheel"]);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.AddExposeTarget("Sample::Wheel");
         definition.SetFilterExpression("@Safety");
         definition.SetDisplayName("EngineOverview");
         var generator = new SysmlSnippetGenerator();
@@ -50,8 +52,8 @@ public sealed class SysmlSnippetGeneratorTests
 
         // Assert: every selected element is present in the emitted text
         Assert.Contains("view EngineOverview {", snippet);
-        Assert.Contains("expose Sample::Engine;", snippet);
-        Assert.Contains("expose Sample::Wheel;", snippet);
+        Assert.Contains("expose Sample::Engine::**;", snippet);
+        Assert.Contains("expose Sample::Wheel::**;", snippet);
         Assert.Contains("render asInterconnectionDiagram;", snippet);
         Assert.Contains("filter @Safety;", snippet);
     }
@@ -65,7 +67,7 @@ public sealed class SysmlSnippetGeneratorTests
     {
         // Arrange: a definition with expose targets but no view kind
         var definition = new ViewDefinitionModel();
-        definition.SetExposeTargets(["Sample::Engine"]);
+        definition.AddExposeTarget("Sample::Engine");
         var generator = new SysmlSnippetGenerator();
 
         // Act / Assert: generation throws
@@ -122,18 +124,27 @@ public sealed class SysmlSnippetGeneratorTests
     }
 
     /// <summary>
-    ///     Validates that formatting a single expose clause emits the target's qualified name verbatim.
+    ///     Validates that formatting a single expose clause emits the correct textual form for each of the four
+    ///     recursion kinds, with and without a bracket-filter expression.
     /// </summary>
-    [Fact]
-    public void FormatExposeClause_QualifiedTarget_EmitsExposeStatement()
+    [Theory]
+    [InlineData(ExposeRecursionKind.MembershipExact, null, "    expose Sample::Engine;")]
+    [InlineData(ExposeRecursionKind.MembershipRecursive, null, "    expose Sample::Engine::**;")]
+    [InlineData(ExposeRecursionKind.MembershipRecursive, "@Safety", "    expose Sample::Engine::**[@Safety];")]
+    [InlineData(ExposeRecursionKind.NamespaceDirectChildren, null, "    expose Sample::Engine::*;")]
+    [InlineData(ExposeRecursionKind.NamespaceRecursive, null, "    expose Sample::Engine::*::**;")]
+    [InlineData(ExposeRecursionKind.NamespaceRecursive, "@Safety", "    expose Sample::Engine::*::**[@Safety];")]
+    public void FormatExposeClause_EachRecursionKind_EmitsCorrectExposeStatement(
+        ExposeRecursionKind kind, string? bracketFilter, string expected)
     {
         // Arrange
         var generator = new SysmlSnippetGenerator();
+        var selection = new ExposeTargetSelection("Sample::Engine", kind, bracketFilter);
 
         // Act
-        var clause = generator.FormatExposeClause("Sample::Engine");
+        var clause = generator.FormatExposeClause(selection);
 
         // Assert
-        Assert.Equal("    expose Sample::Engine;", clause);
+        Assert.Equal(expected, clause);
     }
 }

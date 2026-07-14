@@ -36,9 +36,16 @@ whether to emit an explicit view name.
 
 **FormatExposeClause**: Emits one `expose` statement.
 
-- *Parameters*: `QualifiedName target` — selected package or element.
-- *Returns*: `string` — formatted clause for the target.
-- *Preconditions*: `target` is resolvable and normalized.
+- *Parameters*: `ExposeTargetSelection selection` — selected target, recursion
+  kind, and optional bracket-filter expression.
+- *Returns*: `string` — formatted clause for the target, in one of six
+  textual forms: `expose {Target};` (`MembershipExact`); `expose
+  {Target}::**;` or `expose {Target}::**[{Expr}];` (`MembershipRecursive`,
+  without/with a bracket filter); `expose {Target}::*;`
+  (`NamespaceDirectChildren`); and `expose {Target}::*::**;` or `expose
+  {Target}::*::**[{Expr}];` (`NamespaceRecursive`, without/with a bracket
+  filter).
+- *Preconditions*: `selection.QualifiedName` is resolvable and normalized.
 - *Postconditions*: The clause preserves the chosen target identity without
   inventing a proprietary alias format.
 

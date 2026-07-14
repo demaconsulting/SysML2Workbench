@@ -76,7 +76,8 @@ public sealed class LayoutInvokerTests : IDisposable
         var snapshot = await LoadSampleWorkspaceAsync();
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
-        definition.SetExposeTargets(["Sample::Engine", "Sample::Wheel"]);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.AddExposeTarget("Sample::Wheel");
         var invoker = new LayoutInvoker();
 
         // Act: render the custom view and load the result into a canvas host
@@ -103,7 +104,7 @@ public sealed class LayoutInvokerTests : IDisposable
         var originalCount = snapshot.Workspace.Declarations.Count;
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
-        definition.SetExposeTargets(["Sample::Engine"]);
+        definition.AddExposeTarget("Sample::Engine");
         var invoker = new LayoutInvoker();
 
         // Act
@@ -111,5 +112,30 @@ public sealed class LayoutInvokerTests : IDisposable
 
         // Assert: the live workspace's declaration count is unchanged
         Assert.Equal(originalCount, snapshot.Workspace.Declarations.Count);
+    }
+
+    /// <summary>
+    ///     Regression test for the SysML2Tools 0.1.0-beta.8 <c>ResolvedExposeMembers</c> requirement: without it,
+    ///     <c>ExposeScopeResolver</c> treats the ephemeral preview node as unscoped and renders the entire
+    ///     workspace instead of just the selected targets. Selecting only one of two workspace elements must
+    ///     therefore produce SVG that does not contain the unselected element.
+    /// </summary>
+    [Fact]
+    public async Task RenderCustomView_ScopesOutputToSelectedTargetsOnly()
+    {
+        // Arrange: a custom view definition exposing only one of the workspace's two elements
+        var snapshot = await LoadSampleWorkspaceAsync();
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.General);
+        definition.AddExposeTarget("Sample::Engine");
+        var invoker = new LayoutInvoker();
+
+        // Act: render the custom view
+        var svg = invoker.RenderCustomView(snapshot.Workspace, definition);
+
+        // Assert: the selected target is present, but the unselected target is not - proving the preview node
+        // is scoped, not rendering the whole workspace
+        Assert.Contains("Engine", svg);
+        Assert.DoesNotContain("Wheel", svg);
     }
 }

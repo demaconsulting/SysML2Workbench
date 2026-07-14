@@ -74,7 +74,8 @@ public sealed class LayoutRenderingSubsystemTests : IDisposable
         var snapshot = await LoadSampleWorkspaceAsync();
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
-        definition.SetExposeTargets(["Sample::Engine", "Sample::Wheel"]);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.AddExposeTarget("Sample::Wheel");
         var invoker = new LayoutInvoker();
         var host = new SvgCanvasHost();
 

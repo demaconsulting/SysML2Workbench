@@ -40,13 +40,14 @@ public sealed class ViewBuilderSubsystemTests : IDisposable
 
         // Act: the user makes a sequence of builder selections
         definition.SetViewKind(ViewKind.Grid);
-        definition.SetExposeTargets(["Sample::Engine", "Sample::Wheel"]);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.AddExposeTarget("Sample::Wheel");
         definition.SetFilterExpression("@Safety");
         definition.SetDisplayName("EngineGrid");
 
         // Assert: every input is tracked and the definition validates against the real workspace
         Assert.Equal(ViewKind.Grid, definition.ViewKind);
-        Assert.Equal(["Sample::Engine", "Sample::Wheel"], definition.ExposeTargets);
+        Assert.Equal(["Sample::Engine", "Sample::Wheel"], definition.ExposeTargets.Select(t => t.QualifiedName));
         Assert.Equal("@Safety", definition.FilterExpression);
         Assert.Equal("EngineGrid", definition.DisplayName);
         Assert.Empty(definition.ValidateAgainstWorkspace(snapshot.Workspace));
@@ -61,7 +62,7 @@ public sealed class ViewBuilderSubsystemTests : IDisposable
         // Arrange
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.ActionFlow);
-        definition.SetExposeTargets(["Sample::Engine"]);
+        definition.AddExposeTarget("Sample::Engine");
         definition.SetDisplayName("EngineFlow");
         var generator = new SysmlSnippetGenerator();
 
@@ -70,7 +71,7 @@ public sealed class ViewBuilderSubsystemTests : IDisposable
 
         // Assert
         Assert.Contains("view EngineFlow {", snippet);
-        Assert.Contains("expose Sample::Engine;", snippet);
+        Assert.Contains("expose Sample::Engine::**;", snippet);
         Assert.Contains("render asActionFlowDiagram;", snippet);
     }
 }

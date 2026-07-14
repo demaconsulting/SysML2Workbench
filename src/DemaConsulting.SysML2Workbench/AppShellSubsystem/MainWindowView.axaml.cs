@@ -4,6 +4,7 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Svg.Skia;
@@ -35,11 +36,31 @@ public partial class MainWindowView : Window
         typeof(SysmlConnectionNode),
     ];
 
+    /// <summary>
+    ///     Human-readable display text for each <see cref="ExposeRecursionKind" />, shown in each selected
+    ///     target's row <see cref="ComboBox" />, in declaration order.
+    /// </summary>
+    private static readonly (ExposeRecursionKind Kind, string Display)[] RecursionKindOptions =
+    [
+        (ExposeRecursionKind.MembershipExact, "This element only"),
+        (ExposeRecursionKind.MembershipRecursive, "This element + everything below (::**)"),
+        (ExposeRecursionKind.NamespaceDirectChildren, "Direct children only (::*)"),
+        (ExposeRecursionKind.NamespaceRecursive, "All descendants, not itself (::*::**)"),
+    ];
+
     private readonly MainWindowShell _shell;
     private readonly ScaleTransform _diagramScaleTransform = new(1, 1);
     private readonly TranslateTransform _diagramTranslateTransform = new(0, 0);
     private bool _isPanning;
     private Point _lastPointerPosition;
+
+    /// <summary>
+    ///     Long-lived custom-view builder state, mutated directly by the expose-target row controls' event
+    ///     handlers rather than rebuilt fresh from control values on every Preview/Export click. This is the
+    ///     natural fit for the per-row mutable expose-target UI: each row needs individually addressable
+    ///     recursion-kind and bracket-filter state that a flat "read all controls" rebuild cannot reconstruct.
+    /// </summary>
+    private ViewDefinitionModel _builderDefinition = new();
 
     /// <summary>
     ///     Parameterless constructor required by the Avalonia XAML previewer/designer. Not used at runtime.
@@ -66,6 +87,7 @@ public partial class MainWindowView : Window
 
         OpenWorkspaceMenuItem.Click += OnOpenWorkspaceClick;
         PredefinedViewsListBox.SelectionChanged += OnPredefinedViewSelectionChanged;
+        AddExposeTargetButton.Click += OnAddExposeTargetClick;
         PreviewCustomViewButton.Click += OnPreviewCustomViewClick;
         CopyAsSysmlButton.Click += OnCopyAsSysmlClick;
 
@@ -124,6 +146,21 @@ public partial class MainWindowView : Window
         {
             SetBuilderStatus($"Failed to render '{descriptor.DisplayName}': {ex.Message}");
         }
+    }
+
+    /// <summary>
+    ///     Adds the currently-selected available target to the long-lived custom-view builder state and
+    ///     refreshes the selected-targets panel to show its new row.
+    /// </summary>
+    private void OnAddExposeTargetClick(object? sender, RoutedEventArgs e)
+    {
+        if (AvailableExposeTargetsListBox.SelectedItem is not string qualifiedName)
+        {
+            return;
+        }
+
+        _builderDefinition.AddExposeTarget(qualifiedName);
+        RefreshSelectedExposeTargetsPanel();
     }
 
     private void OnPreviewCustomViewClick(object? sender, RoutedEventArgs e)
@@ -215,7 +252,7 @@ public partial class MainWindowView : Window
         PredefinedViewsListBox.ItemsSource = _shell.ViewCatalog.AvailableViews;
         DiagnosticsListBox.ItemsSource = _shell.Diagnostics.VisibleDiagnostics;
 
-        ExposeTargetsListBox.ItemsSource = _shell.CurrentWorkspace is null
+        AvailableExposeTargetsListBox.ItemsSource = _shell.CurrentWorkspace is null
             ? []
             : _shell.CurrentWorkspace.Workspace.Declarations
                 .Where(kvp => !_shell.CurrentWorkspace.Workspace.StdlibNames.Contains(kvp.Key))
@@ -223,6 +260,82 @@ public partial class MainWindowView : Window
                 .Select(kvp => kvp.Key)
                 .OrderBy(name => name, StringComparer.Ordinal)
                 .ToList();
+
+        // A fresh workspace invalidates any previously-selected expose targets, so the builder state starts
+        // clean rather than referencing qualified names that may no longer resolve
+        _builderDefinition = new ViewDefinitionModel();
+        RefreshSelectedExposeTargetsPanel();
+    }
+
+    /// <summary>
+    ///     Rebuilds the "Selected Targets" panel's rows from <see cref="_builderDefinition" />'s current expose
+    ///     targets. Each row is constructed directly in code (no data-binding/template framework) so its
+    ///     recursion-kind <see cref="ComboBox" />, bracket-filter <see cref="TextBox" />, and Remove
+    ///     <see cref="Button" /> can close over the row's own qualified name and mutate
+    ///     <see cref="_builderDefinition" /> directly.
+    /// </summary>
+    private void RefreshSelectedExposeTargetsPanel()
+    {
+        SelectedExposeTargetsPanel.Children.Clear();
+
+        foreach (var selection in _builderDefinition.ExposeTargets)
+        {
+            var qualifiedName = selection.QualifiedName;
+
+            var nameText = new TextBlock { Text = qualifiedName, FontWeight = FontWeight.Bold, TextWrapping = TextWrapping.Wrap };
+
+            var kindComboBox = new ComboBox
+            {
+                ItemsSource = RecursionKindOptions.Select(o => o.Display).ToList(),
+                SelectedIndex = Array.FindIndex(RecursionKindOptions, o => o.Kind == selection.RecursionKind),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            kindComboBox.SelectionChanged += (_, _) =>
+            {
+                if (kindComboBox.SelectedIndex < 0)
+                {
+                    return;
+                }
+
+                _builderDefinition.SetExposeRecursionKind(qualifiedName, RecursionKindOptions[kindComboBox.SelectedIndex].Kind);
+                RefreshSelectedExposeTargetsPanel();
+            };
+
+            var removeButton = new Button { Content = "Remove" };
+            removeButton.Click += (_, _) =>
+            {
+                _builderDefinition.RemoveExposeTarget(qualifiedName);
+                RefreshSelectedExposeTargetsPanel();
+            };
+
+            var kindRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+            kindRow.Children.Add(kindComboBox);
+            kindRow.Children.Add(removeButton);
+
+            var isRecursive = selection.RecursionKind is ExposeRecursionKind.MembershipRecursive or ExposeRecursionKind.NamespaceRecursive;
+            var filterTextBox = new TextBox
+            {
+                PlaceholderText = "Bracket filter (optional)",
+                Text = selection.BracketFilterExpression,
+                IsEnabled = isRecursive,
+            };
+            ToolTip.SetTip(filterTextBox, "Narrows this target's expose::** / ::*::** membership to elements matching a SysML v2 filter expression (Phase 1 subset). Only applies to the two recursive recursion kinds.");
+            filterTextBox.LostFocus += (_, _) => _builderDefinition.SetExposeBracketFilter(qualifiedName, filterTextBox.Text);
+
+            var row = new Border
+            {
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(4),
+                Child = new StackPanel
+                {
+                    Spacing = 2,
+                    Children = { nameText, kindRow, filterTextBox },
+                },
+            };
+
+            SelectedExposeTargetsPanel.Children.Add(row);
+        }
     }
 
     /// <summary>
@@ -231,22 +344,15 @@ public partial class MainWindowView : Window
     /// <returns>Normalized custom-view state.</returns>
     private ViewDefinitionModel BuildDefinitionFromBuilderControls()
     {
-        var definition = new ViewDefinitionModel();
-
         if (ViewKindComboBox.SelectedItem is ViewKind viewKind)
         {
-            definition.SetViewKind(viewKind);
+            _builderDefinition.SetViewKind(viewKind);
         }
 
-        var selectedTargets = ExposeTargetsListBox.SelectedItems?
-            .Cast<string>()
-            .ToList() ?? [];
-        definition.SetExposeTargets(selectedTargets);
+        _builderDefinition.SetFilterExpression(FilterExpressionTextBox.Text);
+        _builderDefinition.SetDisplayName(DisplayNameTextBox.Text);
 
-        definition.SetFilterExpression(FilterExpressionTextBox.Text);
-        definition.SetDisplayName(DisplayNameTextBox.Text);
-
-        return definition;
+        return _builderDefinition;
     }
 
     /// <summary>

@@ -45,19 +45,27 @@ view without writing SysML syntax:
 
 1. Pick a **View Kind** from the dropdown (General, Interconnection, State
    Transition, Action Flow, Sequence, or Grid).
-2. Multi-select one or more **Expose Targets** from the list of elements and
-   packages in the loaded workspace. Each selected target becomes its own
-   `expose` statement in the resulting view - custom views support multiple
+2. In the **Available** list, select an element or package from the loaded
+   workspace and click **Add →** to move it into **Selected**. Repeat for
+   every element or package you want exposed - custom views support multiple
    exposed elements, just like a hand-written SysML view.
-3. Optionally enter a **Filter Expression** to narrow what is included.
-4. Optionally enter a **View Name** - otherwise a default name is used.
-5. Click **Preview** to render the custom view live in the center canvas,
+3. For each row in **Selected**, choose its **recursion kind** from the
+   dropdown - *This element only*, *This element + everything below
+   (::\*\*)* (the default), *Direct children only (::\*)*, or *All
+   descendants, not itself (::\*::\*\*)* - and optionally enter a
+   **bracket-filter expression** (enabled only for the two recursive kinds)
+   to narrow that target's exposed membership. Click **Remove** to drop a
+   row entirely.
+4. Optionally enter a **Filter Expression** to narrow what is included.
+5. Optionally enter a **View Name** - otherwise a default name is used.
+6. Click **Preview** to render the custom view live in the center canvas,
    with the same pan/zoom controls as a predefined view.
-6. Click **Copy as SysML** to copy valid `view ... expose ...` SysML v2 text
+7. Click **Copy as SysML** to copy valid `view ... expose ...` SysML v2 text
    to the clipboard. Each `expose` target is emitted using its exact
-   qualified name; Phase 0 does not support renaming an exposed target
-   (there is no `as` alias support), regardless of whether a custom view
-   name was supplied. Paste this into a `.sysml` file to promote the
+   qualified name and selected recursion kind/bracket filter; Phase 0 does
+   not support renaming an exposed target (there is no `as` alias support),
+   regardless of whether a custom view name was supplied. Paste this into a
+   `.sysml` file to promote the
    ephemeral preview into a permanent, version-controlled view definition.
 
 Custom views built in the GUI are **session-only** - they are not saved to

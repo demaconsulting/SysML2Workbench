@@ -68,7 +68,8 @@ public sealed class AvaloniaTests : IDisposable
         Assert.NotNull(window.GetVisualDescendants().OfType<Menu>().FirstOrDefault());
         Assert.NotNull(window.FindControl<ListBox>("PredefinedViewsListBox"));
         Assert.NotNull(window.FindControl<ComboBox>("ViewKindComboBox"));
-        Assert.NotNull(window.FindControl<ListBox>("ExposeTargetsListBox"));
+        Assert.NotNull(window.FindControl<ListBox>("AvailableExposeTargetsListBox"));
+        Assert.NotNull(window.FindControl<Button>("AddExposeTargetButton"));
         Assert.NotNull(window.FindControl<Button>("PreviewCustomViewButton"));
         Assert.NotNull(window.FindControl<Button>("CopyAsSysmlButton"));
 

@@ -28,8 +28,34 @@ services are required.
 **ChangeViewKind_StoresCurrentSelection**: Changing the view kind stores the current selection. Verified by
 `ViewDefinitionModelTests.ChangeViewKind_StoresCurrentSelection`.
 
-**SelectTargets_StoresMultipleExposeTargets**: Selecting expose targets stores multiple targets in the requested order,
-without duplicates. Verified by `ViewDefinitionModelTests.SelectTargets_StoresMultipleExposeTargets`.
+**AddExposeTarget_StoresMultipleExposeTargetsWithoutDuplicates**: Selecting expose targets stores multiple targets in
+the requested order, without duplicates, each defaulting to `MembershipRecursive`. Verified by
+`ViewDefinitionModelTests.AddExposeTarget_StoresMultipleExposeTargetsWithoutDuplicates`.
+
+**RemoveExposeTarget_RemovesOnlyMatchingSelection**: Removing an expose target drops only that selection. Verified by
+`ViewDefinitionModelTests.RemoveExposeTarget_RemovesOnlyMatchingSelection`.
+
+**RemoveExposeTarget_UnknownQualifiedName_IsNoOp**: Removing a qualified name that was never added is a no-op.
+Verified by `ViewDefinitionModelTests.RemoveExposeTarget_UnknownQualifiedName_IsNoOp`.
+
+**SetExposeRecursionKind_ChangesSelectedTargetKind**: Changing a selected target's recursion kind updates only that
+target. Verified by `ViewDefinitionModelTests.SetExposeRecursionKind_ChangesSelectedTargetKind`.
+
+**SetExposeBracketFilter_SetsAndClearsExpression**: Setting and clearing a target's bracket-filter expression works,
+and setting a filter on an unknown qualified name is a no-op. Verified by
+`ViewDefinitionModelTests.SetExposeBracketFilter_SetsAndClearsExpression`.
+
+**ValidateAgainstWorkspace_ValidBracketFilterOnRecursiveTarget_ReturnsNoDiagnostics**: A valid bracket-filter
+expression on a recursive target produces no diagnostics. Verified by
+`ViewDefinitionModelTests.ValidateAgainstWorkspace_ValidBracketFilterOnRecursiveTarget_ReturnsNoDiagnostics`.
+
+**ValidateAgainstWorkspace_InvalidBracketFilterExpression_ReturnsDiagnostic**: An unparsable bracket-filter expression
+is reported as a diagnostic. Verified by
+`ViewDefinitionModelTests.ValidateAgainstWorkspace_InvalidBracketFilterExpression_ReturnsDiagnostic`.
+
+**ValidateAgainstWorkspace_BracketFilterOnNonRecursiveKind_ReturnsDiagnostic**: A bracket-filter expression on a
+`MembershipExact` or `NamespaceDirectChildren` target is reported as a diagnostic. Verified by
+`ViewDefinitionModelTests.ValidateAgainstWorkspace_BracketFilterOnNonRecursiveKind_ReturnsDiagnostic`.
 
 **DefinitionState_ReportsRenderAndExportReadiness**: The definition reports whether it has enough information to render
 a preview or export a snippet. Verified by `ViewDefinitionModelTests.DefinitionState_ReportsRenderAndExportReadiness`.
