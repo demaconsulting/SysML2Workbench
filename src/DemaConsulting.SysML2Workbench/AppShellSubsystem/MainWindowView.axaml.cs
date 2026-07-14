@@ -2,17 +2,19 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Dock.Model.Core;
+using Dock.Model.Core.Events;
 using Dock.Model.Mvvm.Controls;
 
 namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 
 /// <summary>
 ///     Thin Avalonia code-behind for the main application window. All region-specific orchestration and
-///     validation logic is delegated to <see cref="MainWindowShell" /> (via the four panel view models this
-///     class composes into a Dock layout); this class only builds that layout, wires the File and View menus,
-///     and coordinates workspace-open refresh across the panels. The View menu lets a user restore a Tool panel
-///     that was closed through Dock's own chrome, reusing the same long-lived panel view model instance so any
-///     in-progress panel state survives the close/restore cycle.
+///     validation logic is delegated to <see cref="MainWindowShell" /> (via the panel view models this class
+///     composes into a Dock layout); this class only builds that layout, wires the File and View menus, forwards
+///     Dock's own focus/close signals to <see cref="MainWindowShell" />, and reconciles the shell's
+///     <see cref="MainWindowShell.OpenTabs" /> against the Dock <see cref="WorkbenchDockFactory.DiagramDock" />.
+///     The View menu lets a user restore a Tool panel that was closed through Dock's own chrome, reusing the same
+///     long-lived panel view model instance so any in-progress panel state survives the close/restore cycle.
 /// </summary>
 public partial class MainWindowView : Window
 {
@@ -20,8 +22,8 @@ public partial class MainWindowView : Window
     private readonly PredefinedViewsToolViewModel _predefinedViewsViewModel;
     private readonly CustomViewBuilderToolViewModel _customViewBuilderViewModel;
     private readonly DiagnosticsToolViewModel _diagnosticsViewModel;
-    private readonly DiagramDocumentViewModel _diagramViewModel;
     private readonly WorkbenchDockFactory _dockFactory;
+    private readonly Dictionary<string, DiagramDocumentViewModel> _diagramViewModelsByTabId = new();
 
     /// <summary>
     ///     Parameterless constructor required by the Avalonia XAML previewer/designer. Not used at runtime.
@@ -32,8 +34,8 @@ public partial class MainWindowView : Window
     }
 
     /// <summary>
-    ///     Creates the main window bound to a real, composed shell, and builds the Dock layout hosting the four
-    ///     Phase-0 panels over it.
+    ///     Creates the main window bound to a real, composed shell, and builds the Dock layout hosting the
+    ///     Phase-0 panels and every currently open diagram tab over it.
     /// </summary>
     /// <param name="shell">Fully composed application shell.</param>
     public MainWindowView(MainWindowShell shell)
@@ -42,16 +44,20 @@ public partial class MainWindowView : Window
 
         InitializeComponent();
 
-        _diagramViewModel = new DiagramDocumentViewModel(_shell) { Id = "Diagram", Title = "Diagram" };
-        _predefinedViewsViewModel = new PredefinedViewsToolViewModel(_shell, _diagramViewModel) { Id = "PredefinedViews", Title = "Predefined Views" };
-        _customViewBuilderViewModel = new CustomViewBuilderToolViewModel(_shell, _diagramViewModel) { Id = "CustomViewBuilder", Title = "Custom View Builder" };
+        _predefinedViewsViewModel = new PredefinedViewsToolViewModel(_shell) { Id = "PredefinedViews", Title = "Predefined Views" };
+        _customViewBuilderViewModel = new CustomViewBuilderToolViewModel(_shell) { Id = "CustomViewBuilder", Title = "Custom View Builder" };
         _diagnosticsViewModel = new DiagnosticsToolViewModel(_shell) { Id = "Diagnostics", Title = "Diagnostics" };
 
-        var factory = new WorkbenchDockFactory(_predefinedViewsViewModel, _customViewBuilderViewModel, _diagnosticsViewModel, _diagramViewModel);
+        var factory = new WorkbenchDockFactory(_predefinedViewsViewModel, _customViewBuilderViewModel, _diagnosticsViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
         WorkbenchDockControl.Layout = (IDock)layout;
         _dockFactory = factory;
+
+        _dockFactory.FocusedDockableChanged += OnFocusedDockableChanged;
+        _dockFactory.DiagramTabClosed += OnDiagramTabClosed;
+        _shell.TabsChanged += OnShellTabsChanged;
+        OnShellTabsChanged(this, EventArgs.Empty);
 
         OpenWorkspaceMenuItem.Click += OnOpenWorkspaceClick;
 
@@ -102,6 +108,73 @@ public partial class MainWindowView : Window
         if (tool.Owner is IDock ownerDock)
         {
             _dockFactory.SetFocusedDockable(ownerDock, tool);
+        }
+    }
+
+    /// <summary>
+    ///     Forwards Dock's own focus-change signal to the shell, but only when focus lands on a diagram document
+    ///     (focus changes onto a Tool panel are deliberately ignored, so switching focus to a tool panel does not
+    ///     clear which diagram tab a subsequent "Preview" click should target).
+    /// </summary>
+    private void OnFocusedDockableChanged(object? sender, FocusedDockableChangedEventArgs e)
+    {
+        if (e.Dockable is DiagramDocumentViewModel diagram)
+        {
+            _shell.NotifyActiveDiagramTab(diagram.TabId);
+        }
+    }
+
+    /// <summary>
+    ///     Handles a diagram document closing through Dock's own chrome by retiring the corresponding tab from
+    ///     the shell and evicting the tracked view model.
+    /// </summary>
+    private void OnDiagramTabClosed(object? sender, DiagramDocumentViewModel diagram)
+    {
+        _shell.CloseDiagramTab(diagram.TabId);
+        _diagramViewModelsByTabId.Remove(diagram.TabId);
+    }
+
+    /// <summary>
+    ///     Reconciles the Dock <see cref="WorkbenchDockFactory.DiagramDock" /> against
+    ///     <see cref="MainWindowShell.OpenTabs" />: creates a document for every newly opened tab, removes the
+    ///     document for every tab that no longer exists (covers <c>ApplyWorkspaceSnapshot</c>'s tab-clear-on-reload
+    ///     path, which bypasses <see cref="MainWindowShell.CloseDiagramTab" />), repaints and retitles the active
+    ///     tab's document, and makes it the active/focused dockable so the user sees whatever tab the shell just
+    ///     opened, closed, or updated.
+    /// </summary>
+    private void OnShellTabsChanged(object? sender, EventArgs e)
+    {
+        var openTabIds = _shell.OpenTabs.Select(tab => tab.Id).ToHashSet();
+
+        // Add documents for newly opened tabs.
+        foreach (var tab in _shell.OpenTabs)
+        {
+            if (_diagramViewModelsByTabId.ContainsKey(tab.Id))
+            {
+                continue;
+            }
+
+            var diagramViewModel = new DiagramDocumentViewModel(_shell, tab.Id) { Id = tab.Id, Title = tab.Title };
+            _diagramViewModelsByTabId[tab.Id] = diagramViewModel;
+            _dockFactory.AddDockable(_dockFactory.DiagramDock, diagramViewModel);
+        }
+
+        // Remove documents for tabs that no longer exist (for example, a workspace reload cleared every tab).
+        foreach (var staleTabId in _diagramViewModelsByTabId.Keys.Where(tabId => !openTabIds.Contains(tabId)).ToList())
+        {
+            _dockFactory.RemoveDockable(_diagramViewModelsByTabId[staleTabId], false);
+            _diagramViewModelsByTabId.Remove(staleTabId);
+        }
+
+        // Refresh the active tab's title and repaint it in place.
+        if (_shell.ActiveTabId is { } activeTabId && _diagramViewModelsByTabId.TryGetValue(activeTabId, out var activeViewModel))
+        {
+            var activeTab = _shell.OpenTabs.First(tab => tab.Id == activeTabId);
+            activeViewModel.Title = activeTab.Title;
+            activeViewModel.RaiseDiagramChanged();
+
+            _dockFactory.SetActiveDockable(activeViewModel);
+            _dockFactory.SetFocusedDockable(_dockFactory.DiagramDock, activeViewModel);
         }
     }
 

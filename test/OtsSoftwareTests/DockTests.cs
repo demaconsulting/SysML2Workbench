@@ -10,6 +10,7 @@ using DemaConsulting.SysML2Workbench.WorkspaceSubsystem;
 using Dock.Avalonia.Controls;
 using Dock.Model.Controls;
 using Dock.Model.Core;
+using Dock.Model.Core.Events;
 
 namespace OtsSoftwareTests;
 
@@ -40,7 +41,6 @@ public sealed class DockTests : IDisposable
             new DiagnosticsAggregator(),
             new ViewCatalogPresenter(),
             new LayoutInvoker(),
-            new SvgCanvasHost(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
             new RollingFileLogger(_tempLogRoot));
@@ -48,23 +48,25 @@ public sealed class DockTests : IDisposable
 
     /// <summary>
     ///     Validates that <see cref="WorkbenchDockFactory.CreateLayout" /> returns a non-null root dock whose
-    ///     visual tree of dockables includes the four Phase-0 panel view models, proving the factory genuinely
-    ///     composes the documented layout rather than an empty or partial one.
+    ///     visual tree of dockables includes the three Phase-0 Tool panel view models and a dynamically added
+    ///     diagram document, proving the factory genuinely composes the documented layout rather than an empty or
+    ///     partial one.
     /// </summary>
     [Fact]
     public void CreateLayout_ComposesFourPanelDockables()
     {
         // Arrange
         using var shell = CreateShell();
-        var diagramViewModel = new DiagramDocumentViewModel(shell);
-        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell, diagramViewModel);
-        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell, diagramViewModel);
+        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
+        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, diagramViewModel);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
 
         // Act
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
+        var diagramViewModel = new DiagramDocumentViewModel(shell, "tab-1");
+        factory.AddDockable(factory.DiagramDock, diagramViewModel);
 
         // Assert
         Assert.NotNull(layout);
@@ -84,13 +86,13 @@ public sealed class DockTests : IDisposable
     {
         // Arrange
         using var shell = CreateShell();
-        var diagramViewModel = new DiagramDocumentViewModel(shell);
-        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell, diagramViewModel);
-        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell, diagramViewModel);
+        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
+        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, diagramViewModel);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
+        factory.AddDockable(factory.DiagramDock, new DiagramDocumentViewModel(shell, "tab-1"));
 
         // Act
         var window = new Avalonia.Controls.Window
@@ -117,11 +119,10 @@ public sealed class DockTests : IDisposable
     {
         // Arrange
         using var shell = CreateShell();
-        var diagramViewModel = new DiagramDocumentViewModel(shell);
-        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell, diagramViewModel);
-        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell, diagramViewModel);
+        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
+        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, diagramViewModel);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
 
@@ -156,6 +157,123 @@ public sealed class DockTests : IDisposable
         Assert.Same(originalOwner, predefinedViewsViewModel.Owner);
 
         window.Close();
+    }
+
+    /// <summary>
+    ///     Validates the empty-<c>DocumentDock</c>-persistence research finding end to end through a real
+    ///     Dock control: building the layout with zero initial diagram documents, adding one, then closing it
+    ///     leaves the same <see cref="WorkbenchDockFactory.DiagramDock" /> instance in the layout tree with zero
+    ///     visible dockables, rather than the container itself disappearing.
+    /// </summary>
+    [AvaloniaFact]
+    public void DocumentDock_StaysInLayoutTree_AfterLastDocumentCloses()
+    {
+        // Arrange
+        using var shell = CreateShell();
+        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
+        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
+        var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
+        var layout = factory.CreateLayout();
+        factory.InitLayout(layout);
+
+        var diagramDocument = new DiagramDocumentViewModel(shell, "tab-1");
+        factory.AddDockable(factory.DiagramDock, diagramDocument);
+
+        var window = new Avalonia.Controls.Window
+        {
+            Content = new DockControl { Layout = layout },
+        };
+        window.Show();
+
+        // Act
+        factory.CloseDockable(diagramDocument);
+
+        // Assert
+        Assert.Contains(factory.DiagramDock, CollectDockables(layout));
+        Assert.Empty(factory.DiagramDock.VisibleDockables ?? Enumerable.Empty<IDockable>());
+
+        window.Close();
+    }
+
+    /// <summary>
+    ///     Validates dynamic add/remove of diagram documents at runtime, and that closing one raises
+    ///     <see cref="WorkbenchDockFactory.DiagramTabClosed" /> exactly once with the closed view model.
+    /// </summary>
+    [AvaloniaFact]
+    public void AddDockable_And_CloseDockable_DynamicallyManageDiagramDocuments()
+    {
+        // Arrange
+        using var shell = CreateShell();
+        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
+        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
+        var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
+        var layout = factory.CreateLayout();
+        factory.InitLayout(layout);
+
+        var window = new Avalonia.Controls.Window
+        {
+            Content = new DockControl { Layout = layout },
+        };
+        window.Show();
+
+        var firstDocument = new DiagramDocumentViewModel(shell, "tab-1");
+        var secondDocument = new DiagramDocumentViewModel(shell, "tab-2");
+        factory.AddDockable(factory.DiagramDock, firstDocument);
+        factory.AddDockable(factory.DiagramDock, secondDocument);
+
+        // Assert - both added
+        Assert.Contains(firstDocument, factory.DiagramDock.VisibleDockables!);
+        Assert.Contains(secondDocument, factory.DiagramDock.VisibleDockables!);
+        Assert.Equal(2, factory.DiagramDock.VisibleDockables!.Count);
+
+        var closedDocuments = new List<DiagramDocumentViewModel>();
+        factory.DiagramTabClosed += (_, closed) => closedDocuments.Add(closed);
+
+        // Act - close one
+        factory.CloseDockable(firstDocument);
+
+        // Assert
+        Assert.Single(factory.DiagramDock.VisibleDockables!);
+        Assert.Contains(secondDocument, factory.DiagramDock.VisibleDockables!);
+        Assert.DoesNotContain(firstDocument, factory.DiagramDock.VisibleDockables!);
+        Assert.Equal([firstDocument], closedDocuments);
+
+        window.Close();
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="Dock.Model.Core.IFactory.FocusedDockableChanged" /> fires for a programmatic
+    ///     active-dockable change onto a diagram document, the mechanism <see cref="MainWindowView" /> relies on
+    ///     to forward Dock's own focus tracking to <see cref="MainWindowShell.NotifyActiveDiagramTab" />.
+    /// </summary>
+    [Fact]
+    public void FocusedDockableChanged_FiresForActiveDockableChangesOnDiagramDocuments()
+    {
+        // Arrange
+        using var shell = CreateShell();
+        var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
+        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
+        var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
+        var layout = factory.CreateLayout();
+        factory.InitLayout(layout);
+
+        var firstDocument = new DiagramDocumentViewModel(shell, "tab-1");
+        var secondDocument = new DiagramDocumentViewModel(shell, "tab-2");
+        factory.AddDockable(factory.DiagramDock, firstDocument);
+        factory.AddDockable(factory.DiagramDock, secondDocument);
+
+        FocusedDockableChangedEventArgs? received = null;
+        factory.FocusedDockableChanged += (_, e) => received = e;
+
+        // Act
+        factory.SetFocusedDockable(factory.DiagramDock, secondDocument);
+
+        // Assert
+        Assert.NotNull(received);
+        Assert.Same(secondDocument, received.Dockable);
     }
 
     /// <summary>

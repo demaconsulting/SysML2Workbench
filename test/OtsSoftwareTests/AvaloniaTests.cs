@@ -46,7 +46,6 @@ public sealed class AvaloniaTests : IDisposable
             new DiagnosticsAggregator(),
             new ViewCatalogPresenter(),
             new LayoutInvoker(),
-            new SvgCanvasHost(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
             new RollingFileLogger(_tempLogRoot));
@@ -82,9 +81,10 @@ public sealed class AvaloniaTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that Avalonia hosts the interactive diagram surface alongside the diagnostics panel, and
-    ///     that opening a workspace and selecting a view actually populates the diagram control with rendered
-    ///     content through the real Avalonia control tree.
+    ///     Validates that Avalonia hosts the interactive diagram surface alongside the diagnostics panel: no
+    ///     diagram tab (and so no <c>DiagramImage</c> control) exists until a view is selected, and opening a
+    ///     workspace and selecting a view actually populates a real diagram control in the Avalonia visual tree
+    ///     with the rendered content.
     /// </summary>
     [AvaloniaFact]
     public async Task MainWindow_HostsDiagramAndDiagnosticsPanels()
@@ -104,22 +104,26 @@ public sealed class AvaloniaTests : IDisposable
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
-        var diagramImage = FindByName<Image>(window, "DiagramImage");
         var diagnosticsList = FindByName<ListBox>(window, "DiagnosticsListBox");
 
-        // Assert: the diagram and diagnostics regions are hosted before any workspace is opened
-        Assert.NotNull(diagramImage);
+        // Assert: the diagnostics tool panel is hosted, and no diagram tab (so no DiagramImage control) exists
+        // before any workspace is opened - the diagram document area is dynamically populated per open tab.
         Assert.NotNull(diagnosticsList);
-        Assert.Null(diagramImage!.Source);
+        Assert.Null(FindByName<Image>(window, "DiagramImage"));
 
         // Act: opening the workspace and selecting the predefined view through the shell
         await shell.OpenWorkspaceAsync(_tempRoot);
         var view = shell.ViewCatalog.AvailableViews[0];
         shell.SelectPredefinedView(view.QualifiedName);
+        Dispatcher.UIThread.RunJobs();
 
-        // Assert: the shell's canvas host reflects the rendered diagram; the real diagram Image control is bound
-        // to this same canvas state through DiagramDocumentView's code-behind
+        // Assert: the shell's canvas host reflects the rendered diagram, and a real diagram Image control is now
+        // hosted in the visual tree, bound to that same tab's canvas state through DiagramDocumentView's
+        // code-behind
         Assert.True(shell.Canvas.IsContentLoaded);
+        var diagramImage = FindByName<Image>(window, "DiagramImage");
+        Assert.NotNull(diagramImage);
+        Assert.NotNull(diagramImage!.Source);
 
         window.Close();
     }

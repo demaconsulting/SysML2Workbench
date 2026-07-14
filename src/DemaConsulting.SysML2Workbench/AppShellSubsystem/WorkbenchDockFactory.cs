@@ -16,34 +16,55 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 ///     back without losing its in-progress state. This setting applies factory-wide, so any future
 ///     <see cref="Dock.Model.Mvvm.Controls.Tool" /> panel added to this factory will also hide-not-destroy on
 ///     close.
+///     The diagram <see cref="DocumentDock" /> (exposed as <see cref="DiagramDock" />) is built with an initially
+///     empty document list and dynamically managed at runtime by <see cref="MainWindowView" /> (via the inherited
+///     <c>AddDockable</c>/<c>RemoveDockable</c>) as diagram tabs open and close - <c>Document</c>s, unlike
+///     <c>Tool</c>s, are removed outright on close with no restore path, which is an intentional, documented
+///     departure from the Tool panels' hide/restore behavior (matching how closing a diagram tab is always safe:
+///     zero tabs is a supported, first-class state, and reopening one is one click away). The
+///     <see cref="DiagramDock" /> itself sets <c>IsCollapsable = false</c> so it (and its parent
+///     <c>ProportionalDock</c> branch) remains visibly present in the layout even with zero documents open, rather
+///     than collapsing/disappearing once its last document closes.
 /// </summary>
 public sealed class WorkbenchDockFactory : Factory
 {
     private readonly PredefinedViewsToolViewModel _predefinedViewsViewModel;
     private readonly CustomViewBuilderToolViewModel _customViewBuilderViewModel;
     private readonly DiagnosticsToolViewModel _diagnosticsViewModel;
-    private readonly DiagramDocumentViewModel _diagramViewModel;
 
     /// <summary>
-    ///     Creates the dock layout factory over the four already-constructed panel view models.
+    ///     Raised after a <see cref="DiagramDocumentViewModel" /> is closed through Dock's own chrome (or any
+    ///     other path that ultimately calls <c>CloseDockable</c>), so <see cref="MainWindowView" /> can retire the
+    ///     corresponding <see cref="WorkbenchTab" /> from <see cref="MainWindowShell" />.
+    /// </summary>
+    public event EventHandler<DiagramDocumentViewModel>? DiagramTabClosed;
+
+    /// <summary>
+    ///     Creates the dock layout factory over the three already-constructed Tool panel view models. The diagram
+    ///     <see cref="DocumentDock" /> is populated dynamically at runtime rather than at construction time - see
+    ///     <see cref="DiagramDock" />.
     /// </summary>
     /// <param name="predefinedViewsViewModel">Predefined-views tool panel.</param>
     /// <param name="customViewBuilderViewModel">Custom-view builder tool panel.</param>
     /// <param name="diagnosticsViewModel">Diagnostics tool panel.</param>
-    /// <param name="diagramViewModel">Single always-open diagram document.</param>
     public WorkbenchDockFactory(
         PredefinedViewsToolViewModel predefinedViewsViewModel,
         CustomViewBuilderToolViewModel customViewBuilderViewModel,
-        DiagnosticsToolViewModel diagnosticsViewModel,
-        DiagramDocumentViewModel diagramViewModel)
+        DiagnosticsToolViewModel diagnosticsViewModel)
     {
         _predefinedViewsViewModel = predefinedViewsViewModel ?? throw new ArgumentNullException(nameof(predefinedViewsViewModel));
         _customViewBuilderViewModel = customViewBuilderViewModel ?? throw new ArgumentNullException(nameof(customViewBuilderViewModel));
         _diagnosticsViewModel = diagnosticsViewModel ?? throw new ArgumentNullException(nameof(diagnosticsViewModel));
-        _diagramViewModel = diagramViewModel ?? throw new ArgumentNullException(nameof(diagramViewModel));
 
         HideToolsOnClose = true;
     }
+
+    /// <summary>
+    ///     The dock hosting all open diagram documents, exposed so <see cref="MainWindowView" /> can dynamically
+    ///     add/remove <see cref="DiagramDocumentViewModel" /> instances and set the active/focused document as
+    ///     tabs open, close, or become active.
+    /// </summary>
+    public IDocumentDock DiagramDock { get; private set; } = null!;
 
     /// <inheritdoc />
     public override IRootDock CreateLayout()
@@ -80,9 +101,10 @@ public sealed class WorkbenchDockFactory : Factory
             Id = "DiagramDock",
             Proportion = 0.78,
             CanCreateDocument = false,
-            VisibleDockables = CreateList<IDockable>(_diagramViewModel),
-            ActiveDockable = _diagramViewModel,
+            IsCollapsable = false,
+            VisibleDockables = CreateList<IDockable>(),
         };
+        DiagramDock = documentDock;
 
         var centerVerticalDock = new ProportionalDock
         {
@@ -106,5 +128,16 @@ public sealed class WorkbenchDockFactory : Factory
         root.ActiveDockable = mainHorizontalDock;
 
         return root;
+    }
+
+    /// <inheritdoc />
+    public override void OnDockableClosed(IDockable? dockable)
+    {
+        base.OnDockableClosed(dockable);
+
+        if (dockable is DiagramDocumentViewModel diagramDocument)
+        {
+            DiagramTabClosed?.Invoke(this, diagramDocument);
+        }
     }
 }

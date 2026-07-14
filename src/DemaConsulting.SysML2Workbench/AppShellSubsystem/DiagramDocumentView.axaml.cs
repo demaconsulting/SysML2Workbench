@@ -7,9 +7,9 @@ using Avalonia.Svg.Skia;
 namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 
 /// <summary>
-///     Thin Avalonia view for the single, always-open diagram surface. Keeps the pan/zoom pointer handling as
-///     direct code-behind (rather than bound commands) since it manipulates transient render transforms and the
-///     shell's canvas viewport state on every pointer move, which is not a natural fit for data binding.
+///     Thin Avalonia view for one open diagram tab's surface. Keeps the pan/zoom pointer handling as direct
+///     code-behind (rather than bound commands) since it manipulates transient render transforms and the tab's
+///     own canvas viewport state on every pointer move, which is not a natural fit for data binding.
 /// </summary>
 public partial class DiagramDocumentView : UserControl
 {
@@ -37,7 +37,7 @@ public partial class DiagramDocumentView : UserControl
 
         if (Design.IsDesignMode)
         {
-            DataContext = new DiagramDocumentViewModel(DesignTimeShellFactory.Create());
+            DataContext = new DiagramDocumentViewModel(DesignTimeShellFactory.Create(), "design-preview");
         }
     }
 
@@ -64,20 +64,20 @@ public partial class DiagramDocumentView : UserControl
 
     private void OnDiagramPointerWheelChanged(object? sender, PointerWheelEventArgs e)
     {
-        if (_viewModel is null || !_viewModel.Shell.Canvas.IsContentLoaded)
+        if (_viewModel is null || !_viewModel.Canvas.IsContentLoaded)
         {
             return;
         }
 
         var factor = e.Delta.Y > 0 ? 1.1 : 1 / 1.1;
-        _viewModel.Shell.Canvas.SetZoom(_viewModel.Shell.Canvas.ZoomLevel * factor);
+        _viewModel.Canvas.SetZoom(_viewModel.Canvas.ZoomLevel * factor);
         ApplyCanvasTransform();
         e.Handled = true;
     }
 
     private void OnDiagramPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (_viewModel is null || !_viewModel.Shell.Canvas.IsContentLoaded)
+        if (_viewModel is null || !_viewModel.Canvas.IsContentLoaded)
         {
             return;
         }
@@ -88,7 +88,7 @@ public partial class DiagramDocumentView : UserControl
 
     private void OnDiagramPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_viewModel is null || !_isPanning || !_viewModel.Shell.Canvas.IsContentLoaded)
+        if (_viewModel is null || !_isPanning || !_viewModel.Canvas.IsContentLoaded)
         {
             return;
         }
@@ -97,7 +97,7 @@ public partial class DiagramDocumentView : UserControl
         var delta = position - _lastPointerPosition;
         _lastPointerPosition = position;
 
-        _viewModel.Shell.Canvas.PanViewport(delta);
+        _viewModel.Canvas.PanViewport(delta);
         ApplyCanvasTransform();
     }
 
@@ -107,21 +107,21 @@ public partial class DiagramDocumentView : UserControl
     }
 
     /// <summary>
-    ///     Loads the shell's currently active diagram SVG into the on-screen image control.
+    ///     Loads this tab's currently active diagram SVG into the on-screen image control.
     /// </summary>
     private void LoadCurrentDiagram()
     {
-        if (_viewModel is null || _viewModel.Shell.Canvas.CurrentSvg is null)
+        if (_viewModel is null || _viewModel.Canvas.CurrentSvg is null)
         {
             return;
         }
 
-        DiagramImage.Source = new SvgImage { Source = SvgSource.LoadFromSvg(_viewModel.Shell.Canvas.CurrentSvg) };
+        DiagramImage.Source = new SvgImage { Source = SvgSource.LoadFromSvg(_viewModel.Canvas.CurrentSvg) };
         ApplyCanvasTransform();
     }
 
     /// <summary>
-    ///     Reflects the shell canvas host's current zoom and pan state onto the on-screen render transform.
+    ///     Reflects this tab's canvas host's current zoom and pan state onto the on-screen render transform.
     /// </summary>
     private void ApplyCanvasTransform()
     {
@@ -130,9 +130,9 @@ public partial class DiagramDocumentView : UserControl
             return;
         }
 
-        _diagramScaleTransform.ScaleX = _viewModel.Shell.Canvas.ZoomLevel;
-        _diagramScaleTransform.ScaleY = _viewModel.Shell.Canvas.ZoomLevel;
-        _diagramTranslateTransform.X = _viewModel.Shell.Canvas.ViewportOffset.X;
-        _diagramTranslateTransform.Y = _viewModel.Shell.Canvas.ViewportOffset.Y;
+        _diagramScaleTransform.ScaleX = _viewModel.Canvas.ZoomLevel;
+        _diagramScaleTransform.ScaleY = _viewModel.Canvas.ZoomLevel;
+        _diagramTranslateTransform.X = _viewModel.Canvas.ViewportOffset.X;
+        _diagramTranslateTransform.Y = _viewModel.Canvas.ViewportOffset.Y;
     }
 }

@@ -45,7 +45,6 @@ public sealed class App : Application
                 new DiagnosticsAggregator(),
                 new ViewCatalogPresenter(),
                 new LayoutInvoker(),
-                new SvgCanvasHost(),
                 new DiagnosticsListView(),
                 new SysmlSnippetGenerator(),
                 new RollingFileLogger(logDirectory));

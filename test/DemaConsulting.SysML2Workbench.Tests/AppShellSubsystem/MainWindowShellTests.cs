@@ -51,6 +51,10 @@ public sealed class MainWindowShellTests : IDisposable
             + "        expose Engine;\n"
             + "        render asGeneralDiagram;\n"
             + "    }\n"
+            + "    view PredefinedView2 {\n"
+            + "        expose Wheel;\n"
+            + "        render asGeneralDiagram;\n"
+            + "    }\n"
             + "}\n",
             TestContext.Current.CancellationToken);
     }
@@ -66,7 +70,6 @@ public sealed class MainWindowShellTests : IDisposable
             new DiagnosticsAggregator(),
             new ViewCatalogPresenter(),
             new LayoutInvoker(),
-            new SvgCanvasHost(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
             new RollingFileLogger(_tempLogRoot));
@@ -88,7 +91,7 @@ public sealed class MainWindowShellTests : IDisposable
 
         // Assert: the workspace is loaded and downstream regions were refreshed
         Assert.Same(snapshot, shell.CurrentWorkspace);
-        Assert.Single(shell.ViewCatalog.AvailableViews);
+        Assert.Equal(2, shell.ViewCatalog.AvailableViews.Count);
         Assert.False(shell.Canvas.IsContentLoaded);
     }
 
@@ -112,6 +115,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Assert
         Assert.Single(shell.OpenTabs);
         Assert.Equal(WorkbenchTabKind.PredefinedView, shell.OpenTabs[0].Kind);
+        Assert.Equal(shell.OpenTabs[0].Id, shell.ActiveTabId);
 
         // Act: preview a custom view, opening a second, distinct tab
         var definition = new ViewDefinitionModel();
@@ -192,5 +196,213 @@ public sealed class MainWindowShellTests : IDisposable
 
         await Assert.ThrowsAsync<DirectoryNotFoundException>(() => shell.OpenWorkspaceAsync(Path.Combine(_tempRoot, "missing")));
         Assert.Throws<InvalidOperationException>(() => shell.SelectPredefinedView("anything"));
+    }
+
+    /// <summary>
+    ///     Validates that previewing a custom view while a custom-view-preview tab is already active re-renders
+    ///     in place rather than opening a second tab (product decision 3, first bullet).
+    /// </summary>
+    [Fact]
+    public async Task PreviewCustomView_WhenActiveTabIsCustomPreview_UpdatesInPlace()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.OpenWorkspaceAsync(_tempRoot);
+
+        var first = new ViewDefinitionModel();
+        first.SetViewKind(ViewKind.General);
+        first.AddExposeTarget("Sample::Engine");
+        first.SetDisplayName("First");
+
+        var second = new ViewDefinitionModel();
+        second.SetViewKind(ViewKind.General);
+        second.AddExposeTarget("Sample::Wheel");
+        second.SetDisplayName("Second");
+
+        // Act
+        shell.PreviewCustomView(first);
+        var firstTabId = shell.ActiveTabId;
+        shell.PreviewCustomView(second);
+
+        // Assert: same tab identity reused, and the second definition's content is what is now shown
+        Assert.Single(shell.OpenTabs);
+        Assert.Equal(firstTabId, shell.ActiveTabId);
+        Assert.Equal("Second", shell.OpenTabs[0].Title);
+    }
+
+    /// <summary>
+    ///     Validates that previewing a custom view while a predefined-view tab is active opens a brand-new,
+    ///     distinct custom-preview tab rather than reusing or replacing the predefined-view tab (product decision
+    ///     3, second bullet).
+    /// </summary>
+    [Fact]
+    public async Task PreviewCustomView_WhenActiveTabIsPredefinedView_OpensNewTab()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.OpenWorkspaceAsync(_tempRoot);
+        var view = shell.ViewCatalog.AvailableViews[0];
+        shell.SelectPredefinedView(view.QualifiedName);
+        var predefinedTabId = shell.ActiveTabId;
+
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.General);
+        definition.AddExposeTarget("Sample::Engine");
+
+        // Act
+        shell.PreviewCustomView(definition);
+
+        // Assert
+        Assert.Equal(2, shell.OpenTabs.Count);
+        Assert.NotEqual(predefinedTabId, shell.ActiveTabId);
+        Assert.Contains(shell.OpenTabs, t => t.Id == predefinedTabId && t.Kind == WorkbenchTabKind.PredefinedView);
+        Assert.Contains(shell.OpenTabs, t => t.Id == shell.ActiveTabId && t.Kind == WorkbenchTabKind.CustomViewPreview);
+    }
+
+    /// <summary>
+    ///     Validates that previewing a custom view with zero tabs open opens exactly one new, active custom-preview
+    ///     tab (product decision 3's "or there is no active/focused diagram tab at all" clause).
+    /// </summary>
+    [Fact]
+    public async Task PreviewCustomView_WithNoTabsOpen_OpensNewTab()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.OpenWorkspaceAsync(_tempRoot);
+
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.General);
+        definition.AddExposeTarget("Sample::Engine");
+
+        // Act
+        shell.PreviewCustomView(definition);
+
+        // Assert
+        Assert.Single(shell.OpenTabs);
+        Assert.Equal(WorkbenchTabKind.CustomViewPreview, shell.OpenTabs[0].Kind);
+        Assert.Equal(shell.OpenTabs[0].Id, shell.ActiveTabId);
+    }
+
+    /// <summary>
+    ///     Validates the "+ New Diagram Tab" affordance end to end: it opens an empty, active tab, and a
+    ///     subsequent preview call updates that same tab in place (product decision 4).
+    /// </summary>
+    [Fact]
+    public async Task OpenNewCustomPreviewTab_OpensEmptyActiveTab_AndSubsequentPreviewUpdatesIt()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.OpenWorkspaceAsync(_tempRoot);
+
+        // Act
+        var newTab = shell.OpenNewCustomPreviewTab();
+
+        // Assert: empty, active tab
+        Assert.False(newTab.Canvas.IsContentLoaded);
+        Assert.Equal(newTab.Id, shell.ActiveTabId);
+
+        // Act: preview into it
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.General);
+        definition.AddExposeTarget("Sample::Engine");
+        shell.PreviewCustomView(definition);
+
+        // Assert: still exactly one tab, now with content
+        Assert.Single(shell.OpenTabs);
+        Assert.Equal(newTab.Id, shell.OpenTabs[0].Id);
+        Assert.True(shell.GetTabCanvas(newTab.Id)!.IsContentLoaded);
+    }
+
+    /// <summary>
+    ///     Validates that closing a diagram tab removes it and reassigns the active tab to a neighbor, and that
+    ///     closing the final tab leaves no open tabs, a null active tab, and an idle (empty) canvas.
+    /// </summary>
+    [Fact]
+    public async Task CloseDiagramTab_RemovesTab_AndReassignsActiveTab()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.OpenWorkspaceAsync(_tempRoot);
+        var views = shell.ViewCatalog.AvailableViews;
+        shell.SelectPredefinedView(views[0].QualifiedName);
+        var firstTabId = shell.ActiveTabId!;
+        shell.SelectPredefinedView(views[1].QualifiedName);
+        var secondTabId = shell.ActiveTabId!;
+
+        // Act: close the active (second) tab
+        shell.CloseDiagramTab(secondTabId);
+
+        // Assert: one tab remains and becomes active
+        Assert.Single(shell.OpenTabs);
+        Assert.Equal(firstTabId, shell.ActiveTabId);
+
+        // Act: close the last remaining tab
+        shell.CloseDiagramTab(firstTabId);
+
+        // Assert: no tabs remain, no active tab, and the canvas falls back to the idle canvas
+        Assert.Empty(shell.OpenTabs);
+        Assert.Null(shell.ActiveTabId);
+        Assert.False(shell.Canvas.IsContentLoaded);
+    }
+
+    /// <summary>
+    ///     Validates that notifying the shell of an unknown/stale tab id is ignored rather than clearing a
+    ///     still-valid <see cref="MainWindowShell.ActiveTabId" />.
+    /// </summary>
+    [Fact]
+    public async Task NotifyActiveDiagramTab_UnknownId_IsIgnored()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.OpenWorkspaceAsync(_tempRoot);
+        var view = shell.ViewCatalog.AvailableViews[0];
+        shell.SelectPredefinedView(view.QualifiedName);
+        var activeTabId = shell.ActiveTabId;
+
+        // Act
+        shell.NotifyActiveDiagramTab("not-a-real-tab");
+
+        // Assert
+        Assert.Equal(activeTabId, shell.ActiveTabId);
+    }
+
+    /// <summary>
+    ///     Validates that each diagram tab owns a fully independent canvas: opening two predefined views produces
+    ///     two distinct canvas host instances, and zooming one does not affect the other's zoom level (the
+    ///     central technical-debt fix motivating the multi-tab feature).
+    /// </summary>
+    [Fact]
+    public async Task SelectPredefinedView_TabsHaveIndependentCanvases()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.OpenWorkspaceAsync(_tempRoot);
+        var views = shell.ViewCatalog.AvailableViews;
+
+        // Act
+        shell.SelectPredefinedView(views[0].QualifiedName);
+        var id1 = shell.ActiveTabId!;
+        shell.SelectPredefinedView(views[1].QualifiedName);
+        var id2 = shell.ActiveTabId!;
+
+        var canvas1 = shell.GetTabCanvas(id1)!;
+        var canvas2 = shell.GetTabCanvas(id2)!;
+
+        // Assert: distinct instances
+        Assert.NotSame(canvas1, canvas2);
+
+        // Act: zoom the second tab's canvas only
+        canvas2.SetZoom(2.5);
+
+        // Assert: the first tab's zoom is unaffected
+        Assert.Equal(1.0, canvas1.ZoomLevel);
+        Assert.Equal(2.5, canvas2.ZoomLevel);
     }
 }

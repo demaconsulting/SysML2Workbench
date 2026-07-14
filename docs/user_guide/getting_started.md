@@ -38,10 +38,21 @@ Select any entry in the **Predefined Views** list to render it. Supported
 kinds are General, Interconnection, State Transition, Action Flow, Sequence,
 and Grid diagrams - the same kinds produced by the SysML2Tools CLI.
 
-The rendered diagram appears as an interactive SVG in the center canvas:
+Each rendered view opens in its own diagram tab in the center of the window,
+identified by the view's name. Selecting a predefined view that is already
+open switches focus to its existing tab instead of opening a duplicate.
+Diagram tabs are closed like any other dockable document - click the close
+("x") chrome on the tab. You can have any number of diagram tabs open at
+once, or none at all; the diagram area itself always stays visible even with
+every tab closed, ready to host the next view you open.
+
+The rendered diagram appears as an interactive SVG in its tab's canvas:
 
 - **Zoom**: scroll the mouse wheel over the diagram.
 - **Pan**: click and drag with the mouse.
+
+Each diagram tab has its own independent pan/zoom state, so switching
+between tabs never disturbs another tab's view of its diagram.
 
 ## Building a Custom View
 
@@ -63,8 +74,13 @@ ad-hoc view without writing SysML syntax:
    row entirely.
 4. Optionally enter a **Filter Expression** to narrow what is included.
 5. Optionally enter a **View Name** - otherwise a default name is used.
-6. Click **Preview** to render the custom view live in the center canvas,
-   with the same pan/zoom controls as a predefined view.
+6. Click **Preview** to render the custom view live. If the currently
+   focused tab is already a custom-view preview, it is updated in place;
+   otherwise a new tab opens for it. Click **+ New Diagram Tab** to
+   explicitly open a fresh, empty preview tab first (for example, to compare
+   two custom-view iterations side by side in separate tabs) - the next
+   **Preview** click then renders into that tab. Every preview tab supports
+   the same pan/zoom controls as a predefined-view tab.
 7. Click **Copy as SysML** to copy valid `view ... expose ...` SysML v2 text
    to the clipboard. Each `expose` target is emitted using its exact
    qualified name and selected recursion kind/bracket filter; Phase 0 does

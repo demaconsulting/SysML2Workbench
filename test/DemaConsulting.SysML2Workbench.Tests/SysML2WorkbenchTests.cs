@@ -54,7 +54,6 @@ public sealed class SysML2WorkbenchTests : IDisposable
             new DiagnosticsAggregator(),
             new ViewCatalogPresenter(),
             new LayoutInvoker(),
-            new SvgCanvasHost(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
             new RollingFileLogger(_tempLogRoot));
@@ -174,7 +173,6 @@ public sealed class SysML2WorkbenchTests : IDisposable
             new DiagnosticsAggregator(),
             new ViewCatalogPresenter(),
             new LayoutInvoker(),
-            new SvgCanvasHost(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
             logger);

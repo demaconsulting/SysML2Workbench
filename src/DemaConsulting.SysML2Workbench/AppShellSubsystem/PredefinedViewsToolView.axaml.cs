@@ -21,7 +21,7 @@ public partial class PredefinedViewsToolView : UserControl
         if (Design.IsDesignMode)
         {
             var shell = DesignTimeShellFactory.Create();
-            DataContext = new PredefinedViewsToolViewModel(shell, new DiagramDocumentViewModel(shell));
+            DataContext = new PredefinedViewsToolViewModel(shell);
         }
     }
 }

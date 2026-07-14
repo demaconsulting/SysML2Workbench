@@ -58,6 +58,7 @@
     <TextBlock Text="View Name (optional)" />
     <TextBox Name="DisplayNameTextBox" PlaceholderText="CustomView" />
 
+    <Button Name="NewDiagramTabButton" Content="+ New Diagram Tab" HorizontalAlignment="Stretch" />
     <Button Name="PreviewCustomViewButton" Content="Preview" HorizontalAlignment="Stretch" />
     <Button Name="CopyAsSysmlButton" Content="Copy as SysML" HorizontalAlignment="Stretch" />
 

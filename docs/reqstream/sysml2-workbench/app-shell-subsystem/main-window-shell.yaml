@@ -16,9 +16,16 @@ sections:
               - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ManageViewTabs'
                 title: 'The MainWindowShell shall manage tabbed view presentation for rendered diagrams during a user session.'
                 justification: |
-                  The architecture calls out tabbed views as part of the desktop shell experience.
+                  The architecture calls out tabbed views as part of the desktop shell experience, including multiple independent diagram tabs, predefined-view tab duplicate-avoidance/focus, custom-view-preview in-place-update-or-new-tab semantics, and tab close/active-tab reassignment.
                 tests:
                   - 'MainWindowShellTests.OpenViews_ManagesTabbedPresentation'
+                  - 'MainWindowShellTests.PreviewCustomView_WhenActiveTabIsCustomPreview_UpdatesInPlace'
+                  - 'MainWindowShellTests.PreviewCustomView_WhenActiveTabIsPredefinedView_OpensNewTab'
+                  - 'MainWindowShellTests.PreviewCustomView_WithNoTabsOpen_OpensNewTab'
+                  - 'MainWindowShellTests.OpenNewCustomPreviewTab_OpensEmptyActiveTab_AndSubsequentPreviewUpdatesIt'
+                  - 'MainWindowShellTests.CloseDiagramTab_RemovesTab_AndReassignsActiveTab'
+                  - 'MainWindowShellTests.NotifyActiveDiagramTab_UnknownId_IsIgnored'
+                  - 'MainWindowShellTests.SelectPredefinedView_TabsHaveIndependentCanvases'
 
               - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SynchronizeSessionState'
                 title: 'The MainWindowShell shall synchronize active workspace, view selection, custom-view state, and diagnostics across the visible shell regions.'

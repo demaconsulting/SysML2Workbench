@@ -48,12 +48,18 @@ environment.
    user workflow without pushing UI-specific code into those subsystems.
 5. The desktop platform head initializes the shell and application lifetime but
    remains a bootstrap concern rather than a separately documented unit.
-6. The Avalonia UI layer presents MainWindowShell's four panels (predefined
-   views, custom view builder, diagnostics, diagram) as a resizable,
-   floatable, closable Dock layout, composed by a Dock factory from thin
-   panel views and view models that hold no logic beyond forwarding to
-   MainWindowShell and binding its state; a closed panel is restorable via a
-   View menu, which reuses the same long-lived panel view model instance so
-   its in-progress state survives the close/restore cycle; MainWindowShell
-   itself has no dependency on Avalonia or Dock and is unaware of how its
-   panels are arranged on screen.
+6. The Avalonia UI layer presents MainWindowShell's panels (predefined
+   views, custom view builder, diagnostics, and diagram) as a resizable,
+   floatable Dock layout, composed by a Dock factory from thin panel views
+   and view models that hold no logic beyond forwarding to MainWindowShell
+   and binding its state. The three Tool panels (predefined views, custom
+   view builder, diagnostics) are closable and restorable via a View menu,
+   which reuses the same long-lived panel view model instance so its
+   in-progress state survives the close/restore cycle. The diagram area
+   hosts zero or more independently closable diagram Documents - one per
+   open `WorkbenchTab`, each bound to its own `SvgCanvasHost` - and the
+   Dock `DocumentDock` container itself remains visibly present even when
+   no diagram tab is open, so an empty diagram area is a normal, supported
+   state rather than a dead end. MainWindowShell itself has no dependency
+   on Avalonia or Dock and is unaware of how its panels are arranged on
+   screen.

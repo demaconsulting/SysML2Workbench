@@ -27,11 +27,13 @@ implementing its own splitter/panel-management code.
 
 ### Integration Pattern
 
-`WorkbenchDockFactory` composes the four panel view models
+`WorkbenchDockFactory` composes the three Tool panel view models
 (`PredefinedViewsToolViewModel`, `CustomViewBuilderToolViewModel`,
-`DiagnosticsToolViewModel`, `DiagramDocumentViewModel`) into a
-`ProportionalDock`/`ToolDock`/`DocumentDock` tree approximating the legacy
-fixed layout's default proportions. `MainWindowView` builds this layout once
+`DiagnosticsToolViewModel`) into a `ProportionalDock`/`ToolDock`/`DocumentDock`
+tree approximating the legacy fixed layout's default proportions, with the
+`DocumentDock` initially empty; `DiagramDocumentViewModel` instances are added
+to and removed from it dynamically at runtime as diagram tabs open and close
+(see "Diagram Document Tabs" below). `MainWindowView` builds this layout once
 per window and binds it to a `DockControl`; `MainWindowShell` itself has no
 Dock dependency, preserving its existing zero-Avalonia-dependency design.
 Layout serialization/persistence is out of scope for this phase.
@@ -58,3 +60,41 @@ preserved across a close/restore cycle. Each menu item's `IsChecked` is
 bound one-way to the panel's `IsOpen` property purely as a visual indicator;
 the `Click` handler never hides an already-open panel, so clicking the
 menu item for a visible panel only (re)focuses it.
+
+### Diagram Document Tabs
+
+Unlike the three Tool panels, the diagram area hosts zero or more
+independently closable `Document`s - one `DiagramDocumentViewModel` per open
+`WorkbenchTab` - added and removed dynamically at runtime rather than fixed
+at layout-construction time. This depends on two further Dock APIs beyond
+the ones the Tool panels use:
+
+- **`IDockable.IsCollapsable = false`** — set on the `DocumentDock` instance
+  `WorkbenchDockFactory.CreateLayout()` builds (exposed as `DiagramDock`).
+  Dock's default document-close path (`CloseDockable` → `RemoveDockable(...,
+  collapse: true)` → `CollapseDock(owner)`) removes an emptied `DocumentDock`
+  from its parent `ProportionalDock` branch once its last document closes,
+  unless the `DocumentDock`'s own `IsCollapsable` is `false`, in which case
+  `CollapseDock` returns immediately and the (now empty) `DocumentDock`
+  stays exactly where it is in the layout tree. This is what keeps the
+  diagram area visibly present even when zero diagram tabs are open, rather
+  than a Tool-panel-style "closed and gone until restored" state - there is
+  no restore path for a `Document`, so an empty-but-present container is the
+  only way to avoid a dead end.
+- **`IFactory.FocusedDockableChanged`/`OnDockableClosed`** — `MainWindowView`
+  subscribes to `WorkbenchDockFactory`'s inherited `FocusedDockableChanged`
+  event to forward Dock's own tab-focus tracking to
+  `MainWindowShell.NotifyActiveDiagramTab` whenever focus lands on a diagram
+  document (focus changes onto a Tool panel are ignored), and
+  `WorkbenchDockFactory` overrides `OnDockableClosed` to raise a
+  `DiagramTabClosed` event when a diagram document closes through Dock's own
+  chrome, which `MainWindowView` uses to call
+  `MainWindowShell.CloseDiagramTab`.
+
+`Document`s and `Tool`s therefore have deliberately different close
+semantics in this codebase: a closed `Tool` is hidden and restorable via the
+View menu (see above), while a closed diagram `Document` is removed outright
+with no restore path - closing a diagram tab is always a safe operation
+(zero tabs open is a supported, first-class state), and reopening one is one
+click away via the catalog or the "+ New Diagram Tab" button, so no
+restore mechanism is needed.

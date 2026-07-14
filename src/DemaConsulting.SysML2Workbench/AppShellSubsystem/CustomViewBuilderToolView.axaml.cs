@@ -43,6 +43,7 @@ public partial class CustomViewBuilderToolView : UserControl
         ViewKindComboBox.ItemsSource = Enum.GetValues<ViewKind>();
 
         AddExposeTargetButton.Click += OnAddExposeTargetClick;
+        NewDiagramTabButton.Click += OnNewDiagramTabClick;
         PreviewCustomViewButton.Click += OnPreviewCustomViewClick;
         CopyAsSysmlButton.Click += OnCopyAsSysmlClick;
 
@@ -51,7 +52,7 @@ public partial class CustomViewBuilderToolView : UserControl
         if (Design.IsDesignMode)
         {
             var shell = DesignTimeShellFactory.Create();
-            DataContext = new CustomViewBuilderToolViewModel(shell, new DiagramDocumentViewModel(shell));
+            DataContext = new CustomViewBuilderToolViewModel(shell);
         }
     }
 
@@ -102,13 +103,21 @@ public partial class CustomViewBuilderToolView : UserControl
         {
             var definition = BuildDefinitionFromBuilderControls();
             _viewModel.Shell.PreviewCustomView(definition);
-            _viewModel.DiagramViewModel.RaiseDiagramChanged();
             _viewModel.StatusMessage = null;
         }
         catch (Exception ex)
         {
             _viewModel.StatusMessage = $"Preview failed: {ex.Message}";
         }
+    }
+
+    /// <summary>
+    ///     Opens a brand-new, empty custom-view-preview diagram tab and makes it active, so a subsequent
+    ///     "Preview" click renders into it in place rather than opening yet another tab.
+    /// </summary>
+    private void OnNewDiagramTabClick(object? sender, RoutedEventArgs e)
+    {
+        _viewModel?.Shell.OpenNewCustomPreviewTab();
     }
 
     private async void OnCopyAsSysmlClick(object? sender, RoutedEventArgs e)

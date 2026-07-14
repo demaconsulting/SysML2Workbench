@@ -21,12 +21,20 @@ public enum WorkbenchTabKind
 }
 
 /// <summary>
-///     One open tab in the shell's tabbed presentation area.
+///     One open tab in the shell's tabbed presentation area. Each tab owns its own <see cref="SvgCanvasHost" />
+///     so multiple diagram tabs can be open at once with fully independent zoom/pan/content state.
 /// </summary>
 /// <param name="Id">Stable identifier used to detect an already-open tab.</param>
 /// <param name="Title">User-facing tab label.</param>
 /// <param name="Kind">Content category shown by the tab.</param>
-public sealed record WorkbenchTab(string Id, string Title, WorkbenchTabKind Kind);
+/// <param name="Canvas">This tab's own diagram surface state.</param>
+/// <remarks>
+///     Because <see cref="Canvas" /> is a mutable reference type, two <see cref="WorkbenchTab" /> instances are
+///     no longer meaningfully value-equal to each other once its state diverges. Nothing in
+///     <see cref="MainWindowShell" /> compares <see cref="WorkbenchTab" /> instances by equality; all lookups are
+///     by <see cref="Id" />.
+/// </remarks>
+public sealed record WorkbenchTab(string Id, string Title, WorkbenchTabKind Kind, SvgCanvasHost Canvas);
 
 /// <summary>
 ///     MainWindowShell is the desktop composition root that coordinates workspace lifecycle, view selection,
@@ -44,11 +52,23 @@ public sealed class MainWindowShell : IDisposable
     private readonly DiagnosticsAggregator _diagnosticsAggregator;
     private readonly ViewCatalogPresenter _viewCatalogPresenter;
     private readonly LayoutInvoker _layoutInvoker;
-    private readonly SvgCanvasHost _canvasHost;
     private readonly DiagnosticsListView _diagnosticsListView;
     private readonly SysmlSnippetGenerator _snippetGenerator;
     private readonly RollingFileLogger _logger;
     private readonly List<WorkbenchTab> _openTabs = [];
+
+    /// <summary>
+    ///     Canvas shown when no diagram tab is open, so <see cref="Canvas" /> always has a usable instance to
+    ///     return even before the first tab exists (or after the last tab closes).
+    /// </summary>
+    private readonly SvgCanvasHost _idleCanvasHost = new();
+
+    /// <summary>
+    ///     Monotonically increasing counter used to generate unique custom-view-preview tab identifiers across
+    ///     the shell's lifetime. Deliberately not reset when <see cref="ApplyWorkspaceSnapshot" /> clears
+    ///     <see cref="_openTabs" />, so ids remain collision-free for the shell instance's entire lifetime.
+    /// </summary>
+    private int _customPreviewTabSequence;
 
     /// <summary>
     ///     Currently loaded workspace and its revision metadata, or <see langword="null" /> before the first
@@ -72,6 +92,20 @@ public sealed class MainWindowShell : IDisposable
     public IReadOnlyList<WorkbenchTab> OpenTabs => _openTabs;
 
     /// <summary>
+    ///     Identifier of the diagram tab currently active/focused, or <see langword="null" /> when no diagram
+    ///     tab is open. Updated either by shell operations that open or focus a tab (<see cref="SelectPredefinedView" />,
+    ///     <see cref="PreviewCustomView" />, <see cref="OpenNewCustomPreviewTab" />, <see cref="CloseDiagramTab" />)
+    ///     or by the UI layer forwarding Dock's own focus-change signal via <see cref="NotifyActiveDiagramTab" />.
+    /// </summary>
+    public string? ActiveTabId { get; private set; }
+
+    /// <summary>
+    ///     The currently active tab, or <see langword="null" /> when <see cref="ActiveTabId" /> is
+    ///     <see langword="null" /> or no longer refers to an open tab.
+    /// </summary>
+    public WorkbenchTab? ActiveTab => _openTabs.FirstOrDefault(tab => tab.Id == ActiveTabId);
+
+    /// <summary>
     ///     Read-only access to the view catalog presenter, exposed so the UI can list predefined views.
     /// </summary>
     public ViewCatalogPresenter ViewCatalog => _viewCatalogPresenter;
@@ -82,9 +116,17 @@ public sealed class MainWindowShell : IDisposable
     public DiagnosticsListView Diagnostics => _diagnosticsListView;
 
     /// <summary>
-    ///     Read-only access to the diagram canvas host, exposed so the UI can bind the diagram surface.
+    ///     Read-only access to the active diagram tab's canvas host, or an idle canvas host with no content
+    ///     loaded when no diagram tab is open.
     /// </summary>
-    public SvgCanvasHost Canvas => _canvasHost;
+    public SvgCanvasHost Canvas => ActiveTab?.Canvas ?? _idleCanvasHost;
+
+    /// <summary>
+    ///     Raised whenever the set of open tabs, or which tab is active, changes: a tab is opened, closed,
+    ///     re-rendered in place, or the workspace is reloaded (which clears every tab). The Avalonia-aware UI
+    ///     layer subscribes to this to reconcile Dock's <c>DocumentDock</c> with <see cref="OpenTabs" />.
+    /// </summary>
+    public event EventHandler? TabsChanged;
 
     /// <summary>
     ///     Creates the shell from its constituent subsystem units.
@@ -94,7 +136,6 @@ public sealed class MainWindowShell : IDisposable
     /// <param name="diagnosticsAggregator">Aggregates per-file diagnostics into a workspace-wide view.</param>
     /// <param name="viewCatalogPresenter">Supplies predefined view choices.</param>
     /// <param name="layoutInvoker">Renders predefined and custom views to SVG.</param>
-    /// <param name="canvasHost">Displays the active diagram.</param>
     /// <param name="diagnosticsListView">Displays workspace diagnostics.</param>
     /// <param name="snippetGenerator">Exports custom-view definitions as SysML text.</param>
     /// <param name="logger">Records shell-level operational events and failures.</param>
@@ -105,7 +146,6 @@ public sealed class MainWindowShell : IDisposable
         DiagnosticsAggregator diagnosticsAggregator,
         ViewCatalogPresenter viewCatalogPresenter,
         LayoutInvoker layoutInvoker,
-        SvgCanvasHost canvasHost,
         DiagnosticsListView diagnosticsListView,
         SysmlSnippetGenerator snippetGenerator,
         RollingFileLogger logger)
@@ -115,7 +155,6 @@ public sealed class MainWindowShell : IDisposable
         ArgumentNullException.ThrowIfNull(diagnosticsAggregator);
         ArgumentNullException.ThrowIfNull(viewCatalogPresenter);
         ArgumentNullException.ThrowIfNull(layoutInvoker);
-        ArgumentNullException.ThrowIfNull(canvasHost);
         ArgumentNullException.ThrowIfNull(diagnosticsListView);
         ArgumentNullException.ThrowIfNull(snippetGenerator);
         ArgumentNullException.ThrowIfNull(logger);
@@ -125,7 +164,6 @@ public sealed class MainWindowShell : IDisposable
         _diagnosticsAggregator = diagnosticsAggregator;
         _viewCatalogPresenter = viewCatalogPresenter;
         _layoutInvoker = layoutInvoker;
-        _canvasHost = canvasHost;
         _diagnosticsListView = diagnosticsListView;
         _snippetGenerator = snippetGenerator;
         _logger = logger;
@@ -193,10 +231,12 @@ public sealed class MainWindowShell : IDisposable
     }
 
     /// <summary>
-    ///     Renders a predefined view selected by the user.
+    ///     Renders a predefined view selected by the user, opening a new diagram tab for it or, if a tab for the
+    ///     same <paramref name="viewId" /> is already open, re-rendering into and activating that existing tab
+    ///     instead of duplicating it.
     /// </summary>
     /// <param name="viewId">Identifier from <see cref="ViewCatalogPresenter" />.</param>
-    /// <returns>Rendered SVG markup now loaded into the canvas.</returns>
+    /// <returns>Rendered SVG markup now loaded into the resulting tab's canvas.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no workspace is loaded.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="viewId" /> is not present in the catalog.</exception>
     public string SelectPredefinedView(string viewId)
@@ -211,10 +251,12 @@ public sealed class MainWindowShell : IDisposable
         try
         {
             var svg = _layoutInvoker.RenderPredefinedView(CurrentWorkspace.Workspace, descriptor);
-            _canvasHost.LoadSvg(svg);
+            var tab = EnsureTabOpen(descriptor.QualifiedName, descriptor.DisplayName, WorkbenchTabKind.PredefinedView);
+            tab.Canvas.LoadSvg(svg);
             ActivePredefinedView = descriptor;
             ActiveCustomView = null;
-            EnsureTabOpen(descriptor.QualifiedName, descriptor.DisplayName, WorkbenchTabKind.PredefinedView);
+            ActiveTabId = tab.Id;
+            TabsChanged?.Invoke(this, EventArgs.Empty);
             return svg;
         }
         catch (Exception ex)
@@ -225,10 +267,13 @@ public sealed class MainWindowShell : IDisposable
     }
 
     /// <summary>
-    ///     Renders the current GUI-authored custom view as a live preview.
+    ///     Renders the current GUI-authored custom view as a live preview. If the currently active tab is itself
+    ///     a <see cref="WorkbenchTabKind.CustomViewPreview" /> tab, it is re-rendered in place (same tab identity
+    ///     and canvas); otherwise a brand-new custom-view-preview tab is opened and made active - this covers
+    ///     both the "active tab is a predefined view" and "no tab is open" cases.
     /// </summary>
     /// <param name="definition">Normalized custom-view state.</param>
-    /// <returns>Rendered SVG markup now loaded into the canvas.</returns>
+    /// <returns>Rendered SVG markup now loaded into the resulting tab's canvas.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="definition" /> is null.</exception>
     /// <exception cref="InvalidOperationException">
     ///     Thrown when no workspace is loaded, or when <paramref name="definition" /> does not validate against
@@ -253,10 +298,26 @@ public sealed class MainWindowShell : IDisposable
         try
         {
             var svg = _layoutInvoker.RenderCustomView(CurrentWorkspace.Workspace, definition);
-            _canvasHost.LoadSvg(svg);
+            var title = definition.DisplayName ?? "Custom View";
+
+            WorkbenchTab tab;
+            if (ActiveTab is { Kind: WorkbenchTabKind.CustomViewPreview } activeTab)
+            {
+                // Re-render in place: same tab identity and canvas, refreshed title.
+                tab = activeTab with { Title = title };
+                _openTabs[_openTabs.FindIndex(t => t.Id == activeTab.Id)] = tab;
+            }
+            else
+            {
+                tab = CreateTab(NextCustomPreviewTabId(), title, WorkbenchTabKind.CustomViewPreview);
+                _openTabs.Add(tab);
+            }
+
+            tab.Canvas.LoadSvg(svg);
             ActiveCustomView = definition;
             ActivePredefinedView = null;
-            EnsureTabOpen("$custom-preview", definition.DisplayName ?? "Custom View", WorkbenchTabKind.CustomViewPreview);
+            ActiveTabId = tab.Id;
+            TabsChanged?.Invoke(this, EventArgs.Empty);
             return svg;
         }
         catch (Exception ex)
@@ -264,6 +325,74 @@ public sealed class MainWindowShell : IDisposable
             _logger.Log(LogLevel.Error, "Failed to render custom view preview.", ex);
             throw;
         }
+    }
+
+    /// <summary>
+    ///     Opens a brand-new, empty custom-view-preview tab and makes it the active tab, without rendering
+    ///     anything into it yet. Backs the "+ New Diagram Tab" affordance in the custom view builder panel; a
+    ///     subsequent <see cref="PreviewCustomView" /> call re-renders into this same tab per that method's
+    ///     in-place-update rule, since it becomes the active custom-view-preview tab.
+    /// </summary>
+    /// <returns>The newly opened, empty tab.</returns>
+    public WorkbenchTab OpenNewCustomPreviewTab()
+    {
+        var tab = CreateTab(NextCustomPreviewTabId(), "Custom View", WorkbenchTabKind.CustomViewPreview);
+        _openTabs.Add(tab);
+        ActiveTabId = tab.Id;
+        TabsChanged?.Invoke(this, EventArgs.Empty);
+        return tab;
+    }
+
+    /// <summary>
+    ///     Closes the diagram tab with the given identifier, if one is open. If the closed tab was the active
+    ///     tab, a neighboring tab becomes active, or <see cref="ActiveTabId" /> becomes <see langword="null" />
+    ///     if no tabs remain.
+    /// </summary>
+    /// <param name="tabId">Identifier of the tab to close.</param>
+    public void CloseDiagramTab(string tabId)
+    {
+        var index = _openTabs.FindIndex(t => t.Id == tabId);
+        if (index < 0)
+        {
+            return;
+        }
+
+        _openTabs.RemoveAt(index);
+
+        if (ActiveTabId == tabId)
+        {
+            ActiveTabId = _openTabs.Count == 0 ? null : _openTabs[Math.Min(index, _openTabs.Count - 1)].Id;
+        }
+
+        TabsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    ///     Notifies the shell that a diagram tab has gained UI focus, so a subsequent <see cref="PreviewCustomView" />
+    ///     call knows which tab is "active" for its in-place-update-or-new-tab decision. Called by the
+    ///     Avalonia-aware UI layer when Dock reports a focus change onto a diagram document.
+    /// </summary>
+    /// <param name="tabId">Identifier of the newly focused diagram tab.</param>
+    public void NotifyActiveDiagramTab(string? tabId)
+    {
+        if (tabId is not null && _openTabs.All(tab => tab.Id != tabId))
+        {
+            // Unknown or stale id (for example, a queued focus notification for a tab that has since closed) -
+            // ignored rather than clearing a still-valid ActiveTabId.
+            return;
+        }
+
+        ActiveTabId = tabId;
+    }
+
+    /// <summary>
+    ///     Returns the canvas host owned by the given open tab.
+    /// </summary>
+    /// <param name="tabId">Identifier of an open tab.</param>
+    /// <returns>The tab's canvas host, or <see langword="null" /> if no tab with that identifier is open.</returns>
+    public SvgCanvasHost? GetTabCanvas(string tabId)
+    {
+        return _openTabs.FirstOrDefault(tab => tab.Id == tabId)?.Canvas;
     }
 
     /// <summary>
@@ -285,6 +414,15 @@ public sealed class MainWindowShell : IDisposable
     ///     Applies a freshly loaded or reloaded workspace snapshot to all workspace-derived shell state.
     /// </summary>
     /// <param name="snapshot">Newly published workspace snapshot.</param>
+    /// <remarks>
+    ///     Every open tab is closed as part of this reset: a reloaded/newly-opened workspace invalidates every
+    ///     currently-rendered SVG (predefined views reference the old workspace's element tree, and custom-view
+    ///     previews were validated against the old workspace via <c>ValidateAgainstWorkspace</c>). Keeping stale
+    ///     tabs open would silently show diagrams that no longer correspond to any current workspace state, which
+    ///     is the same reason <see cref="ActivePredefinedView" />/<see cref="ActiveCustomView" /> are reset here
+    ///     too. The custom-preview tab-id sequence counter is deliberately not reset alongside <see cref="_openTabs" />
+    ///     so ids remain unique for the shell instance's entire lifetime.
+    /// </remarks>
     private void ApplyWorkspaceSnapshot(WorkspaceSnapshot snapshot)
     {
         CurrentWorkspace = snapshot;
@@ -296,22 +434,50 @@ public sealed class MainWindowShell : IDisposable
         ActivePredefinedView = null;
         ActiveCustomView = null;
         _openTabs.Clear();
+        ActiveTabId = null;
+        TabsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
-    ///     Opens a tab for the given identifier if one is not already open.
+    ///     Returns the already-open tab for the given identifier, or opens and returns a new one if none is open.
     /// </summary>
     /// <param name="id">Stable tab identifier.</param>
     /// <param name="title">User-facing tab label.</param>
     /// <param name="kind">Content category shown by the tab.</param>
-    private void EnsureTabOpen(string id, string title, WorkbenchTabKind kind)
+    /// <returns>The existing or newly opened tab.</returns>
+    private WorkbenchTab EnsureTabOpen(string id, string title, WorkbenchTabKind kind)
     {
-        if (_openTabs.Any(tab => tab.Id == id))
+        var existing = _openTabs.FirstOrDefault(tab => tab.Id == id);
+        if (existing is not null)
         {
-            return;
+            return existing;
         }
 
-        _openTabs.Add(new WorkbenchTab(id, title, kind));
+        var tab = CreateTab(id, title, kind);
+        _openTabs.Add(tab);
+        return tab;
+    }
+
+    /// <summary>
+    ///     Constructs a new tab with a freshly created, independent canvas host.
+    /// </summary>
+    /// <param name="id">Stable tab identifier.</param>
+    /// <param name="title">User-facing tab label.</param>
+    /// <param name="kind">Content category shown by the tab.</param>
+    /// <returns>A new, not-yet-registered tab.</returns>
+    private static WorkbenchTab CreateTab(string id, string title, WorkbenchTabKind kind)
+    {
+        return new WorkbenchTab(id, title, kind, new SvgCanvasHost());
+    }
+
+    /// <summary>
+    ///     Generates the next unique custom-view-preview tab identifier, drawing from a counter that persists for
+    ///     the whole shell lifetime (see <see cref="ApplyWorkspaceSnapshot" />'s remarks).
+    /// </summary>
+    /// <returns>A unique, stable tab identifier.</returns>
+    private string NextCustomPreviewTabId()
+    {
+        return $"$custom-preview-{_customPreviewTabSequence++}";
     }
 
     /// <inheritdoc />

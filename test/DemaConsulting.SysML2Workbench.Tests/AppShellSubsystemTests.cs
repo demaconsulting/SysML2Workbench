@@ -55,7 +55,6 @@ public sealed class AppShellSubsystemTests : IDisposable
             new DiagnosticsAggregator(),
             new ViewCatalogPresenter(),
             new LayoutInvoker(),
-            new SvgCanvasHost(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
             new RollingFileLogger(_tempLogRoot));

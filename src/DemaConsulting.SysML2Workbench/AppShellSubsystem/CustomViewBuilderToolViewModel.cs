@@ -8,7 +8,10 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 ///     Dock tool view model backing the "Custom View Builder" panel. Holds the long-lived
 ///     <see cref="ViewDefinitionModel" /> builder state (mutated directly by
 ///     <see cref="CustomViewBuilderToolView" />'s per-row controls) and the available expose-target picker list
-///     derived from the currently loaded workspace.
+///     derived from the currently loaded workspace. This view model deliberately tracks no diagram tab itself:
+///     100% of the "which tab, create-or-reuse, repaint, focus" decision is made centrally by
+///     <see cref="MainWindowShell" /> and its <see cref="MainWindowShell.TabsChanged" /> notification, which the
+///     Avalonia-aware composition root reconciles against Dock.
 /// </summary>
 public partial class CustomViewBuilderToolViewModel : Dock.Model.Mvvm.Controls.Tool
 {
@@ -36,22 +39,15 @@ public partial class CustomViewBuilderToolViewModel : Dock.Model.Mvvm.Controls.T
     ///     Creates the custom-view builder tool view model.
     /// </summary>
     /// <param name="shell">Fully composed application shell.</param>
-    /// <param name="diagramViewModel">Diagram document view model to notify after a successful preview.</param>
-    public CustomViewBuilderToolViewModel(MainWindowShell shell, DiagramDocumentViewModel diagramViewModel)
+    public CustomViewBuilderToolViewModel(MainWindowShell shell)
     {
         Shell = shell ?? throw new ArgumentNullException(nameof(shell));
-        DiagramViewModel = diagramViewModel ?? throw new ArgumentNullException(nameof(diagramViewModel));
     }
 
     /// <summary>
     ///     Shared application shell.
     /// </summary>
     public MainWindowShell Shell { get; }
-
-    /// <summary>
-    ///     Diagram document view model to refresh after a custom view is successfully previewed.
-    /// </summary>
-    public DiagramDocumentViewModel DiagramViewModel { get; }
 
     /// <summary>
     ///     Long-lived custom-view builder state, mutated directly by the expose-target row controls' event
