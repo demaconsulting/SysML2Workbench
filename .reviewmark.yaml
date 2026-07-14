@@ -316,3 +316,15 @@ reviews:
       - docs/reqstream/ots/xunit.yaml
       - docs/design/ots/xunit.md
       - docs/verification/ots/xunit.md
+  - id: OTS-Dock
+    title: Review that Dock Provides Required Functionality
+    paths:
+      - docs/reqstream/ots/dock.yaml
+      - docs/design/ots/dock.md
+      - docs/verification/ots/dock.md
+  - id: OTS-CommunityToolkitMvvm
+    title: Review that CommunityToolkit.Mvvm Provides Required Functionality
+    paths:
+      - docs/reqstream/ots/communitytoolkit-mvvm.yaml
+      - docs/design/ots/communitytoolkit-mvvm.md
+      - docs/verification/ots/communitytoolkit-mvvm.md

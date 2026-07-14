@@ -34,12 +34,14 @@ configuration rather than ad hoc workstation state.
 OTS items are consumed through narrow integration seams. SysML2Tools and
 DemaConsulting.Rendering are wrapped behind local units that translate
 workspace or view state into library calls. Avalonia is used as the application
-shell and control layer, but subsystem responsibilities remain in local units
-rather than in code-behind spread across the UI. xUnit is confined to
-verification projects and does not participate in runtime behavior. Across all
-items, the local code treats OTS failures as diagnosable events: exceptions are
-surfaced to the shell, and notable integration faults are logged through the
-local rolling logger.
+shell and control layer, with Dock providing the resizable, floatable,
+closable panel-docking layout for that shell and CommunityToolkit.Mvvm
+supplying observable-property generation for the Dock panel view models, but
+subsystem responsibilities remain in local units rather than in code-behind
+spread across the UI. xUnit is confined to verification projects and does not
+participate in runtime behavior. Across all items, the local code treats OTS
+failures as diagnosable events: exceptions are surfaced to the shell, and
+notable integration faults are logged through the local rolling logger.
 
 ## Qualification Strategy
 

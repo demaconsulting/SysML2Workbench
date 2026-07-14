@@ -28,5 +28,19 @@ package SysML2WorkbenchArchitecture {
             comment verificationRef /* Verification: docs/verification/ots/xunit.md */
             comment reqRef /* Requirements: docs/reqstream/ots/xunit.yaml */
         }
+        part def Dock {
+            doc /* AvaloniaUI/Dock NuGet dependency for the resizable, floatable, closable dockable panel layout hosting the desktop application shell. */
+
+            comment designRef /* Design: docs/design/ots/dock.md */
+            comment verificationRef /* Verification: docs/verification/ots/dock.md */
+            comment reqRef /* Requirements: docs/reqstream/ots/dock.yaml */
+        }
+        part def CommunityToolkitMvvm {
+            doc /* CommunityToolkit.Mvvm NuGet dependency providing observable-property source generation for the Dock panel view models. */
+
+            comment designRef /* Design: docs/design/ots/communitytoolkit-mvvm.md */
+            comment verificationRef /* Verification: docs/verification/ots/communitytoolkit-mvvm.md */
+            comment reqRef /* Requirements: docs/reqstream/ots/communitytoolkit-mvvm.yaml */
+        }
     }
 }

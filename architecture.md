@@ -44,7 +44,9 @@ application itself has no knowledge of git).
 
 ## Technology Stack
 
-- **Language/Framework**: C#, .NET, Avalonia 12 (UI), xUnit v3 (tests).
+- **Language/Framework**: C#, .NET, Avalonia 12 (UI), AvaloniaUI/Dock (dockable
+  panel layout), CommunityToolkit.Mvvm (observable-property generation for
+  Dock panel view models), xUnit v3 (tests).
 - **Rendering**: DemaConsulting.Rendering (SVG output), displayed via an
   Avalonia SVG-rendering control — no native `DrawingContext` renderer at
   this stage, in order to reuse the existing, well-tested rendering library

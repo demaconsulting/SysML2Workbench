@@ -15,9 +15,12 @@ words:
   - bursty
   - buildmark
   - Dema
+  - Dockable
+  - Dockables
   - fileassert
   - Hmmssfff
   - LOCALAPPDATA
+  - Mvvm
   - Pandoc
   - pasteable
   - postconditions
@@ -41,6 +44,7 @@ words:
   - Xunit
   - yamlfix
   - Avalonia
+  - CommunityToolkit
   - DemaConsulting
   - SysML2
   - SysML2Tools

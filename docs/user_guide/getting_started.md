@@ -20,7 +20,8 @@ for setup prerequisites.
 4. Once loaded, the **Predefined Views** list (left panel) is populated with
    every view usage declared in the workspace, and the **Diagnostics** panel
    (bottom) lists any parser or reference-resolution problems found across
-   the whole workspace.
+   the whole workspace. Panels are docked in this default arrangement but can
+   be resized, floated, or closed like any other dockable panel.
 
 While a workspace is open, SysML2Workbench watches the folder for external
 changes. If you edit a `.sysml` file in another editor, or `git pull` new
@@ -40,8 +41,8 @@ The rendered diagram appears as an interactive SVG in the center canvas:
 
 ## Building a Custom View
 
-The **Custom View Builder** panel (right side) lets you construct an ad-hoc
-view without writing SysML syntax:
+The **Custom View Builder** panel (right side, dockable) lets you construct an
+ad-hoc view without writing SysML syntax:
 
 1. Pick a **View Kind** from the dropdown (General, Interconnection, State
    Transition, Action Flow, Sequence, or Grid).

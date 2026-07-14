@@ -48,3 +48,10 @@ environment.
    user workflow without pushing UI-specific code into those subsystems.
 5. The desktop platform head initializes the shell and application lifetime but
    remains a bootstrap concern rather than a separately documented unit.
+6. The Avalonia UI layer presents MainWindowShell's four panels (predefined
+   views, custom view builder, diagnostics, diagram) as a resizable,
+   floatable, closable Dock layout, composed by a Dock factory from thin
+   panel views and view models that hold no logic beyond forwarding to
+   MainWindowShell and binding its state; MainWindowShell itself has no
+   dependency on Avalonia or Dock and is unaware of how its panels are
+   arranged on screen.
