@@ -103,6 +103,12 @@ public sealed class WorkbenchDockFactory : Factory
             CanCreateDocument = false,
             IsCollapsable = false,
             VisibleDockables = CreateList<IDockable>(),
+
+            // Dock.Model.Mvvm.Controls.DocumentDock defaults EmptyContent to the literal string
+            // "No documents open", rendered centered in the document area whenever it has zero open
+            // documents. Cleared so zero open diagram tabs is a plain blank area (matching Visual Studio's
+            // editor region with no files open), not a placeholder message.
+            EmptyContent = null,
         };
         DiagramDock = documentDock;
 

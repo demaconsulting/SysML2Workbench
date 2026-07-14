@@ -81,6 +81,12 @@ the ones the Tool panels use:
   than a Tool-panel-style "closed and gone until restored" state - there is
   no restore path for a `Document`, so an empty-but-present container is the
   only way to avoid a dead end.
+- **`IDocumentDock.EmptyContent = null`** — `Dock.Model.Mvvm.Controls.DocumentDock`
+  defaults `EmptyContent` to the literal string `"No documents open"`,
+  rendered centered in the document area whenever it has zero visible
+  dockables. Cleared to `null` on `DiagramDock` so the diagram area with
+  zero open tabs is a plain blank area (matching Visual Studio's editor
+  region with no files open), not a placeholder message.
 - **`IFactory.FocusedDockableChanged`/`OnDockableClosed`** — `MainWindowView`
   subscribes to `WorkbenchDockFactory`'s inherited `FocusedDockableChanged`
   event to forward Dock's own tab-focus tracking to
