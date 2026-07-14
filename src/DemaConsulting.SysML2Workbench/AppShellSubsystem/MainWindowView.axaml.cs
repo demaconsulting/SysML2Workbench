@@ -1,66 +1,23 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Data;
-using Avalonia.Input;
-using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
-using Avalonia.Layout;
-using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using Avalonia.Svg.Skia;
-using DemaConsulting.SysML2Tools.Semantic.Model;
-using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
-using DemaConsulting.SysML2Workbench.ViewBuilderSubsystem;
-using DemaConsulting.SysML2Workbench.ViewCatalogSubsystem;
+using Dock.Model.Core;
 
 namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 
 /// <summary>
-///     Thin Avalonia code-behind for the main application window. All orchestration and validation logic is
-///     delegated to <see cref="MainWindowShell" />; this class only translates user gestures into shell calls
-///     and reflects shell state back into the visible controls.
+///     Thin Avalonia code-behind for the main application window. All region-specific orchestration and
+///     validation logic is delegated to <see cref="MainWindowShell" /> (via the four panel view models this
+///     class composes into a Dock layout); this class only builds that layout, wires the File menu, and
+///     coordinates workspace-open refresh across the panels.
 /// </summary>
 public partial class MainWindowView : Window
 {
-    /// <summary>
-    ///     Node kinds excluded from the expose-target picker, mirroring <see cref="ViewDefinitionModel" />'s own
-    ///     validation rules so the user cannot select a target that would fail validation.
-    /// </summary>
-    private static readonly Type[] DisallowedExposeNodeTypes =
-    [
-        typeof(SysmlViewNode),
-        typeof(SysmlViewpointNode),
-        typeof(SysmlImportNode),
-        typeof(SysmlMetadataNode),
-        typeof(SysmlTransitionNode),
-        typeof(SysmlConnectionNode),
-    ];
-
-    /// <summary>
-    ///     Human-readable display text for each <see cref="ExposeRecursionKind" />, shown in each selected
-    ///     target's row <see cref="ComboBox" />, in declaration order.
-    /// </summary>
-    private static readonly (ExposeRecursionKind Kind, string Display)[] RecursionKindOptions =
-    [
-        (ExposeRecursionKind.MembershipExact, "This element only"),
-        (ExposeRecursionKind.MembershipRecursive, "This element + everything below (::**)"),
-        (ExposeRecursionKind.NamespaceDirectChildren, "Direct children only (::*)"),
-        (ExposeRecursionKind.NamespaceRecursive, "All descendants, not itself (::*::**)"),
-    ];
-
     private readonly MainWindowShell _shell;
-    private readonly ScaleTransform _diagramScaleTransform = new(1, 1);
-    private readonly TranslateTransform _diagramTranslateTransform = new(0, 0);
-    private bool _isPanning;
-    private Point _lastPointerPosition;
-
-    /// <summary>
-    ///     Long-lived custom-view builder state, mutated directly by the expose-target row controls' event
-    ///     handlers rather than rebuilt fresh from control values on every Preview/Export click. This is the
-    ///     natural fit for the per-row mutable expose-target UI: each row needs individually addressable
-    ///     recursion-kind and bracket-filter state that a flat "read all controls" rebuild cannot reconstruct.
-    /// </summary>
-    private ViewDefinitionModel _builderDefinition = new();
+    private readonly PredefinedViewsToolViewModel _predefinedViewsViewModel;
+    private readonly CustomViewBuilderToolViewModel _customViewBuilderViewModel;
+    private readonly DiagnosticsToolViewModel _diagnosticsViewModel;
+    private readonly DiagramDocumentViewModel _diagramViewModel;
 
     /// <summary>
     ///     Parameterless constructor required by the Avalonia XAML previewer/designer. Not used at runtime.
@@ -71,7 +28,8 @@ public partial class MainWindowView : Window
     }
 
     /// <summary>
-    ///     Creates the main window bound to a real, composed shell.
+    ///     Creates the main window bound to a real, composed shell, and builds the Dock layout hosting the four
+    ///     Phase-0 panels over it.
     /// </summary>
     /// <param name="shell">Fully composed application shell.</param>
     public MainWindowView(MainWindowShell shell)
@@ -80,21 +38,17 @@ public partial class MainWindowView : Window
 
         InitializeComponent();
 
-        DiagramImage.RenderTransform = new TransformGroup { Children = { _diagramScaleTransform, _diagramTranslateTransform } };
+        _diagramViewModel = new DiagramDocumentViewModel(_shell) { Id = "Diagram", Title = "Diagram" };
+        _predefinedViewsViewModel = new PredefinedViewsToolViewModel(_shell, _diagramViewModel) { Id = "PredefinedViews", Title = "Predefined Views" };
+        _customViewBuilderViewModel = new CustomViewBuilderToolViewModel(_shell, _diagramViewModel) { Id = "CustomViewBuilder", Title = "Custom View Builder" };
+        _diagnosticsViewModel = new DiagnosticsToolViewModel(_shell) { Id = "Diagnostics", Title = "Diagnostics" };
 
-        PredefinedViewsListBox.DisplayMemberBinding = new Binding(nameof(ViewDescriptor.DisplayName));
-        ViewKindComboBox.ItemsSource = Enum.GetValues<ViewKind>();
+        var factory = new WorkbenchDockFactory(_predefinedViewsViewModel, _customViewBuilderViewModel, _diagnosticsViewModel, _diagramViewModel);
+        var layout = factory.CreateLayout();
+        factory.InitLayout(layout);
+        WorkbenchDockControl.Layout = (IDock)layout;
 
         OpenWorkspaceMenuItem.Click += OnOpenWorkspaceClick;
-        PredefinedViewsListBox.SelectionChanged += OnPredefinedViewSelectionChanged;
-        AddExposeTargetButton.Click += OnAddExposeTargetClick;
-        PreviewCustomViewButton.Click += OnPreviewCustomViewClick;
-        CopyAsSysmlButton.Click += OnCopyAsSysmlClick;
-
-        DiagramBorder.PointerWheelChanged += OnDiagramPointerWheelChanged;
-        DiagramBorder.PointerPressed += OnDiagramPointerPressed;
-        DiagramBorder.PointerMoved += OnDiagramPointerMoved;
-        DiagramBorder.PointerReleased += OnDiagramPointerReleased;
     }
 
     private async void OnOpenWorkspaceClick(object? sender, RoutedEventArgs e)
@@ -120,272 +74,13 @@ public partial class MainWindowView : Window
         try
         {
             await _shell.OpenWorkspaceAsync(folderPath);
-            RefreshWorkspaceBoundControls();
-            SetBuilderStatus(null);
+            _predefinedViewsViewModel.RefreshFromWorkspace();
+            _customViewBuilderViewModel.RefreshFromWorkspace();
+            _diagnosticsViewModel.RefreshFromWorkspace();
         }
         catch (Exception ex)
         {
-            SetBuilderStatus($"Failed to open workspace: {ex.Message}");
+            _customViewBuilderViewModel.StatusMessage = $"Failed to open workspace: {ex.Message}";
         }
-    }
-
-    private void OnPredefinedViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (PredefinedViewsListBox.SelectedItem is not ViewDescriptor descriptor)
-        {
-            return;
-        }
-
-        try
-        {
-            _shell.SelectPredefinedView(descriptor.QualifiedName);
-            LoadCurrentDiagram();
-            SetBuilderStatus(null);
-        }
-        catch (Exception ex)
-        {
-            SetBuilderStatus($"Failed to render '{descriptor.DisplayName}': {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    ///     Adds the currently-selected available target to the long-lived custom-view builder state and
-    ///     refreshes the selected-targets panel to show its new row.
-    /// </summary>
-    private void OnAddExposeTargetClick(object? sender, RoutedEventArgs e)
-    {
-        if (AvailableExposeTargetsListBox.SelectedItem is not string qualifiedName)
-        {
-            return;
-        }
-
-        _builderDefinition.AddExposeTarget(qualifiedName);
-        RefreshSelectedExposeTargetsPanel();
-    }
-
-    private void OnPreviewCustomViewClick(object? sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var definition = BuildDefinitionFromBuilderControls();
-            _shell.PreviewCustomView(definition);
-            LoadCurrentDiagram();
-            SetBuilderStatus(null);
-        }
-        catch (Exception ex)
-        {
-            SetBuilderStatus($"Preview failed: {ex.Message}");
-        }
-    }
-
-    private async void OnCopyAsSysmlClick(object? sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var definition = BuildDefinitionFromBuilderControls();
-            var snippet = _shell.ExportCustomViewSnippet(definition);
-
-            var topLevel = GetTopLevel(this);
-            if (topLevel?.Clipboard is not null)
-            {
-                await topLevel.Clipboard.SetTextAsync(snippet);
-            }
-
-            SetBuilderStatus("Copied SysML snippet to clipboard.");
-        }
-        catch (Exception ex)
-        {
-            SetBuilderStatus($"Export failed: {ex.Message}");
-        }
-    }
-
-    private void OnDiagramPointerWheelChanged(object? sender, PointerWheelEventArgs e)
-    {
-        if (!_shell.Canvas.IsContentLoaded)
-        {
-            return;
-        }
-
-        var factor = e.Delta.Y > 0 ? 1.1 : 1 / 1.1;
-        _shell.Canvas.SetZoom(_shell.Canvas.ZoomLevel * factor);
-        ApplyCanvasTransform();
-        e.Handled = true;
-    }
-
-    private void OnDiagramPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (!_shell.Canvas.IsContentLoaded)
-        {
-            return;
-        }
-
-        _isPanning = true;
-        _lastPointerPosition = e.GetPosition(DiagramBorder);
-    }
-
-    private void OnDiagramPointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (!_isPanning || !_shell.Canvas.IsContentLoaded)
-        {
-            return;
-        }
-
-        var position = e.GetPosition(DiagramBorder);
-        var delta = position - _lastPointerPosition;
-        _lastPointerPosition = position;
-
-        _shell.Canvas.PanViewport(delta);
-        ApplyCanvasTransform();
-    }
-
-    private void OnDiagramPointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        _isPanning = false;
-    }
-
-    /// <summary>
-    ///     Refreshes the predefined view list, expose-target picker, and diagnostics list from current shell
-    ///     state after a workspace open or reload.
-    /// </summary>
-    private void RefreshWorkspaceBoundControls()
-    {
-        PredefinedViewsListBox.ItemsSource = _shell.ViewCatalog.AvailableViews;
-        DiagnosticsListBox.ItemsSource = _shell.Diagnostics.VisibleDiagnostics;
-
-        AvailableExposeTargetsListBox.ItemsSource = _shell.CurrentWorkspace is null
-            ? []
-            : _shell.CurrentWorkspace.Workspace.Declarations
-                .Where(kvp => !_shell.CurrentWorkspace.Workspace.StdlibNames.Contains(kvp.Key))
-                .Where(kvp => !DisallowedExposeNodeTypes.Contains(kvp.Value.GetType()))
-                .Select(kvp => kvp.Key)
-                .OrderBy(name => name, StringComparer.Ordinal)
-                .ToList();
-
-        // A fresh workspace invalidates any previously-selected expose targets, so the builder state starts
-        // clean rather than referencing qualified names that may no longer resolve
-        _builderDefinition = new ViewDefinitionModel();
-        RefreshSelectedExposeTargetsPanel();
-    }
-
-    /// <summary>
-    ///     Rebuilds the "Selected Targets" panel's rows from <see cref="_builderDefinition" />'s current expose
-    ///     targets. Each row is constructed directly in code (no data-binding/template framework) so its
-    ///     recursion-kind <see cref="ComboBox" />, bracket-filter <see cref="TextBox" />, and Remove
-    ///     <see cref="Button" /> can close over the row's own qualified name and mutate
-    ///     <see cref="_builderDefinition" /> directly.
-    /// </summary>
-    private void RefreshSelectedExposeTargetsPanel()
-    {
-        SelectedExposeTargetsPanel.Children.Clear();
-
-        foreach (var selection in _builderDefinition.ExposeTargets)
-        {
-            var qualifiedName = selection.QualifiedName;
-
-            var nameText = new TextBlock { Text = qualifiedName, FontWeight = FontWeight.Bold, TextWrapping = TextWrapping.Wrap };
-
-            var kindComboBox = new ComboBox
-            {
-                ItemsSource = RecursionKindOptions.Select(o => o.Display).ToList(),
-                SelectedIndex = Array.FindIndex(RecursionKindOptions, o => o.Kind == selection.RecursionKind),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
-            kindComboBox.SelectionChanged += (_, _) =>
-            {
-                if (kindComboBox.SelectedIndex < 0)
-                {
-                    return;
-                }
-
-                _builderDefinition.SetExposeRecursionKind(qualifiedName, RecursionKindOptions[kindComboBox.SelectedIndex].Kind);
-                RefreshSelectedExposeTargetsPanel();
-            };
-
-            var removeButton = new Button { Content = "Remove" };
-            removeButton.Click += (_, _) =>
-            {
-                _builderDefinition.RemoveExposeTarget(qualifiedName);
-                RefreshSelectedExposeTargetsPanel();
-            };
-
-            var kindRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
-            kindRow.Children.Add(kindComboBox);
-            kindRow.Children.Add(removeButton);
-
-            var isRecursive = selection.RecursionKind is ExposeRecursionKind.MembershipRecursive or ExposeRecursionKind.NamespaceRecursive;
-            var filterTextBox = new TextBox
-            {
-                PlaceholderText = "Bracket filter (optional)",
-                Text = selection.BracketFilterExpression,
-                IsEnabled = isRecursive,
-            };
-            ToolTip.SetTip(filterTextBox, "Narrows this target's expose::** / ::*::** membership to elements matching a SysML v2 filter expression (Phase 1 subset). Only applies to the two recursive recursion kinds.");
-            filterTextBox.LostFocus += (_, _) => _builderDefinition.SetExposeBracketFilter(qualifiedName, filterTextBox.Text);
-
-            var row = new Border
-            {
-                BorderBrush = Brushes.Gray,
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(4),
-                Child = new StackPanel
-                {
-                    Spacing = 2,
-                    Children = { nameText, kindRow, filterTextBox },
-                },
-            };
-
-            SelectedExposeTargetsPanel.Children.Add(row);
-        }
-    }
-
-    /// <summary>
-    ///     Builds a <see cref="ViewDefinitionModel" /> from the current custom-view builder control values.
-    /// </summary>
-    /// <returns>Normalized custom-view state.</returns>
-    private ViewDefinitionModel BuildDefinitionFromBuilderControls()
-    {
-        if (ViewKindComboBox.SelectedItem is ViewKind viewKind)
-        {
-            _builderDefinition.SetViewKind(viewKind);
-        }
-
-        _builderDefinition.SetFilterExpression(FilterExpressionTextBox.Text);
-        _builderDefinition.SetDisplayName(DisplayNameTextBox.Text);
-
-        return _builderDefinition;
-    }
-
-    /// <summary>
-    ///     Loads the shell's currently active diagram SVG into the on-screen image control.
-    /// </summary>
-    private void LoadCurrentDiagram()
-    {
-        if (_shell.Canvas.CurrentSvg is null)
-        {
-            return;
-        }
-
-        DiagramImage.Source = new SvgImage { Source = SvgSource.LoadFromSvg(_shell.Canvas.CurrentSvg) };
-        ApplyCanvasTransform();
-    }
-
-    /// <summary>
-    ///     Reflects the shell canvas host's current zoom and pan state onto the on-screen render transform.
-    /// </summary>
-    private void ApplyCanvasTransform()
-    {
-        _diagramScaleTransform.ScaleX = _shell.Canvas.ZoomLevel;
-        _diagramScaleTransform.ScaleY = _shell.Canvas.ZoomLevel;
-        _diagramTranslateTransform.X = _shell.Canvas.ViewportOffset.X;
-        _diagramTranslateTransform.Y = _shell.Canvas.ViewportOffset.Y;
-    }
-
-    /// <summary>
-    ///     Shows or clears the custom-view builder status message.
-    /// </summary>
-    /// <param name="message">Message to display, or <see langword="null" /> to clear it.</param>
-    private void SetBuilderStatus(string? message)
-    {
-        BuilderStatusTextBlock.Text = message ?? string.Empty;
     }
 }

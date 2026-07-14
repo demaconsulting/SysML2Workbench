@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dock="using:Dock.Avalonia.Controls"
         x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.MainWindowView"
         Title="SysML2Workbench"
         Width="1280" Height="800">
@@ -12,85 +13,7 @@
       </MenuItem>
     </Menu>
 
-    <Border DockPanel.Dock="Bottom" Height="180" BorderThickness="0,1,0,0" BorderBrush="Gray">
-      <DockPanel Margin="4">
-        <TextBlock DockPanel.Dock="Top" Text="Diagnostics" FontWeight="Bold" />
-        <ListBox Name="DiagnosticsListBox" />
-      </DockPanel>
-    </Border>
-
-    <Border DockPanel.Dock="Left" Width="260" BorderThickness="0,0,1,0" BorderBrush="Gray">
-      <DockPanel Margin="4">
-        <TextBlock DockPanel.Dock="Top" Text="Predefined Views" FontWeight="Bold" />
-        <ListBox Name="PredefinedViewsListBox" />
-      </DockPanel>
-    </Border>
-
-    <Border DockPanel.Dock="Right" Width="320" BorderThickness="1,0,0,0" BorderBrush="Gray">
-      <StackPanel Margin="8" Spacing="6">
-        <TextBlock Text="Custom View Builder" FontWeight="Bold" />
-
-        <TextBlock Text="View Kind" />
-        <ComboBox Name="ViewKindComboBox" HorizontalAlignment="Stretch" />
-
-        <TextBlock Text="Expose Targets" FontWeight="Bold" />
-
-        <TextBlock Text="Available (select, then Add)" />
-        <ListBox Name="AvailableExposeTargetsListBox" Height="90" />
-        <Button Name="AddExposeTargetButton" Content="Add →" HorizontalAlignment="Stretch" />
-
-        <StackPanel Orientation="Horizontal" Spacing="4">
-          <TextBlock Text="Selected" />
-          <TextBlock Text="&#x24D8;" FontWeight="Bold" Foreground="SteelBlue" Cursor="Hand">
-            <ToolTip.Tip>
-              <StackPanel Spacing="4" MaxWidth="360">
-                <TextBlock Text="Each selected target's recursion kind controls which SysML v2 'expose' textual form is generated and rendered." TextWrapping="Wrap" FontWeight="Bold" />
-                <TextBlock Text="This element only - exposes just the named element (expose Target;)." TextWrapping="Wrap" />
-                <TextBlock Text="This element + everything below (::**) - exposes the element and its full nested membership." TextWrapping="Wrap" />
-                <TextBlock Text="Direct children only (::*) - exposes only the element's immediate namespace members." TextWrapping="Wrap" />
-                <TextBlock Text="All descendants, not itself (::*::**) - exposes every namespace descendant, excluding the element itself." TextWrapping="Wrap" />
-              </StackPanel>
-            </ToolTip.Tip>
-          </TextBlock>
-        </StackPanel>
-        <ScrollViewer Height="200">
-          <StackPanel Name="SelectedExposeTargetsPanel" Spacing="4" />
-        </ScrollViewer>
-
-        <StackPanel Orientation="Horizontal" Spacing="4">
-          <TextBlock Text="Filter Expression (optional)" />
-          <TextBlock Text="&#x24D8;" FontWeight="Bold" Foreground="SteelBlue" Cursor="Hand">
-            <ToolTip.Tip>
-              <StackPanel Spacing="4" MaxWidth="360">
-                <TextBlock Text="Narrows the exposed targets to elements matching a SysML v2 filter expression (Phase 1 subset)." TextWrapping="Wrap" FontWeight="Bold" />
-                <TextBlock Text="Supported: classification tests (@Type), boolean connectives (and / or / not / xor / &amp; / |), parentheses, and (as Type).attribute reads compared with == or != against a literal." TextWrapping="Wrap" />
-                <TextBlock Text="Not supported: istype/hastype/all, arithmetic, conditionals, and general feature-chain navigation." TextWrapping="Wrap" FontStyle="Italic" />
-                <TextBlock Text="Examples:" FontWeight="Bold" />
-                <TextBlock Text="@Safety" FontFamily="Consolas" />
-                <TextBlock Text="@Requirements::Verification" FontFamily="Consolas" />
-                <TextBlock Text="not @Deprecated" FontFamily="Consolas" />
-                <TextBlock Text="@Safety and @Critical" FontFamily="Consolas" />
-                <TextBlock Text="@Safety or @Security" FontFamily="Consolas" />
-                <TextBlock Text="(as PartDefinition).name == 'Engine'" FontFamily="Consolas" />
-              </StackPanel>
-            </ToolTip.Tip>
-          </TextBlock>
-        </StackPanel>
-        <TextBox Name="FilterExpressionTextBox" PlaceholderText="e.g. @Safety and not @Deprecated" />
-
-        <TextBlock Text="View Name (optional)" />
-        <TextBox Name="DisplayNameTextBox" PlaceholderText="CustomView" />
-
-        <Button Name="PreviewCustomViewButton" Content="Preview" HorizontalAlignment="Stretch" />
-        <Button Name="CopyAsSysmlButton" Content="Copy as SysML" HorizontalAlignment="Stretch" />
-
-        <TextBlock Name="BuilderStatusTextBlock" TextWrapping="Wrap" Foreground="Red" />
-      </StackPanel>
-    </Border>
-
-    <Border Name="DiagramBorder" Background="White" ClipToBounds="True">
-      <Image Name="DiagramImage" Stretch="Uniform" />
-    </Border>
+    <dock:DockControl Name="WorkbenchDockControl" />
 
   </DockPanel>
 
