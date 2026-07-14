@@ -399,13 +399,15 @@ public sealed class DockTests : IDisposable
     /// <remarks>
     ///     Honesty caveat: headless Avalonia has no live pointer-input pipeline, so this test cannot reproduce the
     ///     exact reported <c>Avalonia.Controls.Selection.InternalSelectionModel</c>/<c>TabStrip</c> crash stack
-    ///     trace verbatim. What it does prove directly: (1) before the fix's <c>Dispatcher.UIThread.RunJobs()</c>
-    ///     pump runs, a Dock mutation driven by a background-thread-raised <c>TabsChanged</c> has not yet been
-    ///     applied - i.e. it is queued via <see cref="IUiDispatcher.Post" /> rather than applied synchronously
-    ///     on the background thread that raised it; and (2) once pumped, the handler is confirmed (via
-    ///     <c>Dispatcher.UIThread.CheckAccess()</c> captured at the moment it runs) to execute on the UI thread.
-    ///     This is the same thread-affinity contract Avalonia's <c>TabStrip</c>/<c>SelectionModel</c> requires and
-    ///     that the reported crash violates, even though the literal race condition itself is not reproduced.
+    ///     trace verbatim. What it does prove directly, via thread-identity facts rather than dispatcher-queue
+    ///     timing assumptions: (1) the second workspace open is genuinely driven from a non-UI thread (the
+    ///     captured background thread ID differs from the captured UI thread ID), so <c>TabsChanged</c> would be
+    ///     raised off the UI thread if it were not marshaled; and (2) once the UI thread's queued work is pumped
+    ///     via <c>Dispatcher.UIThread.RunJobs()</c>, the handler is confirmed - via both
+    ///     <c>Dispatcher.UIThread.CheckAccess()</c> and the handler's own captured managed thread ID - to have
+    ///     actually executed on the UI thread. This is the same thread-affinity contract Avalonia's
+    ///     <c>TabStrip</c>/<c>SelectionModel</c> requires and that the reported crash violates, even though the
+    ///     literal race condition itself is not reproduced.
     /// </remarks>
     [AvaloniaFact]
     public async Task MainWindowView_TabsChangedFromBackgroundThread_MarshalsDiagramDockMutationsOntoUiThread()
@@ -425,6 +427,8 @@ public sealed class DockTests : IDisposable
 
             // Arrange: a shell wired with the real Avalonia dispatcher, hosted in a real MainWindowView, with one
             // diagram tab already open against the first workspace.
+            var uiThreadId = Environment.CurrentManagedThreadId;
+
             using var shell = CreateShell(new AvaloniaUiDispatcher());
             var window = new MainWindowView(shell);
             window.Show();
@@ -440,22 +444,37 @@ public sealed class DockTests : IDisposable
             Assert.Single(dockFactory.DiagramDock.VisibleDockables!);
 
             var handlerRanOnUiThread = false;
-            shell.TabsChanged += (_, _) => handlerRanOnUiThread = Dispatcher.UIThread.CheckAccess();
+            var handlerThreadId = -1;
+            shell.TabsChanged += (_, _) =>
+            {
+                handlerRanOnUiThread = Dispatcher.UIThread.CheckAccess();
+                handlerThreadId = Environment.CurrentManagedThreadId;
+            };
 
             // Act: open a second, different workspace entirely from a background thread, so TabsChanged is
             // guaranteed to be raised off the UI thread if it is not marshaled through the injected dispatcher.
-            await Task.Run(() => shell.OpenWorkspaceAsync(secondRoot));
+            var backgroundThreadId = -1;
+            await Task.Run(() =>
+            {
+                backgroundThreadId = Environment.CurrentManagedThreadId;
+                return shell.OpenWorkspaceAsync(secondRoot);
+            });
 
-            // Assert (pre-pump): the Dock mutation has not happened yet - it is queued via the dispatcher, not
-            // applied inline on the background thread that raised TabsChanged.
-            Assert.Single(dockFactory.DiagramDock.VisibleDockables!);
+            // Assert: the triggering call genuinely executed off the UI thread, proving there was something to
+            // marshal (this replaces a prior pre-pump Dock-emptiness assertion, which assumed the dispatcher queue
+            // could not yet have been drained at this point - a false premise, since awaiting Task.Run's inner
+            // task resumes on the UI thread's SynchronizationContext and may opportunistically interleave with
+            // already-queued dispatcher jobs before this line runs).
+            Assert.NotEqual(uiThreadId, backgroundThreadId);
 
             // Act: pump the UI thread's queued work.
             Dispatcher.UIThread.RunJobs();
 
-            // Assert (post-pump): the marshaled handler ran on the UI thread, and Dock now reflects the new
-            // (empty, since ApplyWorkspaceSnapshot clears tabs) workspace state.
+            // Assert (post-pump): the marshaled handler ran on the UI thread - proven both by the CheckAccess()
+            // flag captured at the moment it ran and by its captured managed thread ID matching the UI thread's -
+            // and Dock now reflects the new (empty, since ApplyWorkspaceSnapshot clears tabs) workspace state.
             Assert.True(handlerRanOnUiThread);
+            Assert.Equal(uiThreadId, handlerThreadId);
             Assert.Empty(dockFactory.DiagramDock.VisibleDockables!);
 
             window.Close();
