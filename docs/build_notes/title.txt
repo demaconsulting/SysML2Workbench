@@ -1,0 +1,13 @@
+---
+title: "SysML2Workbench Build Notes"
+subtitle: "Cross-platform desktop viewer and IDE for SysML v2 models"
+author: "DEMA Consulting"
+description: "Build Notes for SysML2Workbench"
+lang: en-US
+keywords:
+  - Build Notes
+  - .NET
+  - Avalonia
+  - SysML v2
+  - SysML2Tools
+---

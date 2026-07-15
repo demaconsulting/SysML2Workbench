@@ -1,0 +1,28 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'WorkspaceSubsystem Requirements'
+        sections:
+          - title: 'WorkspaceModel Requirements'
+            requirements:
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-MaintainWorkspaceTree'
+                title: 'The WorkspaceModel shall maintain an in-memory representation of the open workspace folder and its tracked SysML files.'
+                justification: |
+                  Users interact with a folder-based workspace, so the unit must keep the current file tree available to the rest of the application.
+                tests:
+                  - 'WorkspaceModelTests.OpenWorkspace_BuildsTrackedFileTree'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-ResolveWorkspaceInputs'
+                title: 'The WorkspaceModel shall determine the set of model files to load by combining workspace discovery rules with SysML import resolution.'
+                justification: |
+                  The workbench must mirror the multi-file loading behavior users expect from existing SysML2Tools workflows.
+                tests:
+                  - 'WorkspaceModelTests.ResolveInputs_FindsDiscoveredAndImportedFiles'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-TrackPerFileLoadState'
+                title: 'The WorkspaceModel shall retain per-file load state, including successful parses and file-specific failures, so reloads can update only affected content.'
+                justification: |
+                  Incremental reload behavior depends on knowing the current state of each tracked file rather than recomputing the entire workspace blindly.
+                tests:
+                  - 'WorkspaceModelTests.ReloadFile_UpdatesOnlyAffectedFileState'

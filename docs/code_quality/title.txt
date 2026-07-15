@@ -1,0 +1,14 @@
+---
+title: "SysML2Workbench Code Quality Report"
+subtitle: "Cross-platform desktop viewer and IDE for SysML v2 models"
+author: "DEMA Consulting"
+description: "Code Quality Report for SysML2Workbench"
+lang: en-US
+keywords:
+  - Code Quality
+  - Static Analysis
+  - .NET
+  - Avalonia
+  - SysML v2
+  - SysML2Tools
+---

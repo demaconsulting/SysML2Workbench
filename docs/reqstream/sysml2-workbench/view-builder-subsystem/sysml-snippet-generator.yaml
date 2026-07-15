@@ -1,0 +1,30 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'ViewBuilderSubsystem Requirements'
+        sections:
+          - title: 'SysmlSnippetGenerator Requirements'
+            requirements:
+              - id: 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-EmitViewSnippet'
+                title: 'The SysmlSnippetGenerator shall emit copy-pasteable SysML view text for the current custom view definition.'
+                justification: |
+                  The product uses generated standard SysML text as the persistence path for GUI-authored custom views.
+                tests:
+                  - 'SysmlSnippetGeneratorTests.ExportDefinition_EmitsSysmlViewSnippet'
+
+              - id: 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-PreserveDefinitionSemantics'
+                title: 'The SysmlSnippetGenerator shall preserve the selected view kind, expose targets, and filter expression in the generated text.'
+                justification: |
+                  Exported text must faithfully represent the current GUI definition so users can promote it into model files without manual reconstruction.
+                tests:
+                  - 'SysmlSnippetGeneratorTests.ExportDefinition_PreservesKindTargetsAndFilter'
+
+              - id: 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-EmitRecursionKindForms'
+                title: 'The SysmlSnippetGenerator shall emit the correct SysML expose textual form for each of the four recursion kinds and optional bracket filter.'
+                justification: |
+                  SysML2Tools 0.1.0-beta.8 defines four distinct expose recursion kinds, two of which support an optional
+                  bracket-filter expression; exported text must use the exact textual form matching each target's selected
+                  kind and filter so it remains valid, semantically-correct SysML v2 syntax.
+                tests:
+                  - 'SysmlSnippetGeneratorTests.FormatExposeClause_EachRecursionKind_EmitsCorrectExposeStatement'

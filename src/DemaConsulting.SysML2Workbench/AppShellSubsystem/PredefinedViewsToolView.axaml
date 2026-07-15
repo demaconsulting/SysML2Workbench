@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DemaConsulting.SysML2Workbench.AppShellSubsystem"
+             x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.PredefinedViewsToolView"
+             x:DataType="local:PredefinedViewsToolViewModel">
+
+  <DockPanel Margin="4">
+    <TextBlock DockPanel.Dock="Top" Text="Predefined Views" FontWeight="Bold" />
+    <TextBlock DockPanel.Dock="Bottom" Name="StatusTextBlock" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="Red" />
+    <ListBox Name="PredefinedViewsListBox"
+             ItemsSource="{Binding AvailableViews}"
+             SelectedItem="{Binding SelectedView, Mode=TwoWay}"
+             DisplayMemberBinding="{Binding DisplayName}" />
+  </DockPanel>
+
+</UserControl>

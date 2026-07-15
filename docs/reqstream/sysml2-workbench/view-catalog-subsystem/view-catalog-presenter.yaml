@@ -1,0 +1,28 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'ViewCatalogSubsystem Requirements'
+        sections:
+          - title: 'ViewCatalogPresenter Requirements'
+            requirements:
+              - id: 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-ListDefinedViews'
+                title: 'The ViewCatalogPresenter shall list the predefined views defined in the loaded model that are supported by the workbench.'
+                justification: |
+                  The presenter is the unit responsible for exposing the model's available view definitions to the UI.
+                tests:
+                  - 'ViewCatalogPresenterTests.LoadedModel_ListsSupportedViewDefinitions'
+
+              - id: 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-DescribeViewKinds'
+                title: 'The ViewCatalogPresenter shall present each listed view with its view kind and display name.'
+                justification: |
+                  Users need enough metadata in the catalog to choose the correct diagram before rendering it.
+                tests:
+                  - 'ViewCatalogPresenterTests.LoadedModel_ShowsViewKindAndDisplayName'
+
+              - id: 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-TrackSelectedView'
+                title: 'The ViewCatalogPresenter shall publish the currently selected predefined view for downstream rendering.'
+                justification: |
+                  Rendering begins from a single active catalog selection, so the presenter must expose that selection change.
+                tests:
+                  - 'ViewCatalogPresenterTests.SelectView_PublishesCurrentSelection'

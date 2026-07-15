@@ -1,0 +1,13 @@
+---
+title: "SysML2Workbench User Guide"
+subtitle: "Cross-platform desktop viewer and IDE for SysML v2 models"
+author: "DEMA Consulting"
+description: "User Guide for SysML2Workbench"
+lang: en-US
+keywords:
+  - User Guide
+  - Desktop Application
+  - Avalonia
+  - SysML v2
+  - SysML2Tools
+---

@@ -1,0 +1,43 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'ViewBuilderSubsystem Requirements'
+        sections:
+          - title: 'ViewDefinitionModel Requirements'
+            requirements:
+              - id: 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreSelectedViewKind'
+                title: 'The ViewDefinitionModel shall store the currently selected custom view kind for the active session.'
+                justification: |
+                  The GUI builder needs a single source of truth for which type of diagram the user is constructing.
+                tests:
+                  - 'ViewDefinitionModelTests.ChangeViewKind_StoresCurrentSelection'
+
+              - id: 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeTargets'
+                title: 'The ViewDefinitionModel shall store one or more selected expose targets for the custom view definition.'
+                justification: |
+                  The architecture explicitly supports multi-target expose semantics, so the unit must preserve multiple selected targets.
+                tests:
+                  - 'ViewDefinitionModelTests.AddExposeTarget_StoresMultipleExposeTargetsWithoutDuplicates'
+                  - 'ViewDefinitionModelTests.RemoveExposeTarget_RemovesOnlyMatchingSelection'
+                  - 'ViewDefinitionModelTests.RemoveExposeTarget_UnknownQualifiedName_IsNoOp'
+
+              - id: 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeRecursionAndFilter'
+                title: 'The ViewDefinitionModel shall store an optional recursion kind and bracket-filter expression per expose target and reject bracket filters on non-recursive kinds.'
+                justification: |
+                  SysML2Tools 0.1.0-beta.8 exposes four distinct expose recursion kinds and an optional bracket-filter
+                  expression on the two recursive kinds; the builder must let users select a kind and filter per target and
+                  must flag combinations that are not valid SysML v2 syntax.
+                tests:
+                  - 'ViewDefinitionModelTests.SetExposeRecursionKind_ChangesSelectedTargetKind'
+                  - 'ViewDefinitionModelTests.SetExposeBracketFilter_SetsAndClearsExpression'
+                  - 'ViewDefinitionModelTests.ValidateAgainstWorkspace_ValidBracketFilterOnRecursiveTarget_ReturnsNoDiagnostics'
+                  - 'ViewDefinitionModelTests.ValidateAgainstWorkspace_InvalidBracketFilterExpression_ReturnsDiagnostic'
+                  - 'ViewDefinitionModelTests.ValidateAgainstWorkspace_BracketFilterOnNonRecursiveKind_ReturnsDiagnostic'
+
+              - id: 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-ReportDefinitionReadiness'
+                title: 'The ViewDefinitionModel shall report whether the current custom view definition contains enough information to render or export.'
+                justification: |
+                  The shell and snippet generator need to know when a user's current selections form a usable custom view definition.
+                tests:
+                  - 'ViewDefinitionModelTests.DefinitionState_ReportsRenderAndExportReadiness'

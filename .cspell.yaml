@@ -1,0 +1,69 @@
+---
+# Spell-Checking
+#
+# PURPOSE:
+# - Maintain professional documentation and code quality
+# - Catch spelling errors before publication
+# - Support consistent technical terminology usage
+# - NEVER add a misspelled word - fix the typo in the source instead
+# - NEVER add a British-English spelling - correct to US-English in the source
+# - PROPOSE only genuine technical terms/names as needed
+version: '0.2'
+language: en
+words:
+  - Argb
+  - axaml
+  - BGRA
+  - bursty
+  - buildmark
+  - Dema
+  - Dockable
+  - Dockables
+  - fileassert
+  - Hmmssfff
+  - LOCALAPPDATA
+  - Mvvm
+  - Pandoc
+  - pasteable
+  - postconditions
+  - renderable
+  - reparsed
+  - reparses
+  - reqstream
+  - retarget
+  - retargeted
+  - retargets
+  - reviewmark
+  - sarif
+  - sarifmark
+  - Skia
+  - slnx
+  - sonar
+  - sonarmark
+  - Stdlib
+  - sysml
+  - timeslice
+  - versionmark
+  - Weasyprint
+  - xunit
+  - Xunit
+  - yamlfix
+  - Avalonia
+  - Collapsable
+  - CommunityToolkit
+  - DemaConsulting
+  - SysML2
+  - SysML2Tools
+  - SysML2Workbench
+ignorePaths:
+  - '**/.git/**'
+  - '**/node_modules/**'
+  - '**/.venv/**'
+  - '**/thirdparty/**'
+  - '**/third-party/**'
+  - '**/3rd-party/**'
+  - '**/.agent-logs/**'
+  - '**/bin/**'
+  - '**/obj/**'
+  - '**/generated/**'
+  - package-lock.json

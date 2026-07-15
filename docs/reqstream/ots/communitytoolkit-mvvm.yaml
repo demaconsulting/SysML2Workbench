@@ -1,0 +1,19 @@
+---
+sections:
+  - title: 'OTS Software Requirements'
+    sections:
+      - title: 'CommunityToolkit.Mvvm Requirements'
+        requirements:
+          - id: 'CommunityToolkitMvvm-GenerateObservablePanelProperties'
+            title: 'The SysML2Workbench shall use CommunityToolkit.Mvvm''s [ObservableProperty] source generator to expose bindable state on its Dock panel view models.'
+            justification: |
+              The Dock panel view models rely on CommunityToolkit.Mvvm to generate bindable properties and change notification without hand-written boilerplate.
+            tests:
+              - 'DockTests.CreateLayout_ComposesFourPanelDockables'
+
+          - id: 'CommunityToolkitMvvm-NotifySelectionChanges'
+            title: 'The SysML2Workbench shall use CommunityToolkit.Mvvm-generated partial change handlers to react to panel selection changes and refresh the diagram.'
+            justification: |
+              Selecting a predefined view must update the diagram surface, which depends on the generated On<Property>Changed partial method being invoked.
+            tests:
+              - 'AvaloniaTests.MainWindow_HostsDiagramAndDiagnosticsPanels'

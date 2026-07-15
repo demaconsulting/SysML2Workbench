@@ -1,0 +1,35 @@
+---
+sections:
+  - title: 'OTS Software Requirements'
+    sections:
+      - title: 'Dock Requirements'
+        requirements:
+          - id: 'Dock-ComposeResizableDockLayout'
+            title: 'The SysML2Workbench shall use AvaloniaUI/Dock to compose its four Phase-0 panels into a resizable, floatable, closable layout.'
+            justification: |
+              Dock provides the panel-docking layout engine required to replace the fixed four-region layout with one users can resize, float, and close.
+            tests:
+              - 'DockTests.CreateLayout_ComposesFourPanelDockables'
+
+          - id: 'Dock-HostLayoutInDockControl'
+            title: 'The SysML2Workbench shall use Dock.Avalonia''s DockControl to host the composed panel layout inside the main window.'
+            justification: |
+              DockControl is the real Avalonia control that renders and manages the composed layout at runtime.
+            tests:
+              - 'DockTests.DockControl_HostsWorkbenchLayout'
+
+          - id: 'Dock-RestoreClosedTool'
+            title: 'The SysML2Workbench shall let a user restore a closed Dock tool panel to its original dock via a View menu, reusing the panel''s existing view model instance.'
+            justification: |
+              Dock's own chrome lets a user close a Tool panel, but without a restore mechanism the panel would be permanently lost for the rest of the session; a View menu backed by Dock's HideToolsOnClose/RestoreDockable pattern lets a closed panel be brought back without losing its in-progress state.
+            tests:
+              - 'DockTests.RestoreDockable_ReopensClosedToolInOriginalDock'
+
+          - id: 'Dock-PersistEmptyDocumentArea'
+            title: 'The SysML2Workbench shall keep the diagram document area visibly present in the layout even when zero diagram tabs are open, using Dock''s IsCollapsable flag.'
+            justification: |
+              Diagram documents have no restore path once closed (unlike Tool panels), so the diagram document area must remain a first-class, always-present part of the layout at zero open tabs rather than collapsing/disappearing, which would otherwise create a dead end once the last diagram tab closed.
+            tests:
+              - 'DockTests.DocumentDock_StaysInLayoutTree_AfterLastDocumentCloses'
+              - 'DockTests.AddDockable_And_CloseDockable_DynamicallyManageDiagramDocuments'
+              - 'DockTests.FocusedDockableChanged_FiresForActiveDockableChangesOnDiagramDocuments'

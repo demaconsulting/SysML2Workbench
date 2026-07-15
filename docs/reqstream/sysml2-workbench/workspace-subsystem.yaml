@@ -1,0 +1,38 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'WorkspaceSubsystem Requirements'
+        requirements:
+          - id: 'SysML2Workbench-WorkspaceSubsystem-ManageWorkspace'
+            title: 'The WorkspaceSubsystem shall maintain the currently open folder as a multi-file SysML workspace with file discovery and import resolution.'
+            justification: |
+              The subsystem owns the live workspace boundary described in the architecture and decomposes the system requirement for opening folder-based models.
+            children:
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-MaintainWorkspaceTree'
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-ResolveWorkspaceInputs'
+            tests:
+              - 'WorkspaceSubsystemTests.OpenWorkspace_BuildsWorkspaceState'
+
+          - id: 'SysML2Workbench-WorkspaceSubsystem-RefreshWorkspaceState'
+            title: 'The WorkspaceSubsystem shall detect external workspace changes, update affected model state, and keep workspace diagnostics current for downstream UI consumers.'
+            justification: |
+              Phase 0 requires live refresh behavior rather than one-time loading, so the subsystem must coordinate change detection and diagnostic updates.
+            children:
+              - 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-DetectExternalChanges'
+              - 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-CoalesceReloadTriggers'
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-TrackPerFileLoadState'
+              - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-CollectWorkspaceDiagnostics'
+              - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-PublishDeterministicDiagnostics'
+            tests:
+              - 'WorkspaceSubsystemTests.ExternalChange_RefreshesWorkspaceState'
+
+          - id: 'SysML2Workbench-WorkspaceSubsystem-AggregateWorkspaceDiagnostics'
+            title: 'The WorkspaceSubsystem shall expose a unified set of workspace diagnostics suitable for display without requiring per-file inspection.'
+            justification: |
+              The system-level diagnostics experience depends on a single subsystem contract that consolidates parser and reference issues across the workspace.
+            children:
+              - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-CollectWorkspaceDiagnostics'
+              - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-PublishDeterministicDiagnostics'
+            tests:
+              - 'WorkspaceSubsystemTests.OpenWorkspace_ProducesUnifiedDiagnostics'

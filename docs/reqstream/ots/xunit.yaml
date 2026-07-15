@@ -1,0 +1,19 @@
+---
+sections:
+  - title: 'OTS Software Requirements'
+    sections:
+      - title: 'XUnit Requirements'
+        requirements:
+          - id: 'XUnit-ExecuteAutomatedVerification'
+            title: 'The SysML2Workbench repository shall use xUnit to execute automated verification for system, subsystem, unit, and OTS integration behavior.'
+            justification: |
+              The repository's compliance workflow needs a test framework that can run the automated evidence linked from requirements.
+            tests:
+              - 'XUnitTests.RunVerificationSuite_ReportsPassingResults'
+
+          - id: 'XUnit-ProvideTraceableTestEvidence'
+            title: 'The SysML2Workbench repository shall use xUnit test results as traceable evidence for ReqStream-linked requirement verification.'
+            justification: |
+              ReqStream traceability depends on consistent automated test method names and pass/fail results from the repository's verification framework.
+            tests:
+              - 'XUnitTests.GenerateResults_ProvideReqStreamEvidence'

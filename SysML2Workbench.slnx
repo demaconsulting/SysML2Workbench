@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DemaConsulting.SysML2Workbench/DemaConsulting.SysML2Workbench.csproj" />
+    <Project Path="src/DemaConsulting.SysML2Workbench.Desktop/DemaConsulting.SysML2Workbench.Desktop.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/DemaConsulting.SysML2Workbench.Tests/DemaConsulting.SysML2Workbench.Tests.csproj" />
+    <Project Path="test/OtsSoftwareTests/OtsSoftwareTests.csproj" />
+  </Folder>
+</Solution>

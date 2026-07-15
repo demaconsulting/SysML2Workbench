@@ -1,0 +1,56 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    requirements:
+      - id: 'SysML2Workbench-ManageWorkspace'
+        title: 'The SysML2Workbench shall open a folder as a live workspace, discover SysML model files, resolve imports, and refresh loaded content when workspace files change.'
+        justification: |
+          Phase 0 is centered on local multi-file model viewing rather than single-file inspection, so users need the desktop application to mirror the SysML2Tools CLI workspace model and stay current with external edits.
+        children:
+          - 'SysML2Workbench-WorkspaceSubsystem-ManageWorkspace'
+          - 'SysML2Workbench-WorkspaceSubsystem-RefreshWorkspaceState'
+        tests:
+          - 'SysML2WorkbenchTests.OpenWorkspace_LoadsAndRefreshesWorkspace'
+
+      - id: 'SysML2Workbench-BrowsePredefinedViews'
+        title: 'The SysML2Workbench shall let users browse supported predefined SysML views from the loaded model and render the selected view in the desktop shell.'
+        justification: |
+          A core value of the application is turning existing model-defined views into an interactive desktop experience without requiring the command-line renderer.
+        children:
+          - 'SysML2Workbench-ViewCatalogSubsystem-EnumeratePredefinedViews'
+          - 'SysML2Workbench-LayoutRenderingSubsystem-RenderSelectedView'
+          - 'SysML2Workbench-AppShellSubsystem-PresentSelectedView'
+        tests:
+          - 'SysML2WorkbenchTests.SelectPredefinedView_RendersDiagram'
+
+      - id: 'SysML2Workbench-AuthorCustomViews'
+        title: 'The SysML2Workbench shall let users build ad hoc custom views, preview them, and export equivalent SysML view text for promotion into model files.'
+        justification: |
+          The architecture explicitly adds GUI-driven custom view authoring while avoiding a tool-specific persistence format by exporting standard SysML text.
+        children:
+          - 'SysML2Workbench-ViewBuilderSubsystem-CaptureCustomViewDefinition'
+          - 'SysML2Workbench-ViewBuilderSubsystem-GenerateCustomViewSnippet'
+          - 'SysML2Workbench-LayoutRenderingSubsystem-RenderCustomView'
+          - 'SysML2Workbench-AppShellSubsystem-HostCustomViewWorkflow'
+        tests:
+          - 'SysML2WorkbenchTests.BuildCustomView_PreviewsAndExportsSnippet'
+
+      - id: 'SysML2Workbench-PresentWorkspaceDiagnostics'
+        title: 'The SysML2Workbench shall collect parser and reference-resolution diagnostics for the whole workspace and present them in a dedicated diagnostics panel.'
+        justification: |
+          Users need a consolidated view of workspace problems so they can understand model load failures and broken references without manually inspecting every file.
+        children:
+          - 'SysML2Workbench-WorkspaceSubsystem-AggregateWorkspaceDiagnostics'
+          - 'SysML2Workbench-DiagnosticsPanelSubsystem-DisplayWorkspaceDiagnostics'
+        tests:
+          - 'SysML2WorkbenchTests.OpenWorkspace_ShowsWorkspaceDiagnostics'
+
+      - id: 'SysML2Workbench-OperateAsDesktopShell'
+        title: 'The SysML2Workbench shall provide a cross-platform desktop shell with local rolling logs for navigating workspaces, rendered diagrams, and diagnostics during a user session.'
+        justification: |
+          The product is a desktop application, so it must provide the shell and operational logging needed for day-to-day use and user-attachable bug reports.
+        children:
+          - 'SysML2Workbench-LoggingSubsystem-PersistOperationalEvents'
+          - 'SysML2Workbench-AppShellSubsystem-CoordinateSessionWorkspace'
+        tests:
+          - 'SysML2WorkbenchTests.StartSession_OpensShellAndWritesOperationalLogs'

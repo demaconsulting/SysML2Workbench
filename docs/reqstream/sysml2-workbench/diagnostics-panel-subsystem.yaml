@@ -1,0 +1,23 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'DiagnosticsPanelSubsystem Requirements'
+        requirements:
+          - id: 'SysML2Workbench-DiagnosticsPanelSubsystem-DisplayWorkspaceDiagnostics'
+            title: 'The DiagnosticsPanelSubsystem shall display each workspace diagnostic with message, severity, and source location details.'
+            justification: |
+              A dedicated diagnostics panel is part of the Phase 0 desktop workflow and must surface enough context for users to understand model problems.
+            children:
+              - 'SysML2Workbench-DiagnosticsPanelSubsystem-DiagnosticsListView-DisplayDiagnosticDetails'
+            tests:
+              - 'DiagnosticsPanelSubsystemTests.BindDiagnostics_ShowsDiagnosticDetails'
+
+          - id: 'SysML2Workbench-DiagnosticsPanelSubsystem-RefreshDisplayedDiagnostics'
+            title: 'The DiagnosticsPanelSubsystem shall refresh the displayed diagnostic list when the aggregated workspace diagnostics change.'
+            justification: |
+              Live workspace reloading is only useful if updated diagnostics are reflected in the panel without reopening the workspace.
+            children:
+              - 'SysML2Workbench-DiagnosticsPanelSubsystem-DiagnosticsListView-RefreshDiagnosticCollection'
+            tests:
+              - 'DiagnosticsPanelSubsystemTests.DiagnosticsChanged_RefreshesList'

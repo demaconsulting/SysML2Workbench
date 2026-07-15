@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DemaConsulting.SysML2Workbench.AppShellSubsystem"
+             x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.DiagnosticsToolView"
+             x:DataType="local:DiagnosticsToolViewModel">
+
+  <DockPanel Margin="4">
+    <TextBlock DockPanel.Dock="Top" Text="Diagnostics" FontWeight="Bold" />
+    <ListBox Name="DiagnosticsListBox" ItemsSource="{Binding VisibleDiagnostics}" />
+  </DockPanel>
+
+</UserControl>
