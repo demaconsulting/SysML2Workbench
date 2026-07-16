@@ -15,9 +15,9 @@
     <PackageReference Include="Dock.Model.Mvvm" Version="12.0.0.2" />
     <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="12.0.0.2" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="DemaConsulting.SysML2Tools.Core" Version="0.1.0-beta.10" />
-    <PackageReference Include="DemaConsulting.SysML2Tools.Language" Version="0.1.0-beta.10" />
-    <PackageReference Include="DemaConsulting.SysML2Tools.Stdlib" Version="0.1.0-beta.10" />
+    <PackageReference Include="DemaConsulting.SysML2Tools.Core" Version="0.1.0-beta.11" />
+    <PackageReference Include="DemaConsulting.SysML2Tools.Language" Version="0.1.0-beta.11" />
+    <PackageReference Include="DemaConsulting.SysML2Tools.Stdlib" Version="0.1.0-beta.11" />
     <PackageReference Include="DemaConsulting.Rendering.Svg" Version="0.1.0-beta.6" />
   </ItemGroup>
 
