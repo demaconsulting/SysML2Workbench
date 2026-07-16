@@ -12,6 +12,10 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of SysML2 Workbench is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
+    <!-- Sets the icon shown in Add/Remove Programs (Apps & Features). -->
+    <Icon Id="AppIcon" SourceFile="$(SysML2WorkbenchIconFile)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
     <Feature Id="MainFeature" Title="SysML2 Workbench" Level="1">
       <ComponentGroupRef Id="ApplicationFiles" />
       <ComponentRef Id="ApplicationShortcut" />

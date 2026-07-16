@@ -18,8 +18,11 @@
     <Platform Condition="'$(Platform)' == '' Or '$(Platform)' == 'AnyCPU'">x64</Platform>
     <!-- Published self-contained win-x64 application output to harvest into the MSI. -->
     <SysML2WorkbenchPublishDir Condition="'$(SysML2WorkbenchPublishDir)' == ''">$(MSBuildThisFileDirectory)..\..\publish\win-x64\</SysML2WorkbenchPublishDir>
-    <!-- Exposes MSBuild properties as WiX preprocessor variables ($(Version), $(SysML2WorkbenchPublishDir) in .wxs). -->
-    <DefineConstants>Version=$(Version);SysML2WorkbenchPublishDir=$(SysML2WorkbenchPublishDir)</DefineConstants>
+    <!-- DEMA Consulting logo (repository-root Icon.ico), used for the Add/Remove Programs icon. -->
+    <SysML2WorkbenchIconFile Condition="'$(SysML2WorkbenchIconFile)' == ''">$(MSBuildThisFileDirectory)..\..\Icon.ico</SysML2WorkbenchIconFile>
+    <!-- Exposes MSBuild properties as WiX preprocessor variables ($(Version), $(SysML2WorkbenchPublishDir),
+         $(SysML2WorkbenchIconFile) in .wxs). -->
+    <DefineConstants>Version=$(Version);SysML2WorkbenchPublishDir=$(SysML2WorkbenchPublishDir);SysML2WorkbenchIconFile=$(SysML2WorkbenchIconFile)</DefineConstants>
   </PropertyGroup>
 
 </Project>
