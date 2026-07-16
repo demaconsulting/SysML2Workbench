@@ -19,6 +19,7 @@ sections:
                   Exported text must faithfully represent the current GUI definition so users can promote it into model files without manual reconstruction.
                 tests:
                   - 'SysmlSnippetGeneratorTests.ExportDefinition_PreservesKindTargetsAndFilter'
+                  - 'SysmlSnippetGeneratorTests.GenerateSnippet_SameQualifiedNameTwoRecursionKinds_EmitsBothExposeClauses'
 
               - id: 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-EmitRecursionKindForms'
                 title: 'The SysmlSnippetGenerator shall emit the correct SysML expose textual form for each of the four recursion kinds and optional bracket filter.'

@@ -150,7 +150,7 @@ public partial class CustomViewBuilderToolView : UserControl
     ///     Rebuilds the "Selected Targets" panel's rows from the builder definition's current expose targets.
     ///     Each row is constructed directly in code (no data-binding/template framework) so its recursion-kind
     ///     <see cref="ComboBox" />, bracket-filter <see cref="TextBox" />, and Remove <see cref="Button" /> can
-    ///     close over the row's own qualified name and mutate the builder definition directly.
+    ///     close over the row's own qualified name and recursion kind and mutate the builder definition directly.
     /// </summary>
     private void RefreshSelectedExposeTargetsPanel()
     {
@@ -166,6 +166,7 @@ public partial class CustomViewBuilderToolView : UserControl
         foreach (var selection in builderDefinition.ExposeTargets)
         {
             var qualifiedName = selection.QualifiedName;
+            var currentKind = selection.RecursionKind;
 
             var nameText = new TextBlock { Text = qualifiedName, FontWeight = FontWeight.Bold, TextWrapping = TextWrapping.Wrap };
 
@@ -182,14 +183,14 @@ public partial class CustomViewBuilderToolView : UserControl
                     return;
                 }
 
-                builderDefinition.SetExposeRecursionKind(qualifiedName, RecursionKindOptions[kindComboBox.SelectedIndex].Kind);
+                builderDefinition.SetExposeRecursionKind(qualifiedName, currentKind, RecursionKindOptions[kindComboBox.SelectedIndex].Kind);
                 RefreshSelectedExposeTargetsPanel();
             };
 
             var removeButton = new Button { Content = "Remove" };
             removeButton.Click += (_, _) =>
             {
-                builderDefinition.RemoveExposeTarget(qualifiedName);
+                builderDefinition.RemoveExposeTarget(qualifiedName, currentKind);
                 RefreshSelectedExposeTargetsPanel();
             };
 
@@ -205,7 +206,7 @@ public partial class CustomViewBuilderToolView : UserControl
                 IsEnabled = isRecursive,
             };
             ToolTip.SetTip(filterTextBox, "Narrows this target's expose::** / ::*::** membership to elements matching a SysML v2 filter expression (Phase 1 subset). Only applies to the two recursive recursion kinds.");
-            filterTextBox.LostFocus += (_, _) => builderDefinition.SetExposeBracketFilter(qualifiedName, filterTextBox.Text);
+            filterTextBox.LostFocus += (_, _) => builderDefinition.SetExposeBracketFilter(qualifiedName, currentKind, filterTextBox.Text);
 
             var row = new Border
             {

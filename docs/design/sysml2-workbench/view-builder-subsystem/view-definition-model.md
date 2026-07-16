@@ -45,31 +45,52 @@ a named snippet.
 - *Returns*: `void` — state is updated in place.
 - *Preconditions*: `qualifiedName` is not null or whitespace.
 - *Postconditions*: The target is added with `RecursionKind` defaulted to
-  `MembershipRecursive`, unless already selected, in which case the existing
-  selection (including its recursion kind and bracket filter) is preserved.
+  `MembershipRecursive`, unless a selection already exists for the exact
+  (`qualifiedName`, `MembershipRecursive`) pair, in which case the existing
+  selection (including its bracket filter) is preserved rather than reset. If
+  `qualifiedName` is already selected under a *different* recursion kind, a
+  second, independent selection is added for the same qualified name — this
+  is valid SysML v2 (for example both `expose PublishingSubsystem;` and
+  `expose PublishingSubsystem::*;` for the same package). Since there are
+  only four possible recursion kinds, at most four selections can ever exist
+  for one qualified name; once all four are taken, this remains a safe no-op.
 
-**RemoveExposeTarget**: Removes a qualified name from the `expose` target set.
+**RemoveExposeTarget**: Removes a qualified name/recursion kind pair from the
+`expose` target set.
 
-- *Parameters*: `QualifiedName qualifiedName` — previously-added target.
+- *Parameters*: `QualifiedName qualifiedName` — previously-added target;
+  `ExposeRecursionKind recursionKind` — recursion kind of the selection to
+  remove.
 - *Returns*: `void` — state is updated in place.
-- *Postconditions*: The matching selection, if any, is removed; a no-op
-  otherwise.
+- *Postconditions*: The selection matching both `qualifiedName` and
+  `recursionKind` is removed, if any; a no-op otherwise. Any other selection
+  sharing the same `qualifiedName` under a different recursion kind is left
+  untouched.
 
 **SetExposeRecursionKind**: Changes a previously-added target's recursion kind.
 
-- *Parameters*: `QualifiedName qualifiedName`, `ExposeRecursionKind kind`.
+- *Parameters*: `QualifiedName qualifiedName`, `ExposeRecursionKind
+  currentRecursionKind` — recursion kind of the selection to change,
+  `ExposeRecursionKind newRecursionKind` — new recursion kind.
 - *Returns*: `void` — state is updated in place.
-- *Postconditions*: The matching selection's `RecursionKind` is updated; a
-  no-op if the qualified name is not currently selected.
+- *Postconditions*: The selection matching (`qualifiedName`,
+  `currentRecursionKind`) has its `RecursionKind` updated to
+  `newRecursionKind`; a no-op if no selection matches that pair. Also a no-op
+  if a *different* selection already exists for (`qualifiedName`,
+  `newRecursionKind`): applying the change would otherwise collide with that
+  sibling selection, so it is rejected rather than creating a duplicate pair
+  or silently clobbering the sibling.
 
 **SetExposeBracketFilter**: Sets or clears a previously-added target's optional
 bracket-filter expression.
 
-- *Parameters*: `QualifiedName qualifiedName`, `string? expression`.
+- *Parameters*: `QualifiedName qualifiedName`, `ExposeRecursionKind
+  recursionKind` — recursion kind of the selection to update, `string?
+  expression`.
 - *Returns*: `void` — state is updated in place.
-- *Postconditions*: The matching selection's `BracketFilterExpression` is
-  updated (or cleared, if null/whitespace); a no-op if the qualified name is
-  not currently selected. Setting a bracket filter on a
+- *Postconditions*: The selection matching (`qualifiedName`, `recursionKind`)
+  has its `BracketFilterExpression` updated (or cleared, if null/whitespace);
+  a no-op if no selection matches that pair. Setting a bracket filter on a
   `MembershipExact`/`NamespaceDirectChildren` target is accepted here but
   reported as an error diagnostic by `ValidateAgainstWorkspace`.
 
@@ -89,7 +110,8 @@ missing view kinds, empty target sets, or invalid filter expressions as
 validation failures rather than exceptions. Resolution failures caused by a
 stale workspace snapshot are surfaced back to the caller so the UI can prompt
 for a refresh. The model never silently changes a user's chosen targets except
-to remove exact duplicates during normalization. A bracket-filter expression
+to remove exact (qualified name, recursion kind) duplicates during
+normalization. A bracket-filter expression
 set on a `MembershipExact` or `NamespaceDirectChildren` target is reported as
 a validation error, since bracket filters are only valid SysML v2 syntax on
 the two recursive expose forms.

@@ -20,3 +20,4 @@ sections:
                 tests:
                   - 'LayoutInvokerTests.RenderCustomView_SupportsPanAndZoom'
                   - 'LayoutInvokerTests.RenderCustomView_ScopesOutputToSelectedTargetsOnly'
+                  - 'LayoutInvokerTests.RenderCustomView_SameQualifiedNameTwoRecursionKinds_RendersWithoutError'

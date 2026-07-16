@@ -36,3 +36,8 @@ target, and the optional filter expression. Verified by
 **FormatExposeClause_EachRecursionKind_EmitsCorrectExposeStatement**: Formatting a single expose clause emits the
 correct textual form for each of the four recursion kinds, with and without a bracket-filter expression (six textual
 forms in total). Verified by `SysmlSnippetGeneratorTests.FormatExposeClause_EachRecursionKind_EmitsCorrectExposeStatement`.
+
+**GenerateSnippet_SameQualifiedNameTwoRecursionKinds_EmitsBothExposeClauses**: A definition with the same qualified
+name exposed twice under different recursion kinds emits both expose clauses, matching the valid SysML v2 pattern of
+exposing the same package both exactly and via its direct children. Verified by
+`SysmlSnippetGeneratorTests.GenerateSnippet_SameQualifiedNameTwoRecursionKinds_EmitsBothExposeClauses`.

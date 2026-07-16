@@ -62,7 +62,11 @@ public sealed class ViewDefinitionModel
     ];
 
     /// <summary>
-    ///     Ordered, duplicate-free expose targets, keyed by <see cref="ExposeTargetSelection.QualifiedName" />.
+    ///     Ordered, duplicate-free expose targets, keyed by the pair of
+    ///     (<see cref="ExposeTargetSelection.QualifiedName" />, <see cref="ExposeTargetSelection.RecursionKind" />).
+    ///     This allows the same qualified name to appear more than once as long as each occurrence uses a
+    ///     distinct recursion kind (for example both <c>expose PublishingSubsystem;</c> and
+    ///     <c>expose PublishingSubsystem::*;</c> for the same package), matching valid SysML v2 semantics.
     /// </summary>
     private List<ExposeTargetSelection> _exposeTargets = [];
 
@@ -117,9 +121,14 @@ public sealed class ViewDefinitionModel
     ///     <see cref="ExposeRecursionKind.MembershipRecursive" /> (matching this unit's prior de-facto behavior).
     /// </summary>
     /// <remarks>
-    ///     If <paramref name="qualifiedName" /> is already selected, this is a no-op: the existing selection
-    ///     (including any previously-set recursion kind or bracket filter) is preserved rather than reset, so
-    ///     re-adding an already-present target from the UI never silently discards prior configuration.
+    ///     If a selection with the same <paramref name="qualifiedName" /> AND
+    ///     <see cref="ExposeRecursionKind.MembershipRecursive" /> already exists, this is a no-op: the existing
+    ///     selection (including any previously-set bracket filter) is preserved rather than reset, so re-adding
+    ///     an already-present target from the UI never silently discards prior configuration. If
+    ///     <paramref name="qualifiedName" /> is already selected under a <em>different</em> recursion kind (for
+    ///     example <see cref="ExposeRecursionKind.NamespaceDirectChildren" />), a second, independent selection is
+    ///     added for the same qualified name — this is valid SysML v2 (for example both
+    ///     <c>expose PublishingSubsystem;</c> and <c>expose PublishingSubsystem::*;</c> for the same package).
     /// </remarks>
     /// <param name="qualifiedName">Qualified name of the package or element to expose.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="qualifiedName" /> is null or whitespace.</exception>
@@ -127,7 +136,7 @@ public sealed class ViewDefinitionModel
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(qualifiedName);
 
-        if (_exposeTargets.Any(t => t.QualifiedName == qualifiedName))
+        if (_exposeTargets.Any(t => t.QualifiedName == qualifiedName && t.RecursionKind == ExposeRecursionKind.MembershipRecursive))
         {
             return;
         }
@@ -136,62 +145,78 @@ public sealed class ViewDefinitionModel
     }
 
     /// <summary>
-    ///     Removes a qualified name from the <c>expose</c> target set.
+    ///     Removes a qualified name/recursion kind pair from the <c>expose</c> target set.
     /// </summary>
     /// <remarks>
-    ///     A no-op when <paramref name="qualifiedName" /> is not currently selected, so callers do not need to
-    ///     guard the call with a prior existence check.
+    ///     A no-op when no selection matches the given (<paramref name="qualifiedName" />,
+    ///     <paramref name="recursionKind" />) pair, so callers do not need to guard the call with a prior
+    ///     existence check. Only the matching selection is removed; any other selection sharing the same
+    ///     <paramref name="qualifiedName" /> but a different recursion kind is left untouched.
     /// </remarks>
     /// <param name="qualifiedName">Qualified name of the previously-added target to remove.</param>
+    /// <param name="recursionKind">Recursion kind of the previously-added target to remove.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="qualifiedName" /> is null or whitespace.</exception>
-    public void RemoveExposeTarget(string qualifiedName)
+    public void RemoveExposeTarget(string qualifiedName, ExposeRecursionKind recursionKind)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(qualifiedName);
 
-        _exposeTargets.RemoveAll(t => t.QualifiedName == qualifiedName);
+        _exposeTargets.RemoveAll(t => t.QualifiedName == qualifiedName && t.RecursionKind == recursionKind);
     }
 
     /// <summary>
     ///     Changes the recursion kind of a previously-added expose target.
     /// </summary>
     /// <remarks>
-    ///     A no-op when <paramref name="qualifiedName" /> is not currently selected.
+    ///     A no-op when no selection matches the given (<paramref name="qualifiedName" />,
+    ///     <paramref name="currentRecursionKind" />) pair. Also a no-op when a <em>different</em> selection
+    ///     already exists for (<paramref name="qualifiedName" />, <paramref name="newRecursionKind" />): changing
+    ///     the matched selection's kind would otherwise collide with that sibling selection, so the change is
+    ///     rejected rather than creating a duplicate pair or silently clobbering the sibling.
     /// </remarks>
     /// <param name="qualifiedName">Qualified name of the previously-added target.</param>
-    /// <param name="kind">New recursion kind for the target.</param>
+    /// <param name="currentRecursionKind">Current recursion kind of the target to change.</param>
+    /// <param name="newRecursionKind">New recursion kind for the target.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="qualifiedName" /> is null or whitespace.</exception>
-    public void SetExposeRecursionKind(string qualifiedName, ExposeRecursionKind kind)
+    public void SetExposeRecursionKind(string qualifiedName, ExposeRecursionKind currentRecursionKind, ExposeRecursionKind newRecursionKind)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(qualifiedName);
 
-        var index = _exposeTargets.FindIndex(t => t.QualifiedName == qualifiedName);
+        var index = _exposeTargets.FindIndex(t => t.QualifiedName == qualifiedName && t.RecursionKind == currentRecursionKind);
         if (index < 0)
         {
             return;
         }
 
-        _exposeTargets[index] = _exposeTargets[index] with { RecursionKind = kind };
+        if (currentRecursionKind != newRecursionKind &&
+            _exposeTargets.Any(t => t.QualifiedName == qualifiedName && t.RecursionKind == newRecursionKind))
+        {
+            return;
+        }
+
+        _exposeTargets[index] = _exposeTargets[index] with { RecursionKind = newRecursionKind };
     }
 
     /// <summary>
     ///     Sets or clears the optional bracket-filter expression of a previously-added expose target.
     /// </summary>
     /// <remarks>
-    ///     A no-op when <paramref name="qualifiedName" /> is not currently selected. Setting a bracket-filter
-    ///     expression on a target whose recursion kind is <see cref="ExposeRecursionKind.MembershipExact" /> or
+    ///     A no-op when no selection matches the given (<paramref name="qualifiedName" />,
+    ///     <paramref name="recursionKind" />) pair. Setting a bracket-filter expression on a target whose
+    ///     recursion kind is <see cref="ExposeRecursionKind.MembershipExact" /> or
     ///     <see cref="ExposeRecursionKind.NamespaceDirectChildren" /> is permitted by this mutator (it does not
     ///     validate the combination) but is reported as an error diagnostic by
     ///     <see cref="ValidateAgainstWorkspace" />, since bracket filters are only valid SysML v2 syntax on the
     ///     two recursive expose forms.
     /// </remarks>
     /// <param name="qualifiedName">Qualified name of the previously-added target.</param>
+    /// <param name="recursionKind">Recursion kind of the previously-added target.</param>
     /// <param name="expression">Bracket-filter expression text, or <see langword="null" />/whitespace to clear it.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="qualifiedName" /> is null or whitespace.</exception>
-    public void SetExposeBracketFilter(string qualifiedName, string? expression)
+    public void SetExposeBracketFilter(string qualifiedName, ExposeRecursionKind recursionKind, string? expression)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(qualifiedName);
 
-        var index = _exposeTargets.FindIndex(t => t.QualifiedName == qualifiedName);
+        var index = _exposeTargets.FindIndex(t => t.QualifiedName == qualifiedName && t.RecursionKind == recursionKind);
         if (index < 0)
         {
             return;

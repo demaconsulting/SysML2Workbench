@@ -124,6 +124,32 @@ public sealed class SysmlSnippetGeneratorTests
     }
 
     /// <summary>
+    ///     Validates that a definition with the same qualified name exposed twice under different recursion
+    ///     kinds emits both expose clauses, matching the valid SysML v2 pattern of exposing the same package
+    ///     both exactly and via its direct children (for example <c>expose PublishingSubsystem;</c> and
+    ///     <c>expose PublishingSubsystem::*;</c>).
+    /// </summary>
+    [Fact]
+    public void GenerateSnippet_SameQualifiedNameTwoRecursionKinds_EmitsBothExposeClauses()
+    {
+        // Arrange: a definition exposing the same qualified name under two different recursion kinds
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.Interconnection);
+        definition.AddExposeTarget("PublishingSubsystem");
+        definition.SetExposeRecursionKind("PublishingSubsystem", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.MembershipExact);
+        definition.AddExposeTarget("PublishingSubsystem");
+        definition.SetExposeRecursionKind("PublishingSubsystem", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.NamespaceDirectChildren);
+        var generator = new SysmlSnippetGenerator();
+
+        // Act: generate the snippet
+        var snippet = generator.GenerateSnippet(definition);
+
+        // Assert: both expose clauses are emitted verbatim
+        Assert.Contains("expose PublishingSubsystem;", snippet);
+        Assert.Contains("expose PublishingSubsystem::*;", snippet);
+    }
+
+    /// <summary>
     ///     Validates that formatting a single expose clause emits the correct textual form for each of the four
     ///     recursion kinds, with and without a bracket-filter expression.
     /// </summary>

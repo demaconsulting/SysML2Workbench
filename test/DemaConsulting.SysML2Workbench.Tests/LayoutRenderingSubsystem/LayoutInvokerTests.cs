@@ -1,3 +1,4 @@
+using DemaConsulting.SysML2Tools.Semantic.Model;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
 using DemaConsulting.SysML2Workbench.ViewBuilderSubsystem;
 using DemaConsulting.SysML2Workbench.ViewCatalogSubsystem;
@@ -137,5 +138,33 @@ public sealed class LayoutInvokerTests : IDisposable
         // is scoped, not rendering the whole workspace
         Assert.Contains("Engine", svg);
         Assert.DoesNotContain("Wheel", svg);
+    }
+
+    /// <summary>
+    ///     Validates that a custom view exposing the same qualified name twice under two different recursion
+    ///     kinds renders without error, covering the valid SysML v2 pattern of exposing the same package both
+    ///     exactly and via its direct children (for example <c>expose PublishingSubsystem;</c> and
+    ///     <c>expose PublishingSubsystem::*;</c>).
+    /// </summary>
+    [Fact]
+    public async Task RenderCustomView_SameQualifiedNameTwoRecursionKinds_RendersWithoutError()
+    {
+        // Arrange: a custom view definition exposing the same qualified name under two recursion kinds
+        var snapshot = await LoadSampleWorkspaceAsync();
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.General);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.MembershipExact);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.NamespaceDirectChildren);
+        Assert.Equal(2, definition.ExposeTargets.Count(t => t.QualifiedName == "Sample::Engine"));
+        var invoker = new LayoutInvoker();
+
+        // Act: render the custom view
+        var svg = invoker.RenderCustomView(snapshot.Workspace, definition);
+
+        // Assert: rendering succeeds and produces SVG containing the shared target
+        Assert.Contains("<svg", svg, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Engine", svg);
     }
 }
