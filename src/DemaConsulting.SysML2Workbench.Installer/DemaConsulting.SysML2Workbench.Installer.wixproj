@@ -7,9 +7,9 @@
 
     This project is intentionally NOT included in SysML2Workbench.slnx: MSI generation
     is Windows-only (Windows Installer format dependency), so it is built explicitly by
-    the package-msi CI job via `dotnet build` against this .wixproj path rather than as
-    part of a solution-wide `dotnet build`/`dotnet restore` that must also succeed on
-    Linux/macOS runners.
+    the build job's windows-latest matrix leg via `dotnet build` against this .wixproj
+    path rather than as part of a solution-wide `dotnet build`/`dotnet restore` that
+    must also succeed on Linux/macOS runners.
   -->
 
   <PropertyGroup>
@@ -18,12 +18,8 @@
     <Platform Condition="'$(Platform)' == '' Or '$(Platform)' == 'AnyCPU'">x64</Platform>
     <!-- Published self-contained win-x64 application output to harvest into the MSI. -->
     <SysML2WorkbenchPublishDir Condition="'$(SysML2WorkbenchPublishDir)' == ''">$(MSBuildThisFileDirectory)..\..\publish\win-x64\</SysML2WorkbenchPublishDir>
-    <!-- Exposes the MSBuild Version property as a WiX preprocessor variable ($(Version) in .wxs). -->
-    <DefineConstants>Version=$(Version)</DefineConstants>
+    <!-- Exposes MSBuild properties as WiX preprocessor variables ($(Version), $(SysML2WorkbenchPublishDir) in .wxs). -->
+    <DefineConstants>Version=$(Version);SysML2WorkbenchPublishDir=$(SysML2WorkbenchPublishDir)</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup>
-    <BindPath Include="$(SysML2WorkbenchPublishDir)" />
-  </ItemGroup>
 
 </Project>

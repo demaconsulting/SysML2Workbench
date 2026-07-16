@@ -31,7 +31,7 @@
   <!-- Harvests the entire published self-contained win-x64 output into INSTALLFOLDER. -->
   <Fragment>
     <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
-      <Files Include="**" />
+      <Files Include="$(SysML2WorkbenchPublishDir)**" />
     </ComponentGroup>
   </Fragment>
 

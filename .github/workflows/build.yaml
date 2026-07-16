@@ -217,6 +217,12 @@ jobs:
           --property:PublishSingleFile=true
           --output publish/win-x64
 
+      - name: Remove debug symbols and docs from published output (win-x64)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Get-ChildItem publish/win-x64 -Include *.pdb,*.xml -Recurse | Remove-Item -Force
+
       - name: Zip published output (win-x64)
         if: matrix.os == 'windows-latest'
         shell: pwsh
@@ -261,6 +267,11 @@ jobs:
           --property:PublishSingleFile=true
           --output publish/linux-x64
 
+      - name: Remove debug symbols and docs from published output (linux-x64)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: find publish/linux-x64 -type f \( -name '*.pdb' -o -name '*.xml' \) -delete
+
       - name: Zip published output (linux-x64)
         if: matrix.os == 'ubuntu-latest'
         shell: bash
@@ -291,6 +302,13 @@ jobs:
           --property:Version=${{ inputs.version }}
           --property:PublishSingleFile=true
           --output publish/osx-arm64
+
+      - name: Remove debug symbols and docs from published output (osx-x64, osx-arm64)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          find publish/osx-x64 -type f \( -name '*.pdb' -o -name '*.xml' \) -delete
+          find publish/osx-arm64 -type f \( -name '*.pdb' -o -name '*.xml' \) -delete
 
       - name: Zip published output (osx-x64, osx-arm64)
         if: matrix.os == 'macos-latest'
