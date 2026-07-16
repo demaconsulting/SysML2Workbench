@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="SysML2 Workbench"
+    Manufacturer="DEMA Consulting"
+    Version="$(Version)"
+    UpgradeCode="AE28439F-4F87-4B5C-A70F-B42BEC1AFEE9"
+    InstallerVersion="500"
+    Compressed="yes"
+    Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of SysML2 Workbench is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="MainFeature" Title="SysML2 Workbench" Level="1">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentRef Id="ApplicationShortcut" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="DEMA Consulting\SysML2 Workbench" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="SysML2 Workbench" />
+    </StandardDirectory>
+  </Fragment>
+
+  <!-- Harvests the entire published self-contained win-x64 output into INSTALLFOLDER. -->
+  <Fragment>
+    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
+      <Files Include="**" />
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="ApplicationShortcut" Directory="ApplicationProgramsFolder" Guid="7F8C6E5A-3A2B-4B7B-9B9E-1B7E4C2F5A61">
+      <Shortcut
+        Id="StartMenuShortcut"
+        Name="SysML2 Workbench"
+        Target="[INSTALLFOLDER]DemaConsulting.SysML2Workbench.Desktop.exe"
+        WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="RemoveApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
+      <RegistryValue
+        Root="HKCU"
+        Key="Software\DEMA Consulting\SysML2 Workbench"
+        Name="Installed"
+        Type="integer"
+        Value="1"
+        KeyPath="yes" />
+    </Component>
+  </Fragment>
+</Wix>
