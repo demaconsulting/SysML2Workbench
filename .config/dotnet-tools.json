@@ -2,6 +2,13 @@
   "version": 1,
   "isRoot": true,
   "tools": {
+    "dotnet-sonarscanner": {
+      "version": "11.2.1",
+      "commands": [
+        "dotnet-sonarscanner"
+      ],
+      "rollForward": false
+    },
     "demaconsulting.pandoctool": {
       "version": "3.10.0",
       "commands": [
