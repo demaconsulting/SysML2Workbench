@@ -21,6 +21,10 @@ sections:
                   - 'ViewDefinitionModelTests.AddExposeTarget_StoresMultipleExposeTargetsWithoutDuplicates'
                   - 'ViewDefinitionModelTests.RemoveExposeTarget_RemovesOnlyMatchingSelection'
                   - 'ViewDefinitionModelTests.RemoveExposeTarget_UnknownQualifiedName_IsNoOp'
+                  - 'ViewDefinitionModelTests.RemoveExposeTarget_KnownQualifiedNameWrongRecursionKind_IsNoOp'
+                  - 'ViewDefinitionModelTests.AddExposeTarget_ExactQualifiedNameAndKindTwice_IsNoOp'
+                  - 'ViewDefinitionModelTests.AddExposeTarget_SameQualifiedNameDifferentRecursionKind_AddsBothSelections'
+                  - 'ViewDefinitionModelTests.RemoveExposeTarget_OneOfTwoSameQualifiedNameSelections_LeavesOtherUntouched'
 
               - id: 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeRecursionAndFilter'
                 title: 'The ViewDefinitionModel shall store an optional recursion kind and bracket-filter expression per expose target and reject bracket filters on non-recursive kinds.'
@@ -30,6 +34,8 @@ sections:
                   must flag combinations that are not valid SysML v2 syntax.
                 tests:
                   - 'ViewDefinitionModelTests.SetExposeRecursionKind_ChangesSelectedTargetKind'
+                  - 'ViewDefinitionModelTests.SetExposeRecursionKind_OneOfTwoSameQualifiedNameSelections_DoesNotAffectOther'
+                  - 'ViewDefinitionModelTests.SetExposeRecursionKind_TargetKindAlreadyTakenBySibling_IsNoOp'
                   - 'ViewDefinitionModelTests.SetExposeBracketFilter_SetsAndClearsExpression'
                   - 'ViewDefinitionModelTests.ValidateAgainstWorkspace_ValidBracketFilterOnRecursiveTarget_ReturnsNoDiagnostics'
                   - 'ViewDefinitionModelTests.ValidateAgainstWorkspace_InvalidBracketFilterExpression_ReturnsDiagnostic'

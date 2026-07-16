@@ -36,3 +36,8 @@ for display with pan and zoom (i.e. loadable into SvgCanvasHost). Verified by
 `ResolvedExposeMembers` requirement - selecting only one of two workspace elements produces SVG that does not contain
 the unselected element, proving the ephemeral preview node is correctly scoped rather than rendering the entire
 workspace. Verified by `LayoutInvokerTests.RenderCustomView_ScopesOutputToSelectedTargetsOnly`.
+
+**RenderCustomView_SameQualifiedNameTwoRecursionKinds_RendersWithoutError**: A custom view exposing the same
+qualified name twice under two different recursion kinds renders without error, covering the valid SysML v2 pattern
+of exposing the same package both exactly and via its direct children. Verified by
+`LayoutInvokerTests.RenderCustomView_SameQualifiedNameTwoRecursionKinds_RendersWithoutError`.

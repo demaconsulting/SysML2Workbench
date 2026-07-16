@@ -92,7 +92,7 @@ public sealed class ViewDefinitionModelTests : IDisposable
         definition.AddExposeTarget("Sample::Wheel");
 
         // Act: remove one target
-        definition.RemoveExposeTarget("Sample::Engine");
+        definition.RemoveExposeTarget("Sample::Engine", ExposeRecursionKind.MembershipRecursive);
 
         // Assert: only the other target remains
         Assert.Equal(["Sample::Wheel"], definition.ExposeTargets.Select(t => t.QualifiedName));
@@ -109,10 +109,143 @@ public sealed class ViewDefinitionModelTests : IDisposable
         definition.AddExposeTarget("Sample::Engine");
 
         // Act: attempt to remove an unrelated qualified name
-        definition.RemoveExposeTarget("Sample::DoesNotExist");
+        definition.RemoveExposeTarget("Sample::DoesNotExist", ExposeRecursionKind.MembershipRecursive);
 
         // Assert: the existing target is untouched
         Assert.Equal(["Sample::Engine"], definition.ExposeTargets.Select(t => t.QualifiedName));
+    }
+
+    /// <summary>
+    ///     Validates that attempting to remove a known qualified name under a recursion kind it does not
+    ///     currently use is a no-op.
+    /// </summary>
+    [Fact]
+    public void RemoveExposeTarget_KnownQualifiedNameWrongRecursionKind_IsNoOp()
+    {
+        // Arrange: a definition with one target at the default recursion kind
+        var definition = new ViewDefinitionModel();
+        definition.AddExposeTarget("Sample::Engine");
+
+        // Act: attempt to remove it under a different recursion kind
+        definition.RemoveExposeTarget("Sample::Engine", ExposeRecursionKind.NamespaceDirectChildren);
+
+        // Assert: the existing target is untouched
+        Assert.Equal(["Sample::Engine"], definition.ExposeTargets.Select(t => t.QualifiedName));
+    }
+
+    /// <summary>
+    ///     Validates that adding the exact same qualified name and recursion kind pair twice remains a no-op,
+    ///     preserving any prior configuration.
+    /// </summary>
+    [Fact]
+    public void AddExposeTarget_ExactQualifiedNameAndKindTwice_IsNoOp()
+    {
+        // Arrange: a definition with a target with a bracket filter set
+        var definition = new ViewDefinitionModel();
+        definition.AddExposeTarget("Sample::Engine");
+        definition.SetExposeBracketFilter("Sample::Engine", ExposeRecursionKind.MembershipRecursive, "@Safety");
+
+        // Act: add the same qualified name again (defaults to the same recursion kind)
+        definition.AddExposeTarget("Sample::Engine");
+
+        // Assert: exactly one selection remains, with its prior configuration preserved
+        var selection = Assert.Single(definition.ExposeTargets);
+        Assert.Equal("Sample::Engine", selection.QualifiedName);
+        Assert.Equal(ExposeRecursionKind.MembershipRecursive, selection.RecursionKind);
+        Assert.Equal("@Safety", selection.BracketFilterExpression);
+    }
+
+    /// <summary>
+    ///     Validates that the same qualified name can be added twice with two different recursion kinds, and
+    ///     both selections appear in <see cref="ViewDefinitionModel.ExposeTargets" />, matching the valid SysML v2
+    ///     pattern of exposing the same package both exactly and recursively (for example
+    ///     <c>expose PublishingSubsystem;</c> and <c>expose PublishingSubsystem::*;</c>).
+    /// </summary>
+    [Fact]
+    public void AddExposeTarget_SameQualifiedNameDifferentRecursionKind_AddsBothSelections()
+    {
+        // Arrange: a definition with a single default-kind target
+        var definition = new ViewDefinitionModel();
+        definition.AddExposeTarget("Sample::Engine");
+
+        // Act: retarget the existing selection to a different recursion kind, then add the qualified name
+        // again so a second, independent selection is created for the (now-free) default recursion kind
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.NamespaceDirectChildren);
+        definition.AddExposeTarget("Sample::Engine");
+
+        // Assert: both selections are present, one per recursion kind
+        var selections = definition.ExposeTargets.Where(t => t.QualifiedName == "Sample::Engine").ToList();
+        Assert.Equal(2, selections.Count);
+        Assert.Contains(selections, s => s.RecursionKind == ExposeRecursionKind.NamespaceDirectChildren);
+        Assert.Contains(selections, s => s.RecursionKind == ExposeRecursionKind.MembershipRecursive);
+    }
+
+    /// <summary>
+    ///     Validates that removing one of two same-qualified-name selections leaves the sibling selection
+    ///     untouched.
+    /// </summary>
+    [Fact]
+    public void RemoveExposeTarget_OneOfTwoSameQualifiedNameSelections_LeavesOtherUntouched()
+    {
+        // Arrange: two selections sharing a qualified name under different recursion kinds
+        var definition = new ViewDefinitionModel();
+        definition.AddExposeTarget("Sample::Engine");
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.NamespaceDirectChildren);
+        definition.AddExposeTarget("Sample::Engine");
+
+        // Act: remove only the default-kind selection
+        definition.RemoveExposeTarget("Sample::Engine", ExposeRecursionKind.MembershipRecursive);
+
+        // Assert: only the other selection remains
+        var selection = Assert.Single(definition.ExposeTargets);
+        Assert.Equal("Sample::Engine", selection.QualifiedName);
+        Assert.Equal(ExposeRecursionKind.NamespaceDirectChildren, selection.RecursionKind);
+    }
+
+    /// <summary>
+    ///     Validates that changing the recursion kind of one of two same-qualified-name selections does not
+    ///     affect the sibling selection.
+    /// </summary>
+    [Fact]
+    public void SetExposeRecursionKind_OneOfTwoSameQualifiedNameSelections_DoesNotAffectOther()
+    {
+        // Arrange: two selections sharing a qualified name under different recursion kinds
+        var definition = new ViewDefinitionModel();
+        definition.AddExposeTarget("Sample::Engine");
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.NamespaceDirectChildren);
+        definition.AddExposeTarget("Sample::Engine");
+
+        // Act: change the default-kind selection to a third, unused recursion kind
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.MembershipExact);
+
+        // Assert: the changed selection reflects the new kind, and the sibling is untouched
+        var selections = definition.ExposeTargets.Where(t => t.QualifiedName == "Sample::Engine").ToList();
+        Assert.Equal(2, selections.Count);
+        Assert.Contains(selections, s => s.RecursionKind == ExposeRecursionKind.MembershipExact);
+        Assert.Contains(selections, s => s.RecursionKind == ExposeRecursionKind.NamespaceDirectChildren);
+    }
+
+    /// <summary>
+    ///     Validates that attempting to change a selection's recursion kind to one already used by a sibling
+    ///     selection for the same qualified name is a no-op, rather than throwing or creating a duplicate pair.
+    /// </summary>
+    [Fact]
+    public void SetExposeRecursionKind_TargetKindAlreadyTakenBySibling_IsNoOp()
+    {
+        // Arrange: two selections sharing a qualified name under different recursion kinds
+        var definition = new ViewDefinitionModel();
+        definition.AddExposeTarget("Sample::Engine");
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.NamespaceDirectChildren);
+        definition.AddExposeTarget("Sample::Engine");
+
+        // Act: attempt to change the default-kind selection to the sibling's kind
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.NamespaceDirectChildren);
+
+        // Assert: both selections remain, unchanged, under their original recursion kinds
+        var selections = definition.ExposeTargets.Where(t => t.QualifiedName == "Sample::Engine").ToList();
+        Assert.Equal(2, selections.Count);
+        Assert.Contains(selections, s => s.RecursionKind == ExposeRecursionKind.MembershipRecursive);
+        Assert.Contains(selections, s => s.RecursionKind == ExposeRecursionKind.NamespaceDirectChildren);
     }
 
     /// <summary>
@@ -127,7 +260,7 @@ public sealed class ViewDefinitionModelTests : IDisposable
         definition.AddExposeTarget("Sample::Wheel");
 
         // Act: change one target's recursion kind
-        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.NamespaceDirectChildren);
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.NamespaceDirectChildren);
 
         // Assert: only the targeted selection changed
         Assert.Equal(ExposeRecursionKind.NamespaceDirectChildren, definition.ExposeTargets.Single(t => t.QualifiedName == "Sample::Engine").RecursionKind);
@@ -146,19 +279,26 @@ public sealed class ViewDefinitionModelTests : IDisposable
         definition.AddExposeTarget("Sample::Engine");
 
         // Act: set a bracket-filter expression
-        definition.SetExposeBracketFilter("Sample::Engine", "@Safety");
+        definition.SetExposeBracketFilter("Sample::Engine", ExposeRecursionKind.MembershipRecursive, "@Safety");
 
         // Assert: the expression is stored
         Assert.Equal("@Safety", definition.ExposeTargets.Single().BracketFilterExpression);
 
         // Act: clear it again
-        definition.SetExposeBracketFilter("Sample::Engine", "  ");
+        definition.SetExposeBracketFilter("Sample::Engine", ExposeRecursionKind.MembershipRecursive, "  ");
 
         // Assert: the expression is cleared
         Assert.Null(definition.ExposeTargets.Single().BracketFilterExpression);
 
         // Act: attempt to set a filter on an unknown qualified name
-        definition.SetExposeBracketFilter("Sample::DoesNotExist", "@Safety");
+        definition.SetExposeBracketFilter("Sample::DoesNotExist", ExposeRecursionKind.MembershipRecursive, "@Safety");
+
+        // Assert: no selection was added and the known one is unaffected
+        Assert.Single(definition.ExposeTargets);
+        Assert.Null(definition.ExposeTargets.Single().BracketFilterExpression);
+
+        // Act: attempt to set a filter on the known qualified name but under a recursion kind it doesn't use
+        definition.SetExposeBracketFilter("Sample::Engine", ExposeRecursionKind.NamespaceDirectChildren, "@Safety");
 
         // Assert: no selection was added and the known one is unaffected
         Assert.Single(definition.ExposeTargets);
@@ -259,8 +399,8 @@ public sealed class ViewDefinitionModelTests : IDisposable
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
         definition.AddExposeTarget("Sample::Engine");
-        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive);
-        definition.SetExposeBracketFilter("Sample::Engine", "@Safety");
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, ExposeRecursionKind.MembershipRecursive);
+        definition.SetExposeBracketFilter("Sample::Engine", ExposeRecursionKind.MembershipRecursive, "@Safety");
 
         // Act: validate against the loaded workspace
         var diagnostics = definition.ValidateAgainstWorkspace(workspace);
@@ -280,7 +420,7 @@ public sealed class ViewDefinitionModelTests : IDisposable
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
         definition.AddExposeTarget("Sample::Engine");
-        definition.SetExposeBracketFilter("Sample::Engine", "@@@not valid@@@");
+        definition.SetExposeBracketFilter("Sample::Engine", ExposeRecursionKind.MembershipRecursive, "@@@not valid@@@");
 
         // Act: validate against the loaded workspace
         var diagnostics = definition.ValidateAgainstWorkspace(workspace);
@@ -304,8 +444,8 @@ public sealed class ViewDefinitionModelTests : IDisposable
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
         definition.AddExposeTarget("Sample::Engine");
-        definition.SetExposeRecursionKind("Sample::Engine", kind);
-        definition.SetExposeBracketFilter("Sample::Engine", "@Safety");
+        definition.SetExposeRecursionKind("Sample::Engine", ExposeRecursionKind.MembershipRecursive, kind);
+        definition.SetExposeBracketFilter("Sample::Engine", kind, "@Safety");
 
         // Act: validate against the loaded workspace
         var diagnostics = definition.ValidateAgainstWorkspace(workspace);
