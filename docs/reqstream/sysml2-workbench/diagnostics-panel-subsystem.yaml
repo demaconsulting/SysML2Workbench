@@ -11,7 +11,7 @@ sections:
             children:
               - 'SysML2Workbench-DiagnosticsPanelSubsystem-DiagnosticsListView-DisplayDiagnosticDetails'
             tests:
-              - 'DiagnosticsPanelSubsystemTests.BindDiagnostics_ShowsDiagnosticDetails'
+              - 'BindDiagnostics_ShowsDiagnosticDetails'
 
           - id: 'SysML2Workbench-DiagnosticsPanelSubsystem-RefreshDisplayedDiagnostics'
             title: 'The DiagnosticsPanelSubsystem shall refresh the displayed diagnostic list when the aggregated workspace diagnostics change.'
@@ -20,4 +20,4 @@ sections:
             children:
               - 'SysML2Workbench-DiagnosticsPanelSubsystem-DiagnosticsListView-RefreshDiagnosticCollection'
             tests:
-              - 'DiagnosticsPanelSubsystemTests.DiagnosticsChanged_RefreshesList'
+              - 'DiagnosticsChanged_RefreshesList'

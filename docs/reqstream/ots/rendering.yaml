@@ -9,11 +9,11 @@ sections:
             justification: |
               The architecture reuses the mature rendering package so the workbench can focus on desktop interaction instead of implementing a new renderer.
             tests:
-              - 'RenderingTests.RenderLayout_ProducesSvgDocument'
+              - 'RenderLayout_ProducesSvgDocument'
 
           - id: 'Rendering-PreserveDiagramPrimitives'
             title: 'The SysML2Workbench shall use DemaConsulting.Rendering output that preserves the diagram primitives needed for interactive viewing in the shell.'
             justification: |
               Rendered diagrams must retain the expected diagram content and structure when displayed in the desktop SVG canvas.
             tests:
-              - 'RenderingTests.RenderLayout_PreservesDiagramPrimitives'
+              - 'RenderLayout_PreservesDiagramPrimitives'

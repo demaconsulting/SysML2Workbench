@@ -11,11 +11,11 @@ sections:
                 justification: |
                   The diagram viewer is the user-facing result of the layout and rendering pipeline.
                 tests:
-                  - 'SvgCanvasHostTests.LoadSvgDocument_DisplaysDiagramCanvas'
+                  - 'LoadSvgDocument_DisplaysDiagramCanvas'
 
               - id: 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-SupportPanAndZoom'
                 title: 'The SvgCanvasHost shall support pan and zoom interaction over the displayed diagram.'
                 justification: |
                   Pan-and-zoom navigation is part of the defined Phase 0 scope for working with rendered diagrams.
                 tests:
-                  - 'SvgCanvasHostTests.UserInteraction_PansAndZoomsDiagram'
+                  - 'UserInteraction_PansAndZoomsDiagram'

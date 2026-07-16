@@ -11,11 +11,11 @@ sections:
                 justification: |
                   Users need enough structured detail in the diagnostics list to understand and act on workspace problems.
                 tests:
-                  - 'DiagnosticsListViewTests.BindDiagnostics_ShowsSeverityMessageAndLocation'
+                  - 'BindDiagnostics_ShowsSeverityMessageAndLocation'
 
               - id: 'SysML2Workbench-DiagnosticsPanelSubsystem-DiagnosticsListView-RefreshDiagnosticCollection'
                 title: 'The DiagnosticsListView shall refresh its displayed collection when workspace diagnostics change.'
                 justification: |
                   The live workspace model requires the UI list to update as diagnostics are added, removed, or reordered.
                 tests:
-                  - 'DiagnosticsListViewTests.DiagnosticsChanged_RefreshesVisibleList'
+                  - 'DiagnosticsChanged_RefreshesVisibleList'
