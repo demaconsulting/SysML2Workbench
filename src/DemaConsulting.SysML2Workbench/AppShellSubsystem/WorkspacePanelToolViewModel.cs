@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DemaConsulting.SysML2Workbench.WorkspaceSubsystem;
+using Material.Icons;
 
 namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 
@@ -13,6 +14,11 @@ public abstract class WorkspaceTreeNode
     ///     Stable identifier used as the tree control's item key.
     /// </summary>
     public required string Id { get; init; }
+
+    /// <summary>
+    ///     The icon shown alongside this node in the tree.
+    /// </summary>
+    public abstract MaterialIconKind IconKind { get; }
 }
 
 /// <summary>
@@ -32,6 +38,10 @@ public sealed class WorkspaceSourceNode : WorkspaceTreeNode
     ///     Files contributed by this source. Empty for a <see cref="WorkspaceSourceKind.File" /> source.
     /// </summary>
     public required IReadOnlyList<WorkspaceFileNode> Children { get; init; }
+
+    /// <inheritdoc />
+    public override MaterialIconKind IconKind =>
+        Source.Kind == WorkspaceSourceKind.Folder ? MaterialIconKind.Folder : MaterialIconKind.FileOutline;
 }
 
 /// <summary>
@@ -50,6 +60,9 @@ public sealed class WorkspaceFileNode : WorkspaceTreeNode
     ///     Identifier of the <see cref="WorkspaceSource" /> that owns this file.
     /// </summary>
     public required string SourceId { get; init; }
+
+    /// <inheritdoc />
+    public override MaterialIconKind IconKind => MaterialIconKind.FileOutline;
 }
 
 /// <summary>
