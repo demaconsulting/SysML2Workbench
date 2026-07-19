@@ -107,5 +107,4 @@ Review-sets: defined in `.reviewmark.yaml`
 
 ## References
 
-- [SysML2Workbench architecture](../../architecture.md)
 - [SysML2Workbench releases](https://github.com/demaconsulting/SysML2Workbench/releases)

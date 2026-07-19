@@ -16,8 +16,9 @@ rolling log file is written for bug-report attachments.
 
 This is a **Phase 0, read-only** release: there is no git integration, no
 text/structural editing, no telemetry, and custom views are session-only until
-exported as text. See [architecture.md](architecture.md) for the full scope
-and [docs/user_guide/](docs/user_guide/) for usage instructions.
+exported as text. See [docs/design/introduction.md](docs/design/introduction.md)
+for the full scope and [docs/user_guide/](docs/user_guide/) for usage
+instructions.
 
 ## Getting Started
 
@@ -45,7 +46,6 @@ building a custom view.
 - `docs/` - requirements (`docs/reqstream/`), design (`docs/design/`),
   verification (`docs/verification/`), the SysML2 architecture model
   (`docs/sysml2/`), and the [user guide](docs/user_guide/).
-- `architecture.md` - the authoritative Phase 0 scope and technology decisions.
 
 ## Building and Testing
 
