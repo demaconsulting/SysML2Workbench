@@ -25,13 +25,22 @@ No external services are required.
 
 #### Test Scenarios
 
-**OpenWorkspace_BuildsTrackedFileTree**: Loading a workspace folder builds a tracked file tree covering every discovered
-file. Verified by `WorkspaceModelTests.OpenWorkspace_BuildsTrackedFileTree`.
+**OpenWorkspace_BuildsTrackedFileTree**: Loading a workspace resolution builds a tracked file tree covering every
+file in the resolution. Verified by `WorkspaceModelTests.LoadWorkspaceAsync_BuildsTrackedFileTree`.
 
-**ResolveInputs_FindsDiscoveredAndImportedFiles**: Resolving workspace inputs combines glob-discovered files with SysML
+**ResolveInputs_FindsDiscoveredAndImportedFiles**: Loading a resolution combines glob-discovered files with SysML
 import resolution across those discovered files. Verified by
-`WorkspaceModelTests.ResolveInputs_FindsDiscoveredAndImportedFiles`.
+`WorkspaceModelTests.LoadWorkspaceAsync_FindsDiscoveredAndImportedFiles`.
 
 **ReloadFile_UpdatesOnlyAffectedFileState**: Reloading the workspace only replaces the per-file state of files whose
 diagnostics actually changed, leaving unaffected file state instances untouched. Verified by
 `WorkspaceModelTests.ReloadFile_UpdatesOnlyAffectedFileState`.
+
+**LoadWorkspaceAsync_EmptyResolution_ProducesValidStdlibOnlySnapshot**: Loading a zero-source, zero-file resolution
+produces a valid, non-throwing, stdlib-only snapshot with no diagnostics rather than a special-cased empty
+placeholder. Verified by `WorkspaceModelTests.LoadWorkspaceAsync_EmptyResolution_ProducesValidStdlibOnlySnapshot`.
+
+**ReloadFilesAsync_AfterResolutionBecomesEmpty_ProducesValidEmptySnapshot**: Reloading against a resolution that has
+since become empty (for example after every source was removed) produces the same valid, non-throwing, stdlib-only
+snapshot as loading empty from scratch. Verified by
+`WorkspaceModelTests.ReloadFilesAsync_AfterResolutionBecomesEmpty_ProducesValidEmptySnapshot`.

@@ -9,6 +9,7 @@ package SysML2WorkbenchArchitecture {
             comment reqRef /* Requirements: docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml */
 
             part mainWindowShell: MainWindowShell;
+            part workspacePanel: WorkspacePanel;
         }
     }
 }

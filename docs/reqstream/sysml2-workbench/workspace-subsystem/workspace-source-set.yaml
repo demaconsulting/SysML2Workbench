@@ -1,0 +1,46 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'WorkspaceSubsystem Requirements'
+        sections:
+          - title: 'WorkspaceSourceSet Requirements'
+            requirements:
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-MaintainOrderedSources'
+                title: 'The WorkspaceSourceSet shall maintain an ordered, idempotent list of file and folder sources.'
+                justification: |
+                  The Workspace panel and file watcher both need a stable, registration-ordered list of sources, and adding the same source twice must not create duplicate entries.
+                tests:
+                  - 'AddFile_SamePathTwice_ReturnsSameSourceAndDoesNotDuplicate'
+                  - 'AddFolder_SamePathTwice_ReturnsSameSourceAndDoesNotDuplicate'
+                  - 'AddFolder_MissingFolder_ThrowsDirectoryNotFoundException'
+                  - 'Sources_PreservesRegistrationOrder'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-RemoveSource'
+                title: 'The WorkspaceSourceSet shall remove a registered source by id, and treat removal of an unknown id as a no-op.'
+                justification: |
+                  Users must be able to remove a previously added source, and a stale or already-removed id must not surface as an error.
+                tests:
+                  - 'RemoveSource_RegisteredThenUnknownId_ReturnsTrueThenFalse'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-ResolveEmptySet'
+                title: 'The WorkspaceSourceSet shall resolve a zero-source set to an empty, non-error resolution.'
+                justification: |
+                  A workspace with no sources open is a first-class, valid state rather than a failure, so resolving it must not throw or require a special-case caller guard.
+                tests:
+                  - 'Resolve_ZeroSources_ReturnsEmptyResolution'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-DiscoverFolderFiles'
+                title: 'The WorkspaceSourceSet shall discover every matching model file recursively under each folder source using the default glob options.'
+                justification: |
+                  Folder sources are the primary way users add whole model trees, and discovery must find every nested `.sysml` file, not only top-level files.
+                tests:
+                  - 'Resolve_FolderSource_DiscoversAllSysmlFilesRecursively'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-DedupeOverlap'
+                title: 'The WorkspaceSourceSet shall dedupe files reachable through more than one source and attribute each merged file to whichever source registered it first, without raising an error.'
+                justification: |
+                  Users may add an individual file that also falls under a folder source, or add two overlapping folders, and the merged file list must contain each file exactly once with a deterministic, silent attribution.
+                tests:
+                  - 'Resolve_FileOverlappingFolder_DedupesAndFirstRegisteredSourceWinsAttribution'
+                  - 'Resolve_NestedFolderOverlap_DedupesAndFirstRegisteredSourceWinsAttribution'

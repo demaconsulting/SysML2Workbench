@@ -10,8 +10,11 @@ snippet export within a single windowed user experience.
 
 #### Data Model
 
-**CurrentWorkspace**: `WorkspaceSnapshot?` — currently loaded workspace and its
-revision metadata.
+**CurrentWorkspace**: `WorkspaceSnapshot` — currently loaded workspace and its
+revision metadata. Never `null`: initialized at construction to a valid empty
+snapshot (zero sources, zero files, stdlib-only) rather than left unset until
+the first source is added, so every consumer can safely read
+`CurrentWorkspace.Sources` without a null guard.
 
 **ActivePredefinedView**: `ViewDescriptor?` — selected catalog view, if the
 user is in predefined-view mode.
@@ -29,27 +32,55 @@ active/focused, or `null` when no diagram tab is open. Updated both by shell
 operations that open or focus a tab, and by the UI layer forwarding Dock's
 own focus-change signal via `NotifyActiveDiagramTab`.
 
+**CurrentSourceIdToFiles**: `IReadOnlyDictionary<string, IReadOnlyList<string>>`
+— per-source file lists from the most recent workspace resolution, used by
+WorkspacePanel to build its tree without owning its own `WorkspaceSourceSet`
+instance.
+
 #### Key Methods
 
-**OpenWorkspace**: Loads a new workspace into the shell.
+**AddFileSource**: Adds a single file as a new workspace source.
 
-- *Parameters*: `string rootPath` — user-selected folder.
-- *Returns*: `void` — shell state updates in place.
-- *Preconditions*: `rootPath` exists and is readable.
-- *Postconditions*: WorkspaceSubsystem is initialized, the view catalog is
-  refreshed, diagnostics are displayed, and every open tab is closed
-  (`ActiveTabId` becomes `null`) since a reloaded workspace invalidates every
-  currently-rendered diagram. The file watcher is retargeted to `rootPath` on
-  every call, not only the first: any previously watched root is torn down and
-  its pending change state discarded, so a second or later workspace open
-  never leaves the watcher bound to a stale folder.
+- *Parameters*: `string path` — file to add.
+- *Returns*: `WorkspaceSnapshot` — the reloaded workspace snapshot.
+- *Postconditions*: The path is registered on the shell's owned
+  `WorkspaceSourceSet`, the source set is re-resolved, `WorkspaceModel` is
+  reloaded against the new resolution, the file watcher begins watching the
+  new source (a non-recursive, filtered watcher for a file source), the
+  resulting snapshot is applied (existing tabs are cleared, since a reload
+  invalidates every currently-rendered diagram), and `SourcesChanged` is
+  raised. Idempotent: adding the same path twice does not duplicate the
+  source.
+
+**AddFolderSource**: Adds a folder as a new workspace source.
+
+- *Parameters*: `string path` — folder to add.
+- *Returns*: `WorkspaceSnapshot` — the reloaded workspace snapshot.
+- *Postconditions*: Identical to `AddFileSource`, except the source is a
+  recursively watched folder and its files are discovered via
+  `WorkspaceSourceSet.Resolve()`'s default glob options.
+
+**RemoveSource**: Removes a previously registered source.
+
+- *Parameters*: `string sourceId` — id of the source to remove.
+- *Returns*: `WorkspaceSnapshot` — the reloaded workspace snapshot.
+- *Postconditions*: The source is removed from the source set (a no-op for
+  an unknown id), the set is re-resolved, `WorkspaceModel` is reloaded, the
+  now-unwatched source's watcher is disposed, the resulting snapshot is
+  applied, and `SourcesChanged` is raised. Removing the last remaining source
+  produces a valid empty snapshot (zero sources, zero files) - the same
+  first-class empty state the shell starts in at construction - and still
+  correctly clears every open tab, not only when shrinking to a smaller
+  nonzero file set.
+
+#### Additional Key Methods
 
 **SelectPredefinedView**: Renders a predefined view selected by the user.
 
 - *Parameters*: `string viewId` — identifier from ViewCatalogPresenter.
 - *Returns*: `void` — active diagram state updates in place.
-- *Preconditions*: A workspace is loaded and the view identifier is present in
-  the current catalog.
+- *Preconditions*: `CurrentWorkspace.Sources.Count > 0` and the view
+  identifier is present in the current catalog.
 - *Postconditions*: `ActivePredefinedView` is updated; a tab identified by the
   view's qualified name is opened (or, if already open, reused) and rendered
   into; that tab becomes `ActiveTabId` either way, so selecting an
@@ -61,7 +92,8 @@ own focus-change signal via `NotifyActiveDiagramTab`.
 - *Parameters*: `ViewDefinitionModel definition` — normalized custom-view
   state.
 - *Returns*: `void` — active diagram state updates in place.
-- *Preconditions*: The definition validates against the current workspace.
+- *Preconditions*: `CurrentWorkspace.Sources.Count > 0` and the definition
+  validates against the current workspace.
 - *Postconditions*: `ActiveCustomView` is updated. If the currently active tab
   is itself a custom-view-preview tab, it is re-rendered in place (same tab
   identity and canvas); otherwise a brand-new custom-view-preview tab is
@@ -116,13 +148,23 @@ workspace is reloaded (which clears every tab). The Avalonia-aware UI layer
 add or remove Dock dockables directly. The notification is raised through an
 injected `IUiDispatcher`, so subscribers are guaranteed to observe it on the
 dispatcher's target thread even though methods that trigger it - most notably
-`OpenWorkspace`, which awaits workspace loading with `ConfigureAwait(false)` -
-may themselves resume on a background thread pool thread once the load
-completes.
+`AddFolderSourceAsync`, which awaits workspace loading with
+`ConfigureAwait(false)` - may themselves resume on a background thread pool
+thread once the load completes.
+
+**SourcesChanged**: Raised whenever the set of workspace sources changes - a
+source is added or removed and the resulting resolution has been applied.
+Parallel in structure and marshaling behavior to `TabsChanged`: raised through
+the same injected `IUiDispatcher`. `WorkspacePanelToolViewModel` subscribes to
+this to rebuild its tree, and `CurrentSourceIdToFiles` reflects the change by
+the time subscribers observe the notification.
 
 #### Dependencies
 
 - **WorkspaceSubsystem** — loads and refreshes the workspace state.
+- **WorkspaceSourceSet** — owned by the shell; mutated by
+  `AddFileSourceAsync`/`AddFolderSourceAsync`/`RemoveSourceAsync` and
+  re-resolved before every `WorkspaceModel` load, reload, and watcher diff.
 - **ViewCatalogPresenter** — supplies predefined view choices.
 - **ViewDefinitionModel** — captures custom-view authoring state.
 - **SysmlSnippetGenerator** — exports custom-view definitions as SysML text.
@@ -130,9 +172,9 @@ completes.
 - **SvgCanvasHost** — displays the active diagram.
 - **DiagnosticsListView** — displays workspace diagnostics.
 - **RollingFileLogger** — records shell-level operational failures.
-- **IUiDispatcher** — marshals `TabsChanged` notifications onto the thread
-  required by UI-facing subscribers; defaults to an immediate, synchronous
-  dispatcher when none is supplied.
+- **IUiDispatcher** — marshals `TabsChanged` and `SourcesChanged`
+  notifications onto the thread required by UI-facing subscribers; defaults
+  to an immediate, synchronous dispatcher when none is supplied.
 - **Avalonia** — provides the window, tab, and application-lifetime framework.
 
 #### Callers

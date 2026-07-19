@@ -6,9 +6,10 @@
 
 AppShellSubsystem is the composition root for the desktop application. It owns
 the main window, navigation flow, and tabbed viewing experience that tie the
-other subsystems into one coherent user workflow. Its only documented unit is
-MainWindowShell. The thin desktop platform head remains outside the documented
-unit set because it is only a bootstrap and lifetime host.
+other subsystems into one coherent user workflow. Its documented units are
+MainWindowShell and WorkspacePanel. The thin desktop platform head remains
+outside the documented unit set because it is only a bootstrap and lifetime
+host.
 
 ### Interfaces
 
@@ -51,18 +52,28 @@ environment.
    user workflow without pushing UI-specific code into those subsystems.
 5. The desktop platform head initializes the shell and application lifetime but
    remains a bootstrap concern rather than a separately documented unit.
-6. The Avalonia UI layer presents MainWindowShell's panels (predefined
-   views, custom view builder, diagnostics, and diagram) as a resizable,
-   floatable Dock layout, composed by a Dock factory from thin panel views
-   and view models that hold no logic beyond forwarding to MainWindowShell
-   and binding its state. The three Tool panels (predefined views, custom
-   view builder, diagnostics) are closable and restorable via a View menu,
-   which reuses the same long-lived panel view model instance so its
-   in-progress state survives the close/restore cycle. The diagram area
-   hosts zero or more independently closable diagram Documents - one per
-   open `WorkbenchTab`, each bound to its own `SvgCanvasHost` - and the
-   Dock `DocumentDock` container itself remains visibly present even when
-   no diagram tab is open, so an empty diagram area is a normal, supported
-   state rather than a dead end. MainWindowShell itself has no dependency
-   on Avalonia or Dock and is unaware of how its panels are arranged on
-   screen.
+6. The Avalonia UI layer presents MainWindowShell's panels (workspace,
+   predefined views, custom view builder, diagnostics, and diagram) as a
+   resizable, floatable Dock layout, composed by a Dock factory from thin
+   panel views and view models that hold no logic beyond forwarding to
+   MainWindowShell and binding its state. The four Tool panels (workspace,
+   predefined views, custom view builder, diagnostics) are closable and
+   restorable via a View menu, which reuses the same long-lived panel view
+   model instance so its in-progress state survives the close/restore
+   cycle. The diagram area hosts zero or more independently closable diagram
+   Documents - one per open `WorkbenchTab`, each bound to its own
+   `SvgCanvasHost` - and the Dock `DocumentDock` container itself remains
+   visibly present even when no diagram tab is open, so an empty diagram
+   area is a normal, supported state rather than a dead end. MainWindowShell
+   itself has no dependency on Avalonia or Dock and is unaware of how its
+   panels are arranged on screen.
+7. A workspace with zero sources open is a first-class, non-error state, not
+   a precondition failure: `MainWindowShell.CurrentWorkspace` is never null
+   and starts as a valid empty snapshot at construction. Every panel that
+   depends on workspace content - the workspace panel, predefined views,
+   custom view builder, and diagnostics - presents a distinct, friendly
+   empty-state message when `Sources.Count == 0` rather than rendering
+   against an empty `SysmlWorkspace` or leaving a blank pane; the diagnostics
+   panel in particular distinguishes "no diagnostics because the workspace is
+   empty" from "no diagnostics because everything is clean," since those are
+   different facts the user needs to tell apart.

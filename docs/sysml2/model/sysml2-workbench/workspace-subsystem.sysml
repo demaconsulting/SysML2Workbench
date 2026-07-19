@@ -9,6 +9,7 @@ package SysML2WorkbenchArchitecture {
             comment reqRef /* Requirements: docs/reqstream/sysml2-workbench/workspace-subsystem.yaml */
 
             part workspaceModel: WorkspaceModel;
+            part workspaceSourceSet: WorkspaceSourceSet;
             part fileWatcher: FileWatcher;
             part diagnosticsAggregator: DiagnosticsAggregator;
         }

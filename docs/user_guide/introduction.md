@@ -22,7 +22,7 @@ This guide currently covers:
 
 - Installation expectations for the phase-0 desktop viewer
 
-- Opening a workspace folder and browsing predefined views
+- Opening a workspace from one or more file/folder sources and browsing predefined views
 
 - Building custom views by selecting a view type, multiple expose targets, and an optional filter
 
