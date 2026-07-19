@@ -43,7 +43,11 @@ public sealed class LayoutInvokerTests : IDisposable
             TestContext.Current.CancellationToken);
 
         var model = new WorkspaceModel();
-        return await model.LoadWorkspaceAsync(_tempRoot);
+
+        var sourceSet = new WorkspaceSourceSet();
+
+        sourceSet.AddFolder(_tempRoot);
+        return await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
     }
 
     /// <summary>

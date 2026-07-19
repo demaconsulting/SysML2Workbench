@@ -24,6 +24,9 @@ public partial class PredefinedViewsToolViewModel : Dock.Model.Mvvm.Controls.Too
     [ObservableProperty]
     private string? _statusMessage;
 
+    [ObservableProperty]
+    private bool _isWorkspaceEmpty;
+
     /// <summary>
     ///     Creates the predefined-views tool view model.
     /// </summary>
@@ -31,6 +34,8 @@ public partial class PredefinedViewsToolViewModel : Dock.Model.Mvvm.Controls.Too
     public PredefinedViewsToolViewModel(MainWindowShell shell)
     {
         _shell = shell ?? throw new ArgumentNullException(nameof(shell));
+        _shell.SourcesChanged += (_, _) => RefreshFromWorkspace();
+        RefreshFromWorkspace();
     }
 
     /// <summary>
@@ -41,6 +46,7 @@ public partial class PredefinedViewsToolViewModel : Dock.Model.Mvvm.Controls.Too
         AvailableViews = _shell.ViewCatalog.AvailableViews;
         SelectedView = null;
         StatusMessage = null;
+        IsWorkspaceEmpty = _shell.CurrentWorkspace.Sources.Count == 0;
     }
 
     partial void OnSelectedViewChanged(ViewDescriptor? value)

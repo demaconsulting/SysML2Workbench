@@ -66,7 +66,8 @@ public sealed class DockTests : IDisposable
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
         var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
+        var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
 
         // Act
         var layout = factory.CreateLayout();
@@ -95,7 +96,8 @@ public sealed class DockTests : IDisposable
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
         var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
+        var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
         factory.AddDockable(factory.DiagramDock, new DiagramDocumentViewModel(shell, "tab-1"));
@@ -128,7 +130,8 @@ public sealed class DockTests : IDisposable
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
         var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
+        var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
 
@@ -179,7 +182,8 @@ public sealed class DockTests : IDisposable
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
         var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
+        var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
 
@@ -214,7 +218,8 @@ public sealed class DockTests : IDisposable
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
         var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
+        var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
 
@@ -262,7 +267,8 @@ public sealed class DockTests : IDisposable
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
         var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel);
+        var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
 
@@ -392,7 +398,7 @@ public sealed class DockTests : IDisposable
     ///     Regression test for the crash reported after opening a second workspace: proves that
     ///     <see cref="MainWindowShell.TabsChanged" /> notifications reaching <see cref="MainWindowView" /> are
     ///     marshaled onto the UI thread via the injected <see cref="AvaloniaUiDispatcher" />, even when
-    ///     <see cref="MainWindowShell.OpenWorkspaceAsync" /> itself resumes on a background thread pool thread
+    ///     <see cref="MainWindowShell.AddFolderSourceAsync" /> itself resumes on a background thread pool thread
     ///     (simulated here by driving the second open through <see cref="Task.Run(Action)" />, which guarantees
     ///     <c>TabsChanged</c> would be raised off the UI thread if it were not marshaled).
     /// </summary>
@@ -434,7 +440,7 @@ public sealed class DockTests : IDisposable
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
-            await shell.OpenWorkspaceAsync(firstRoot);
+            await shell.AddFolderSourceAsync(firstRoot);
             Dispatcher.UIThread.RunJobs();
 
             var dockControl = window.GetVisualDescendants().OfType<DockControl>().First();
@@ -457,7 +463,7 @@ public sealed class DockTests : IDisposable
             await Task.Run(() =>
             {
                 backgroundThreadId = Environment.CurrentManagedThreadId;
-                return shell.OpenWorkspaceAsync(secondRoot);
+                return shell.AddFolderSourceAsync(secondRoot);
             });
 
             // Assert: the triggering call genuinely executed off the UI thread, proving there was something to

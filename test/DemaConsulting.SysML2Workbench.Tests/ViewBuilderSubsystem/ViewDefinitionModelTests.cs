@@ -40,7 +40,11 @@ public sealed class ViewDefinitionModelTests : IDisposable
             TestContext.Current.CancellationToken);
 
         var model = new WorkspaceModel();
-        var snapshot = await model.LoadWorkspaceAsync(_tempRoot);
+
+        var sourceSet = new WorkspaceSourceSet();
+
+        sourceSet.AddFolder(_tempRoot);
+        var snapshot = await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
         return snapshot.Workspace;
     }
 

@@ -7,13 +7,15 @@
         Icon="avares://DemaConsulting.SysML2Workbench/Assets/Icon.png"
         Width="1280" Height="800">
 
-  <DockPanel>
+  <DockPanel DragDrop.AllowDrop="True">
 
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File">
-        <MenuItem Name="OpenWorkspaceMenuItem" Header="_Open Workspace..." />
+        <MenuItem Name="AddFileSourceMenuItem" Header="Open _File..." />
+        <MenuItem Name="AddFolderSourceMenuItem" Header="Open _Folder..." />
       </MenuItem>
       <MenuItem Header="_View">
+        <MenuItem Name="WorkspacePanelMenuItem" Header="_Workspace" Click="OnWorkspacePanelMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
         <MenuItem Name="PredefinedViewsMenuItem" Header="_Predefined Views" Click="OnPredefinedViewsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
         <MenuItem Name="CustomViewBuilderMenuItem" Header="_Custom View Builder" Click="OnCustomViewBuilderMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
         <MenuItem Name="DiagnosticsMenuItem" Header="_Diagnostics" Click="OnDiagnosticsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />

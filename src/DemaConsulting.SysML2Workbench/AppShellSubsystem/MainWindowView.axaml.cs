@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Dock.Model.Core;
@@ -22,6 +23,7 @@ public partial class MainWindowView : Window
     private readonly PredefinedViewsToolViewModel _predefinedViewsViewModel;
     private readonly CustomViewBuilderToolViewModel _customViewBuilderViewModel;
     private readonly DiagnosticsToolViewModel _diagnosticsViewModel;
+    private readonly WorkspacePanelToolViewModel _workspacePanelViewModel;
     private readonly WorkbenchDockFactory _dockFactory;
     private readonly Dictionary<string, DiagramDocumentViewModel> _diagramViewModelsByTabId = new();
 
@@ -47,8 +49,9 @@ public partial class MainWindowView : Window
         _predefinedViewsViewModel = new PredefinedViewsToolViewModel(_shell) { Id = "PredefinedViews", Title = "Predefined Views" };
         _customViewBuilderViewModel = new CustomViewBuilderToolViewModel(_shell) { Id = "CustomViewBuilder", Title = "Custom View Builder" };
         _diagnosticsViewModel = new DiagnosticsToolViewModel(_shell) { Id = "Diagnostics", Title = "Diagnostics" };
+        _workspacePanelViewModel = new WorkspacePanelToolViewModel(_shell) { Id = "WorkspacePanel", Title = "Workspace" };
 
-        var factory = new WorkbenchDockFactory(_predefinedViewsViewModel, _customViewBuilderViewModel, _diagnosticsViewModel);
+        var factory = new WorkbenchDockFactory(_predefinedViewsViewModel, _customViewBuilderViewModel, _diagnosticsViewModel, _workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
         WorkbenchDockControl.Layout = (IDock)layout;
@@ -59,7 +62,8 @@ public partial class MainWindowView : Window
         _shell.TabsChanged += OnShellTabsChanged;
         OnShellTabsChanged(this, EventArgs.Empty);
 
-        OpenWorkspaceMenuItem.Click += OnOpenWorkspaceClick;
+        AddFileSourceMenuItem.Click += OnAddFileSourceClick;
+        AddFolderSourceMenuItem.Click += OnAddFolderSourceClick;
 
         // Each View-menu item's DataContext is explicitly set to its panel view model (distinct from this
         // window's own DataContext) so the one-way IsChecked binding above resolves against the panel's
@@ -67,6 +71,10 @@ public partial class MainWindowView : Window
         PredefinedViewsMenuItem.DataContext = _predefinedViewsViewModel;
         CustomViewBuilderMenuItem.DataContext = _customViewBuilderViewModel;
         DiagnosticsMenuItem.DataContext = _diagnosticsViewModel;
+        WorkspacePanelMenuItem.DataContext = _workspacePanelViewModel;
+
+        AddHandler(DragDrop.DropEvent, OnWindowDrop);
+        AddHandler(DragDrop.DragOverEvent, OnWindowDragOver);
     }
 
     /// <summary>
@@ -83,6 +91,14 @@ public partial class MainWindowView : Window
     private void OnCustomViewBuilderMenuItemClick(object? sender, RoutedEventArgs e)
     {
         ShowOrFocusPanel(_customViewBuilderViewModel);
+    }
+
+    /// <summary>
+    ///     Handles the View menu's "Workspace" click by showing or focusing that panel.
+    /// </summary>
+    private void OnWorkspacePanelMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        ShowOrFocusPanel(_workspacePanelViewModel);
     }
 
     /// <summary>
@@ -178,7 +194,38 @@ public partial class MainWindowView : Window
         }
     }
 
-    private async void OnOpenWorkspaceClick(object? sender, RoutedEventArgs e)
+    private async void OnAddFileSourceClick(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = GetTopLevel(this);
+        if (topLevel?.StorageProvider is null)
+        {
+            return;
+        }
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open SysML2 File",
+            AllowMultiple = false,
+        });
+
+        var filePath = files.Count > 0 ? files[0].TryGetLocalPath() : null;
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return;
+        }
+
+        try
+        {
+            await _shell.AddFileSourceAsync(filePath);
+            RefreshPanelsFromWorkspace();
+        }
+        catch (Exception ex)
+        {
+            _customViewBuilderViewModel.StatusMessage = $"Failed to open file: {ex.Message}";
+        }
+    }
+
+    private async void OnAddFolderSourceClick(object? sender, RoutedEventArgs e)
     {
         var topLevel = GetTopLevel(this);
         if (topLevel?.StorageProvider is null)
@@ -188,7 +235,7 @@ public partial class MainWindowView : Window
 
         var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = "Open SysML2 Workspace",
+            Title = "Open SysML2 Folder",
             AllowMultiple = false,
         });
 
@@ -200,14 +247,69 @@ public partial class MainWindowView : Window
 
         try
         {
-            await _shell.OpenWorkspaceAsync(folderPath);
-            _predefinedViewsViewModel.RefreshFromWorkspace();
-            _customViewBuilderViewModel.RefreshFromWorkspace();
-            _diagnosticsViewModel.RefreshFromWorkspace();
+            await _shell.AddFolderSourceAsync(folderPath);
+            RefreshPanelsFromWorkspace();
         }
         catch (Exception ex)
         {
-            _customViewBuilderViewModel.StatusMessage = $"Failed to open workspace: {ex.Message}";
+            _customViewBuilderViewModel.StatusMessage = $"Failed to open folder: {ex.Message}";
         }
+    }
+
+    /// <summary>
+    ///     Handles a drag-and-drop drop anywhere on the main window by adding each dropped file or folder as a
+    ///     new workspace source, funneling through the same <see cref="MainWindowShell" /> APIs the File menu and
+    ///     Workspace panel use - no separate drag-and-drop orchestration.
+    /// </summary>
+    private async void OnWindowDrop(object? sender, DragEventArgs e)
+    {
+        if (!e.DataTransfer.Formats.Contains(DataFormat.File))
+        {
+            return;
+        }
+
+        foreach (var item in e.DataTransfer.TryGetFiles() ?? [])
+        {
+            var path = item.TryGetLocalPath();
+            if (string.IsNullOrEmpty(path))
+            {
+                continue;
+            }
+
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    await _shell.AddFolderSourceAsync(path);
+                }
+                else if (File.Exists(path))
+                {
+                    await _shell.AddFileSourceAsync(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                _customViewBuilderViewModel.StatusMessage = $"Failed to open dropped path '{path}': {ex.Message}";
+            }
+        }
+
+        RefreshPanelsFromWorkspace();
+    }
+
+    private void OnWindowDragOver(object? sender, DragEventArgs e)
+    {
+        e.DragEffects = e.DataTransfer.Formats.Contains(DataFormat.File) ? DragDropEffects.Copy : DragDropEffects.None;
+    }
+
+    /// <summary>
+    ///     Refreshes the three workspace-derived tool panels after a source is added or removed through the File
+    ///     menu or a drag-and-drop drop. The Workspace panel itself refreshes independently via its own
+    ///     <see cref="MainWindowShell.SourcesChanged" /> subscription.
+    /// </summary>
+    private void RefreshPanelsFromWorkspace()
+    {
+        _predefinedViewsViewModel.RefreshFromWorkspace();
+        _customViewBuilderViewModel.RefreshFromWorkspace();
+        _diagnosticsViewModel.RefreshFromWorkspace();
     }
 }

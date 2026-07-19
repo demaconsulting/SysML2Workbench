@@ -7,6 +7,8 @@
   <StackPanel Margin="8" Spacing="6">
     <TextBlock Text="Custom View Builder" FontWeight="Bold" />
 
+    <TextBlock Name="EmptyStateTextBlock" IsVisible="{Binding IsWorkspaceEmpty}" Text="No workspace open - add a file or folder from the Workspace panel." TextWrapping="Wrap" />
+
     <TextBlock Text="View Kind" />
     <ComboBox Name="ViewKindComboBox" HorizontalAlignment="Stretch" />
 

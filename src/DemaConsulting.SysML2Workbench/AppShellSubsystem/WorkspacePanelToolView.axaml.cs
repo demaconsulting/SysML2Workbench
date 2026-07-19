@@ -1,0 +1,125 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Platform.Storage;
+
+namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
+
+/// <summary>
+///     Thin Avalonia view for the "Workspace" Dock tool panel. All state and orchestration live in
+///     <see cref="WorkspacePanelToolViewModel" />, bound as this control's data context by Dock when the panel is
+///     realized. This view's only real logic is fulfilling the view model's picker-request events with real
+///     Avalonia <c>StorageProvider</c> pickers (the view model itself has no Avalonia dependency) and forwarding
+///     drag-and-drop file/folder drops to the view model's shell-backed add commands.
+/// </summary>
+public partial class WorkspacePanelToolView : UserControl
+{
+    /// <summary>
+    ///     Constructor used both at runtime (Dock's view locator creates this control with no arguments and then
+    ///     assigns the corresponding <see cref="WorkspacePanelToolViewModel" /> as its data context) and by the
+    ///     Avalonia XAML previewer/designer, which is given a throwaway design-time view model.
+    /// </summary>
+    public WorkspacePanelToolView()
+    {
+        InitializeComponent();
+
+        if (Design.IsDesignMode)
+        {
+            var shell = DesignTimeShellFactory.Create();
+            DataContext = new WorkspacePanelToolViewModel(shell);
+        }
+
+        DataContextChanged += OnDataContextChanged;
+
+        AddHandler(DragDrop.DropEvent, OnDrop);
+        AddHandler(DragDrop.DragOverEvent, OnDragOver);
+    }
+
+    private WorkspacePanelToolViewModel? ViewModel => DataContext as WorkspacePanelToolViewModel;
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (ViewModel is { } viewModel)
+        {
+            viewModel.RequestAddFile += OnRequestAddFile;
+            viewModel.RequestAddFolder += OnRequestAddFolder;
+        }
+    }
+
+    private async void OnRequestAddFile(object? sender, EventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider is null || ViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Add Workspace File",
+            AllowMultiple = false,
+        });
+
+        var filePath = files.Count > 0 ? files[0].TryGetLocalPath() : null;
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return;
+        }
+
+        await viewModel.Shell.AddFileSourceAsync(filePath);
+    }
+
+    private async void OnRequestAddFolder(object? sender, EventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider is null || ViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Add Workspace Folder",
+            AllowMultiple = false,
+        });
+
+        var folderPath = folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
+        if (string.IsNullOrEmpty(folderPath))
+        {
+            return;
+        }
+
+        await viewModel.Shell.AddFolderSourceAsync(folderPath);
+    }
+
+    private void OnDragOver(object? sender, DragEventArgs e)
+    {
+        e.DragEffects = e.DataTransfer.Formats.Contains(DataFormat.File) ? DragDropEffects.Copy : DragDropEffects.None;
+    }
+
+    private async void OnDrop(object? sender, DragEventArgs e)
+    {
+        if (ViewModel is not { } viewModel || !e.DataTransfer.Formats.Contains(DataFormat.File))
+        {
+            return;
+        }
+
+        foreach (var item in e.DataTransfer.TryGetFiles() ?? [])
+        {
+            var path = item.TryGetLocalPath();
+            if (string.IsNullOrEmpty(path))
+            {
+                continue;
+            }
+
+            if (Directory.Exists(path))
+            {
+                await viewModel.Shell.AddFolderSourceAsync(path);
+            }
+            else if (File.Exists(path))
+            {
+                await viewModel.Shell.AddFileSourceAsync(path);
+            }
+        }
+    }
+}

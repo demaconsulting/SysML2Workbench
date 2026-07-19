@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DemaConsulting.SysML2Workbench.AppShellSubsystem"
+             xmlns:dd="using:Avalonia.Input"
+             x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.WorkspacePanelToolView"
+             x:DataType="local:WorkspacePanelToolViewModel">
+
+  <DockPanel Margin="4" Name="WorkspacePanelRoot" dd:DragDrop.AllowDrop="True">
+    <TextBlock DockPanel.Dock="Top" Text="Workspace" FontWeight="Bold" />
+
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4" Margin="0,4,0,4">
+      <Button Name="AddFileButton" Content="Add File..." Command="{Binding AddFileCommand}" />
+      <Button Name="AddFolderButton" Content="Add Folder..." Command="{Binding AddFolderCommand}" />
+      <Button Name="RemoveButton" Content="Remove" Command="{Binding RemoveSelectedCommand}" />
+    </StackPanel>
+
+    <TextBlock DockPanel.Dock="Bottom" Name="StatusTextBlock" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="Red" />
+
+    <TextBlock DockPanel.Dock="Top"
+               Name="EmptyStateTextBlock"
+               IsVisible="{Binding IsEmpty}"
+               Text="No sources open - Add File / Add Folder, or drag files/folders here"
+               TextWrapping="Wrap" />
+
+    <TreeView Name="WorkspaceTreeView"
+              IsVisible="{Binding !IsEmpty}"
+              ItemsSource="{Binding RootNodes}"
+              SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+      <TreeView.DataTemplates>
+        <TreeDataTemplate DataType="local:WorkspaceSourceNode" ItemsSource="{Binding Children}">
+          <TextBlock Text="{Binding Source.Path}" />
+        </TreeDataTemplate>
+        <TreeDataTemplate DataType="local:WorkspaceFileNode">
+          <TextBlock Text="{Binding FilePath}" />
+        </TreeDataTemplate>
+      </TreeView.DataTemplates>
+    </TreeView>
+  </DockPanel>
+
+</UserControl>

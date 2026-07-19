@@ -70,7 +70,7 @@ public sealed class SysML2WorkbenchTests : IDisposable
         using var shell = CreateShell();
 
         // Act: initial open
-        var opened = await shell.OpenWorkspaceAsync(_tempRoot);
+        var opened = await shell.AddFolderSourceAsync(_tempRoot);
 
         // Assert
         Assert.Single(opened.Files);
@@ -96,7 +96,7 @@ public sealed class SysML2WorkbenchTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var view = shell.ViewCatalog.AvailableViews[0];
 
         // Act
@@ -117,7 +117,7 @@ public sealed class SysML2WorkbenchTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
 
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.Interconnection);
@@ -152,7 +152,7 @@ public sealed class SysML2WorkbenchTests : IDisposable
         using var shell = CreateShell();
 
         // Act
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
 
         // Assert
         Assert.NotEmpty(shell.Diagnostics.VisibleDiagnostics);
@@ -178,11 +178,11 @@ public sealed class SysML2WorkbenchTests : IDisposable
             logger);
 
         // Act
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
 
         // Assert: the shell is usable and an operational log entry was written locally
         Assert.NotNull(shell.CurrentWorkspace);
         Assert.True(File.Exists(logger.ActiveFilePath));
-        Assert.Contains("Workspace opened", File.ReadAllText(logger.ActiveFilePath));
+        Assert.Contains("Workspace folder source added", File.ReadAllText(logger.ActiveFilePath));
     }
 }

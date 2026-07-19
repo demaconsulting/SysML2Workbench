@@ -58,6 +58,20 @@ public sealed class MainWindowShell : IDisposable
     private readonly List<WorkbenchTab> _openTabs = [];
 
     /// <summary>
+    ///     Owns the ordered set of file/folder sources the user has added to the workspace. The shell is the
+    ///     single owner of this instance; other consumers (for example <see cref="WorkspacePanelToolViewModel" />)
+    ///     read source/attribution state only through the shell's own read-only surface.
+    /// </summary>
+    private readonly WorkspaceSourceSet _sourceSet = new();
+
+    /// <summary>
+    ///     Identifiers of the sources currently registered with <see cref="_fileWatcher" />, tracked so mutators
+    ///     can diff the previous and new source sets and call <see cref="FileWatcher.WatchSource" />/
+    ///     <see cref="FileWatcher.UnwatchSource" /> only for the sources that actually changed.
+    /// </summary>
+    private readonly HashSet<string> _watchedSourceIds = [];
+
+    /// <summary>
     ///     Canvas shown when no diagram tab is open, so <see cref="Canvas" /> always has a usable instance to
     ///     return even before the first tab exists (or after the last tab closes).
     /// </summary>
@@ -71,10 +85,20 @@ public sealed class MainWindowShell : IDisposable
     private int _customPreviewTabSequence;
 
     /// <summary>
-    ///     Currently loaded workspace and its revision metadata, or <see langword="null" /> before the first
-    ///     workspace is opened.
+    ///     Currently loaded workspace and its revision metadata. Never <see langword="null" />: the shell
+    ///     eagerly computes and applies an empty (0-source) snapshot at construction, so a freshly constructed
+    ///     shell always has a valid, if empty, workspace rather than a null placeholder.
     /// </summary>
-    public WorkspaceSnapshot? CurrentWorkspace { get; private set; }
+    public WorkspaceSnapshot CurrentWorkspace { get; private set; }
+
+    /// <summary>
+    ///     Maps each currently loaded source's id to the files it contributed, mirroring the most recent
+    ///     <see cref="WorkspaceSourceResolution.SourceIdToFiles" />. Exposed read-only so
+    ///     <see cref="WorkspacePanelToolViewModel" /> can build its source/file tree without needing its own
+    ///     <see cref="WorkspaceSourceSet" /> instance (the shell is the single owner of source state).
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> CurrentSourceIdToFiles { get; private set; } =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
 
     /// <summary>
     ///     Selected catalog view, if the user is in predefined-view mode.
@@ -129,10 +153,23 @@ public sealed class MainWindowShell : IDisposable
     /// <remarks>
     ///     Raised via the constructor-injected <see cref="IUiDispatcher" /> (see <see cref="RaiseTabsChanged" />),
     ///     so subscribers are guaranteed to observe it on the dispatcher's target thread even though the shell
-    ///     methods that trigger it - most notably <see cref="OpenWorkspaceAsync" />, which awaits workspace
+    ///     methods that trigger it - most notably <see cref="AddFolderSourceAsync" />, which awaits workspace
     ///     loading with <c>ConfigureAwait(false)</c> - may themselves resume on a background thread pool thread.
     /// </remarks>
     public event EventHandler? TabsChanged;
+
+    /// <summary>
+    ///     Raised whenever the set of workspace sources changes: a file or folder source is added or removed.
+    ///     Raised after the resulting workspace snapshot has already been applied (<see cref="CurrentWorkspace" />
+    ///     and <see cref="CurrentSourceIdToFiles" /> reflect the change), so subscribers such as
+    ///     <see cref="WorkspacePanelToolViewModel" /> can rebuild their source tree directly from shell state.
+    /// </summary>
+    /// <remarks>
+    ///     Raised via the same injected <see cref="IUiDispatcher" /> as <see cref="TabsChanged" />, for the same
+    ///     reason: source mutators await workspace loading with <c>ConfigureAwait(false)</c> and may resume on a
+    ///     background thread.
+    /// </remarks>
+    public event EventHandler? SourcesChanged;
 
     /// <summary>
     ///     Dispatcher used to marshal <see cref="TabsChanged" /> notifications onto whatever thread the shell's
@@ -188,6 +225,13 @@ public sealed class MainWindowShell : IDisposable
         _snippetGenerator = snippetGenerator;
         _logger = logger;
         _uiDispatcher = uiDispatcher ?? new ImmediateUiDispatcher();
+
+        // Eagerly establish a valid, empty (0-source) workspace snapshot at construction, so CurrentWorkspace is
+        // never null. Safe to await synchronously here: a zero-source resolution's WorkspaceLoader.LoadAsync([])
+        // call performs no I/O and does not throw (confirmed stdlib-only, diagnostic-free result), and
+        // LoadInternalAsync uses ConfigureAwait(false) throughout so this cannot deadlock on a captured context.
+        var emptySnapshot = _workspaceModel.LoadWorkspaceAsync(_sourceSet.Sources, _sourceSet.Resolve()).GetAwaiter().GetResult();
+        CurrentWorkspace = emptySnapshot;
     }
 
     /// <summary>
@@ -201,62 +245,151 @@ public sealed class MainWindowShell : IDisposable
     }
 
     /// <summary>
-    ///     Loads a new workspace into the shell, refreshes the view catalog and diagnostics, resets active
-    ///     selections, and (re)targets live-watching to the newly opened folder.
+    ///     Raises <see cref="SourcesChanged" /> via the injected <see cref="IUiDispatcher" />, so the
+    ///     notification always reaches subscribers on the dispatcher's target thread, regardless of which thread
+    ///     this method is called from.
     /// </summary>
-    /// <param name="rootPath">User-selected folder.</param>
-    /// <returns>The freshly loaded workspace snapshot.</returns>
-    /// <remarks>
-    ///     The file watcher is retargeted to <paramref name="rootPath" /> on every call, not just the first: any
-    ///     previously watched root is torn down and any of its pending change state is discarded, so a second or
-    ///     later workspace open never leaves the watcher bound to a stale folder. Because workspace loading is
-    ///     awaited with <c>ConfigureAwait(false)</c>, this method's continuation - including the
-    ///     <see cref="TabsChanged" /> notification raised by <see cref="ApplyWorkspaceSnapshot" /> - may resume on
-    ///     a background thread; <see cref="TabsChanged" /> is nonetheless delivered via the injected
-    ///     <see cref="IUiDispatcher" />, so UI-facing subscribers still observe it on their required thread.
-    /// </remarks>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="rootPath" /> is null or whitespace.</exception>
-    /// <exception cref="DirectoryNotFoundException">Thrown when <paramref name="rootPath" /> does not exist.</exception>
-    public async Task<WorkspaceSnapshot> OpenWorkspaceAsync(string rootPath)
+    private void RaiseSourcesChanged()
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(rootPath);
+        _uiDispatcher.Post(() => SourcesChanged?.Invoke(this, EventArgs.Empty));
+    }
+
+    /// <summary>
+    ///     Adds a single file to the workspace's source set, or returns the current snapshot unchanged if the
+    ///     same normalized path is already a registered file source.
+    /// </summary>
+    /// <param name="path">File path to add.</param>
+    /// <returns>The freshly resolved and loaded workspace snapshot.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="path" /> is null or whitespace.</exception>
+    public async Task<WorkspaceSnapshot> AddFileSourceAsync(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
         try
         {
-            var snapshot = await _workspaceModel.LoadWorkspaceAsync(rootPath).ConfigureAwait(false);
-            ApplyWorkspaceSnapshot(snapshot);
-
-            _fileWatcher.StartWatching(snapshot.RootPath);
-
-            _logger.Log(LogLevel.Info, $"Workspace opened: {snapshot.RootPath}");
+            _sourceSet.AddFile(path);
+            var snapshot = await ApplySourceSetChangeAsync().ConfigureAwait(false);
+            _logger.Log(LogLevel.Info, $"Workspace file source added: {path}");
             return snapshot;
         }
         catch (Exception ex) when (ex is not ArgumentException)
         {
-            _logger.Log(LogLevel.Error, $"Failed to open workspace '{rootPath}'", ex);
+            _logger.Log(LogLevel.Error, $"Failed to add workspace file source '{path}'", ex);
             throw;
         }
+    }
+
+    /// <summary>
+    ///     Adds a folder to the workspace's source set, or returns the current snapshot unchanged if the same
+    ///     normalized path is already a registered folder source.
+    /// </summary>
+    /// <param name="path">Folder path to add.</param>
+    /// <returns>The freshly resolved and loaded workspace snapshot.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="path" /> is null or whitespace.</exception>
+    /// <exception cref="DirectoryNotFoundException">Thrown when <paramref name="path" /> does not exist.</exception>
+    public async Task<WorkspaceSnapshot> AddFolderSourceAsync(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+        try
+        {
+            _sourceSet.AddFolder(path);
+            var snapshot = await ApplySourceSetChangeAsync().ConfigureAwait(false);
+            _logger.Log(LogLevel.Info, $"Workspace folder source added: {path}");
+            return snapshot;
+        }
+        catch (Exception ex) when (ex is not ArgumentException)
+        {
+            _logger.Log(LogLevel.Error, $"Failed to add workspace folder source '{path}'", ex);
+            throw;
+        }
+    }
+
+    /// <summary>
+    ///     Removes a source from the workspace's source set. A no-op (still resolves and reapplies) when
+    ///     <paramref name="sourceId" /> does not refer to a currently registered source.
+    /// </summary>
+    /// <param name="sourceId">Identifier of the source to remove.</param>
+    /// <returns>The freshly resolved and loaded workspace snapshot.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId" /> is null or whitespace.</exception>
+    public async Task<WorkspaceSnapshot> RemoveSourceAsync(string sourceId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceId);
+
+        try
+        {
+            _sourceSet.RemoveSource(sourceId);
+            var snapshot = await ApplySourceSetChangeAsync().ConfigureAwait(false);
+            _logger.Log(LogLevel.Info, $"Workspace source removed: {sourceId}");
+            return snapshot;
+        }
+        catch (Exception ex) when (ex is not ArgumentException)
+        {
+            _logger.Log(LogLevel.Error, $"Failed to remove workspace source '{sourceId}'", ex);
+            throw;
+        }
+    }
+
+    /// <summary>
+    ///     Resolves the current <see cref="_sourceSet" />, loads the resulting workspace, applies the snapshot,
+    ///     diffs the previous and new watch sets to call <see cref="FileWatcher.WatchSource" />/
+    ///     <see cref="FileWatcher.UnwatchSource" /> only for sources that actually changed, and raises
+    ///     <see cref="SourcesChanged" />.
+    /// </summary>
+    /// <returns>The freshly resolved and loaded workspace snapshot.</returns>
+    private async Task<WorkspaceSnapshot> ApplySourceSetChangeAsync()
+    {
+        var resolution = _sourceSet.Resolve();
+        var snapshot = await _workspaceModel.LoadWorkspaceAsync(_sourceSet.Sources, resolution).ConfigureAwait(false);
+        ApplyWorkspaceSnapshot(snapshot);
+        CurrentSourceIdToFiles = resolution.SourceIdToFiles;
+
+        var currentSourceIds = _sourceSet.Sources.Select(s => s.Id).ToHashSet();
+
+        // Start watching every newly added source (idempotent for sources already watched).
+        foreach (var source in _sourceSet.Sources)
+        {
+            if (_watchedSourceIds.Add(source.Id))
+            {
+                _fileWatcher.WatchSource(source);
+            }
+        }
+
+        // Stop watching every source no longer present in the set.
+        foreach (var staleSourceId in _watchedSourceIds.Where(id => !currentSourceIds.Contains(id)).ToList())
+        {
+            _fileWatcher.UnwatchSource(staleSourceId);
+            _watchedSourceIds.Remove(staleSourceId);
+        }
+
+        RaiseSourcesChanged();
+        return snapshot;
     }
 
     /// <summary>
     ///     Re-applies pending external file changes by reloading the workspace and refreshing all
     ///     workspace-derived shell state.
     /// </summary>
+    /// <remarks>
+    ///     Safe to call with zero currently watched sources: the shell then skips
+    ///     <see cref="FileWatcher.FlushPendingChanges" /> entirely (which itself requires at least one watched
+    ///     source) and reloads against zero changed paths, which is a valid, cheap no-op-ish reload rather than a
+    ///     failure - refreshing an empty workspace is a first-class, supported operation. Always re-resolves
+    ///     <see cref="_sourceSet" /> before reloading, so a file created or deleted externally under a
+    ///     still-registered folder source is actually picked up, rather than the reload recomputing against a
+    ///     stale file list captured at the last explicit Add/Remove source mutation.
+    /// </remarks>
     /// <returns>The refreshed workspace snapshot.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when no workspace has been opened yet.</exception>
     public async Task<WorkspaceSnapshot> RefreshFromExternalChangesAsync()
     {
-        if (CurrentWorkspace is null)
-        {
-            throw new InvalidOperationException("A workspace must be opened before it can be refreshed.");
-        }
-
-        var changedPaths = _fileWatcher.FlushPendingChanges();
+        IReadOnlyList<string> changedPaths = _watchedSourceIds.Count == 0 ? [] : _fileWatcher.FlushPendingChanges();
 
         try
         {
-            var snapshot = await _workspaceModel.ReloadFilesAsync(changedPaths).ConfigureAwait(false);
+            var resolution = _sourceSet.Resolve();
+            var snapshot = await _workspaceModel.ReloadFilesAsync(changedPaths, resolution).ConfigureAwait(false);
             ApplyWorkspaceSnapshot(snapshot);
+            CurrentSourceIdToFiles = resolution.SourceIdToFiles;
             _logger.Log(LogLevel.Info, $"Workspace refreshed after external change ({changedPaths.Count} file(s)).");
             return snapshot;
         }
@@ -278,9 +411,9 @@ public sealed class MainWindowShell : IDisposable
     /// <exception cref="ArgumentException">Thrown when <paramref name="viewId" /> is not present in the catalog.</exception>
     public string SelectPredefinedView(string viewId)
     {
-        if (CurrentWorkspace is null)
+        if (CurrentWorkspace.Sources.Count == 0)
         {
-            throw new InvalidOperationException("A workspace must be opened before a view can be selected.");
+            throw new InvalidOperationException("A workspace source must be added before a view can be selected.");
         }
 
         var descriptor = _viewCatalogPresenter.SelectView(viewId);
@@ -319,9 +452,9 @@ public sealed class MainWindowShell : IDisposable
     public string PreviewCustomView(ViewDefinitionModel definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        if (CurrentWorkspace is null)
+        if (CurrentWorkspace.Sources.Count == 0)
         {
-            throw new InvalidOperationException("A workspace must be opened before a custom view can be previewed.");
+            throw new InvalidOperationException("A workspace source must be added before a custom view can be previewed.");
         }
 
         var validation = definition.ValidateAgainstWorkspace(CurrentWorkspace.Workspace);
