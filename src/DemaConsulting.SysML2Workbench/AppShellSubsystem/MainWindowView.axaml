@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:dock="using:Dock.Avalonia.Controls"
         xmlns:dockControls="using:Dock.Model.Mvvm.Controls"
+        xmlns:mi="using:Material.Icons.Avalonia"
         x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.MainWindowView"
         Title="SysML2Workbench"
         Icon="avares://DemaConsulting.SysML2Workbench/Assets/Icon.png"
@@ -11,14 +12,44 @@
 
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File">
-        <MenuItem Name="AddFileSourceMenuItem" Header="Open _File..." />
-        <MenuItem Name="AddFolderSourceMenuItem" Header="Open _Folder..." />
+        <MenuItem Name="AddFileSourceMenuItem" Header="Open _File...">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="FileOutline" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Name="AddFolderSourceMenuItem" Header="Open _Folder...">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="FolderOpenOutline" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <Separator />
+        <MenuItem Name="ExitMenuItem" Header="E_xit" Click="OnExitMenuItemClick">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="ExitToApp" />
+          </MenuItem.Icon>
+        </MenuItem>
       </MenuItem>
       <MenuItem Header="_View">
-        <MenuItem Name="WorkspacePanelMenuItem" Header="_Workspace" Click="OnWorkspacePanelMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
-        <MenuItem Name="PredefinedViewsMenuItem" Header="_Predefined Views" Click="OnPredefinedViewsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
-        <MenuItem Name="CustomViewBuilderMenuItem" Header="_Custom View Builder" Click="OnCustomViewBuilderMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
-        <MenuItem Name="DiagnosticsMenuItem" Header="_Diagnostics" Click="OnDiagnosticsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" />
+        <MenuItem Name="WorkspacePanelMenuItem" Header="_Workspace" Click="OnWorkspacePanelMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="FileTree" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Name="PredefinedViewsMenuItem" Header="_Predefined Views" Click="OnPredefinedViewsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="ViewList" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Name="CustomViewBuilderMenuItem" Header="_Custom View Builder" Click="OnCustomViewBuilderMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="PencilRuler" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Name="DiagnosticsMenuItem" Header="_Diagnostics" Click="OnDiagnosticsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="AlertCircleOutline" />
+          </MenuItem.Icon>
+        </MenuItem>
       </MenuItem>
     </Menu>
 

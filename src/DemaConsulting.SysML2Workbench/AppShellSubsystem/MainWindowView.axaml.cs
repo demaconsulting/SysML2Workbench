@@ -115,6 +115,15 @@ public partial class MainWindowView : Window
     }
 
     /// <summary>
+    ///     Handles the File menu's "Exit" click by closing the main window, which shuts down the application
+    ///     (this is the desktop app's only window).
+    /// </summary>
+    private void OnExitMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    /// <summary>
     ///     Restores <paramref name="tool" /> to its original dock if it was hidden by a prior close (via
     ///     <see cref="WorkbenchDockFactory" />'s <c>HideToolsOnClose</c> setting, a safe no-op if it is not
     ///     currently hidden), then makes it the active and focused dockable in its owning dock. This never hides
