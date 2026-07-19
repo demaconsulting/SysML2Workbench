@@ -1,0 +1,39 @@
+---
+resource-path:
+  - docs/design
+  - docs/design/sysml2-workbench
+  - docs/design/ots
+  - docs/template
+
+input-files:
+  - docs/design/title.txt
+  - docs/design/introduction.md
+  - docs/design/sysml2-workbench.md
+  - docs/design/sysml2-workbench/app-shell-subsystem.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/main-window-shell.md
+  - docs/design/sysml2-workbench/workspace-subsystem.md
+  - docs/design/sysml2-workbench/workspace-subsystem/workspace-model.md
+  - docs/design/sysml2-workbench/workspace-subsystem/file-watcher.md
+  - docs/design/sysml2-workbench/workspace-subsystem/diagnostics-aggregator.md
+  - docs/design/sysml2-workbench/view-catalog-subsystem.md
+  - docs/design/sysml2-workbench/view-catalog-subsystem/view-catalog-presenter.md
+  - docs/design/sysml2-workbench/view-builder-subsystem.md
+  - docs/design/sysml2-workbench/view-builder-subsystem/view-definition-model.md
+  - docs/design/sysml2-workbench/view-builder-subsystem/sysml-snippet-generator.md
+  - docs/design/sysml2-workbench/layout-rendering-subsystem.md
+  - docs/design/sysml2-workbench/layout-rendering-subsystem/layout-invoker.md
+  - docs/design/sysml2-workbench/layout-rendering-subsystem/svg-canvas-host.md
+  - docs/design/sysml2-workbench/diagnostics-panel-subsystem.md
+  - docs/design/sysml2-workbench/diagnostics-panel-subsystem/diagnostics-list-view.md
+  - docs/design/sysml2-workbench/logging-subsystem.md
+  - docs/design/sysml2-workbench/logging-subsystem/rolling-file-logger.md
+  - docs/design/ots.md
+  - docs/design/ots/avalonia.md
+  - docs/design/ots/communitytoolkit-mvvm.md
+  - docs/design/ots/dock.md
+  - docs/design/ots/rendering.md
+  - docs/design/ots/sysml2-tools.md
+  - docs/design/ots/xunit.md
+template: template.html
+table-of-contents: true
+number-sections: true

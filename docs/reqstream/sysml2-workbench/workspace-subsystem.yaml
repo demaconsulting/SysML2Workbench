@@ -12,7 +12,7 @@ sections:
               - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-MaintainWorkspaceTree'
               - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-ResolveWorkspaceInputs'
             tests:
-              - 'WorkspaceSubsystemTests.OpenWorkspace_BuildsWorkspaceState'
+              - 'OpenWorkspace_BuildsWorkspaceState'
 
           - id: 'SysML2Workbench-WorkspaceSubsystem-RefreshWorkspaceState'
             title: 'The WorkspaceSubsystem shall detect external workspace changes, update affected model state, and keep workspace diagnostics current for downstream UI consumers.'
@@ -25,7 +25,7 @@ sections:
               - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-CollectWorkspaceDiagnostics'
               - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-PublishDeterministicDiagnostics'
             tests:
-              - 'WorkspaceSubsystemTests.ExternalChange_RefreshesWorkspaceState'
+              - 'ExternalChange_RefreshesWorkspaceState'
 
           - id: 'SysML2Workbench-WorkspaceSubsystem-AggregateWorkspaceDiagnostics'
             title: 'The WorkspaceSubsystem shall expose a unified set of workspace diagnostics suitable for display without requiring per-file inspection.'
@@ -35,4 +35,4 @@ sections:
               - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-CollectWorkspaceDiagnostics'
               - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-PublishDeterministicDiagnostics'
             tests:
-              - 'WorkspaceSubsystemTests.OpenWorkspace_ProducesUnifiedDiagnostics'
+              - 'OpenWorkspace_ProducesUnifiedDiagnostics'

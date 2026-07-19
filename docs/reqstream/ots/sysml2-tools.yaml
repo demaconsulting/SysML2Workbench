@@ -9,11 +9,11 @@ sections:
             justification: |
               SysML2Workbench is intentionally a thin shell over the published SysML2Tools libraries instead of reimplementing parsing and semantic resolution.
             tests:
-              - 'SysML2ToolsTests.LoadWorkspaceModel_ParsesAndResolvesImports'
+              - 'LoadWorkspaceModel_ParsesAndResolvesImports'
 
           - id: 'SysML2Tools-GenerateViewLayouts'
             title: 'The SysML2Workbench shall use SysML2Tools to generate layout data for supported predefined and custom views.'
             justification: |
               The product depends on the existing SysML2Tools layout strategies to produce diagram structure for rendering.
             tests:
-              - 'SysML2ToolsTests.RenderView_GeneratesLayoutGraph'
+              - 'RenderView_GeneratesLayoutGraph'

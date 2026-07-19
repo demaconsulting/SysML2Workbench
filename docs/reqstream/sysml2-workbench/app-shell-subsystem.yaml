@@ -12,7 +12,7 @@ sections:
               - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ArrangePrimaryRegions'
               - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ManageViewTabs'
             tests:
-              - 'AppShellSubsystemTests.Startup_ShowsWorkspaceDiagramAndDiagnosticsRegions'
+              - 'Startup_ShowsWorkspaceDiagramAndDiagnosticsRegions'
 
           - id: 'SysML2Workbench-AppShellSubsystem-CoordinateSessionWorkspace'
             title: 'The AppShellSubsystem shall coordinate active workspace, view-selection, custom-view, and diagnostics state across the main window session.'
@@ -21,7 +21,7 @@ sections:
             children:
               - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SynchronizeSessionState'
             tests:
-              - 'AppShellSubsystemTests.SessionChanges_SynchronizeShellState'
+              - 'SessionChanges_SynchronizeShellState'
 
           - id: 'SysML2Workbench-AppShellSubsystem-HostCustomViewWorkflow'
             title: 'The AppShellSubsystem shall expose commands and surfaces that let users preview and export custom views without leaving the main window.'
@@ -31,4 +31,4 @@ sections:
               - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ArrangePrimaryRegions'
               - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SynchronizeSessionState'
             tests:
-              - 'AppShellSubsystemTests.CustomViewWorkflow_PreviewsAndExportsFromShell'
+              - 'CustomViewWorkflow_PreviewsAndExportsFromShell'

@@ -22,6 +22,11 @@ tools:
     command: npm --version
     regex: (?<version>\d+\.\d+\.\d+)
 
+  # SonarScanner for .NET (from dotnet tool list)
+  dotnet-sonarscanner:
+    command: dotnet tool list
+    regex: (?i)dotnet-sonarscanner\s+(?<version>\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?)
+
   # Pandoc (DemaConsulting.PandocTool from dotnet tool list)
   pandoc:
     command: dotnet tool list

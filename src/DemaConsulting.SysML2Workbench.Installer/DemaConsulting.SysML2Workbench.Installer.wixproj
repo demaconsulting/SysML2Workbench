@@ -1,0 +1,28 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <!--
+    Builds the Windows MSI installer for SysML2Workbench using the WiX Toolset v5
+    MSBuild SDK. Pinned to the 5.0.x line, which predates the WiX Open Source
+    Maintenance Fee EULA introduced with v6.0 (see https://www.firegiant.com/blog/2025/2/18/wix-osmf/).
+
+    This project is intentionally NOT included in SysML2Workbench.slnx: MSI generation
+    is Windows-only (Windows Installer format dependency), so it is built explicitly by
+    the build job's windows-latest matrix leg via `dotnet build` against this .wixproj
+    path rather than as part of a solution-wide `dotnet build`/`dotnet restore` that
+    must also succeed on Linux/macOS runners.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <!-- MSI targets 64-bit installs to match the self-contained win-x64 publish output. -->
+    <Platform Condition="'$(Platform)' == '' Or '$(Platform)' == 'AnyCPU'">x64</Platform>
+    <!-- Published self-contained win-x64 application output to harvest into the MSI. -->
+    <SysML2WorkbenchPublishDir Condition="'$(SysML2WorkbenchPublishDir)' == ''">$(MSBuildThisFileDirectory)..\..\publish\win-x64\</SysML2WorkbenchPublishDir>
+    <!-- DEMA Consulting logo (repository-root Icon.ico), used for the Add/Remove Programs icon. -->
+    <SysML2WorkbenchIconFile Condition="'$(SysML2WorkbenchIconFile)' == ''">$(MSBuildThisFileDirectory)..\..\Icon.ico</SysML2WorkbenchIconFile>
+    <!-- Exposes MSBuild properties as WiX preprocessor variables ($(Version), $(SysML2WorkbenchPublishDir),
+         $(SysML2WorkbenchIconFile) in .wxs). -->
+    <DefineConstants>Version=$(Version);SysML2WorkbenchPublishDir=$(SysML2WorkbenchPublishDir);SysML2WorkbenchIconFile=$(SysML2WorkbenchIconFile)</DefineConstants>
+  </PropertyGroup>
+
+</Project>

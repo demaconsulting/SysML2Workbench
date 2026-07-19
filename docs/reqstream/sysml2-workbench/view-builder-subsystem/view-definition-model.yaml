@@ -11,20 +11,20 @@ sections:
                 justification: |
                   The GUI builder needs a single source of truth for which type of diagram the user is constructing.
                 tests:
-                  - 'ViewDefinitionModelTests.ChangeViewKind_StoresCurrentSelection'
+                  - 'ChangeViewKind_StoresCurrentSelection'
 
               - id: 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeTargets'
                 title: 'The ViewDefinitionModel shall store one or more selected expose targets for the custom view definition.'
                 justification: |
                   The architecture explicitly supports multi-target expose semantics, so the unit must preserve multiple selected targets.
                 tests:
-                  - 'ViewDefinitionModelTests.AddExposeTarget_StoresMultipleExposeTargetsWithoutDuplicates'
-                  - 'ViewDefinitionModelTests.RemoveExposeTarget_RemovesOnlyMatchingSelection'
-                  - 'ViewDefinitionModelTests.RemoveExposeTarget_UnknownQualifiedName_IsNoOp'
-                  - 'ViewDefinitionModelTests.RemoveExposeTarget_KnownQualifiedNameWrongRecursionKind_IsNoOp'
-                  - 'ViewDefinitionModelTests.AddExposeTarget_ExactQualifiedNameAndKindTwice_IsNoOp'
-                  - 'ViewDefinitionModelTests.AddExposeTarget_SameQualifiedNameDifferentRecursionKind_AddsBothSelections'
-                  - 'ViewDefinitionModelTests.RemoveExposeTarget_OneOfTwoSameQualifiedNameSelections_LeavesOtherUntouched'
+                  - 'AddExposeTarget_StoresMultipleExposeTargetsWithoutDuplicates'
+                  - 'RemoveExposeTarget_RemovesOnlyMatchingSelection'
+                  - 'RemoveExposeTarget_UnknownQualifiedName_IsNoOp'
+                  - 'RemoveExposeTarget_KnownQualifiedNameWrongRecursionKind_IsNoOp'
+                  - 'AddExposeTarget_ExactQualifiedNameAndKindTwice_IsNoOp'
+                  - 'AddExposeTarget_SameQualifiedNameDifferentRecursionKind_AddsBothSelections'
+                  - 'RemoveExposeTarget_OneOfTwoSameQualifiedNameSelections_LeavesOtherUntouched'
 
               - id: 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeRecursionAndFilter'
                 title: 'The ViewDefinitionModel shall store an optional recursion kind and bracket-filter expression per expose target and reject bracket filters on non-recursive kinds.'
@@ -33,17 +33,17 @@ sections:
                   expression on the two recursive kinds; the builder must let users select a kind and filter per target and
                   must flag combinations that are not valid SysML v2 syntax.
                 tests:
-                  - 'ViewDefinitionModelTests.SetExposeRecursionKind_ChangesSelectedTargetKind'
-                  - 'ViewDefinitionModelTests.SetExposeRecursionKind_OneOfTwoSameQualifiedNameSelections_DoesNotAffectOther'
-                  - 'ViewDefinitionModelTests.SetExposeRecursionKind_TargetKindAlreadyTakenBySibling_IsNoOp'
-                  - 'ViewDefinitionModelTests.SetExposeBracketFilter_SetsAndClearsExpression'
-                  - 'ViewDefinitionModelTests.ValidateAgainstWorkspace_ValidBracketFilterOnRecursiveTarget_ReturnsNoDiagnostics'
-                  - 'ViewDefinitionModelTests.ValidateAgainstWorkspace_InvalidBracketFilterExpression_ReturnsDiagnostic'
-                  - 'ViewDefinitionModelTests.ValidateAgainstWorkspace_BracketFilterOnNonRecursiveKind_ReturnsDiagnostic'
+                  - 'SetExposeRecursionKind_ChangesSelectedTargetKind'
+                  - 'SetExposeRecursionKind_OneOfTwoSameQualifiedNameSelections_DoesNotAffectOther'
+                  - 'SetExposeRecursionKind_TargetKindAlreadyTakenBySibling_IsNoOp'
+                  - 'SetExposeBracketFilter_SetsAndClearsExpression'
+                  - 'ValidateAgainstWorkspace_ValidBracketFilterOnRecursiveTarget_ReturnsNoDiagnostics'
+                  - 'ValidateAgainstWorkspace_InvalidBracketFilterExpression_ReturnsDiagnostic'
+                  - 'ValidateAgainstWorkspace_BracketFilterOnNonRecursiveKind_ReturnsDiagnostic'
 
               - id: 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-ReportDefinitionReadiness'
                 title: 'The ViewDefinitionModel shall report whether the current custom view definition contains enough information to render or export.'
                 justification: |
                   The shell and snippet generator need to know when a user's current selections form a usable custom view definition.
                 tests:
-                  - 'ViewDefinitionModelTests.DefinitionState_ReportsRenderAndExportReadiness'
+                  - 'DefinitionState_ReportsRenderAndExportReadiness'

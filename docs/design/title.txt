@@ -1,0 +1,14 @@
+---
+title: "SysML2Workbench Software Design Document"
+subtitle: "Cross-platform desktop viewer and IDE for SysML v2 models"
+author: "DEMA Consulting"
+description: "Software Design Document for SysML2Workbench"
+lang: en-US
+keywords:
+  - Design
+  - Architecture
+  - .NET
+  - Avalonia
+  - SysML v2
+  - SysML2Tools
+---

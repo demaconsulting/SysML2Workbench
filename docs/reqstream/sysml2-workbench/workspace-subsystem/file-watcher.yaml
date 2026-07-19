@@ -11,11 +11,11 @@ sections:
                 justification: |
                   Live workspace refresh is driven by external file-system activity, so the unit must observe all change types relevant to the open model set.
                 tests:
-                  - 'FileWatcherTests.ExternalFileChange_RaisesAffectedPathEvent'
+                  - 'ExternalFileChange_RaisesAffectedPathEvent'
 
               - id: 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-CoalesceReloadTriggers'
                 title: 'The FileWatcher shall coalesce bursts of file-system notifications into reload triggers that identify the affected workspace paths.'
                 justification: |
                   Editors and source-control operations often emit multiple low-level events, and the workspace refresh pipeline needs stable, actionable reload requests.
                 tests:
-                  - 'FileWatcherTests.NotificationBurst_CoalescesIntoSingleReloadTrigger'
+                  - 'NotificationBurst_CoalescesIntoSingleReloadTrigger'

@@ -11,7 +11,7 @@ sections:
             children:
               - 'SysML2Workbench-LoggingSubsystem-RollingFileLogger-WriteTimestampedEntries'
             tests:
-              - 'LoggingSubsystemTests.LogEvent_WritesLocalEntry'
+              - 'LogEvent_WritesLocalEntry'
 
           - id: 'SysML2Workbench-LoggingSubsystem-RetainRecentLogHistory'
             title: 'The LoggingSubsystem shall retain recent operational history by rotating log files without unbounded growth.'
@@ -20,4 +20,4 @@ sections:
             children:
               - 'SysML2Workbench-LoggingSubsystem-RollingFileLogger-RotateLogFiles'
             tests:
-              - 'LoggingSubsystemTests.LogGrowth_RotatesRetainedFiles'
+              - 'LogGrowth_RotatesRetainedFiles'

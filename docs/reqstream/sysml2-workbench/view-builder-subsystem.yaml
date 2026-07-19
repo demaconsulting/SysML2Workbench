@@ -14,7 +14,7 @@ sections:
               - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeRecursionAndFilter'
               - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-ReportDefinitionReadiness'
             tests:
-              - 'ViewBuilderSubsystemTests.EditDefinition_TracksCustomViewInputs'
+              - 'EditDefinition_TracksCustomViewInputs'
 
           - id: 'SysML2Workbench-ViewBuilderSubsystem-GenerateCustomViewSnippet'
             title: 'The ViewBuilderSubsystem shall generate copy-pasteable SysML text from the current custom view definition.'
@@ -25,4 +25,4 @@ sections:
               - 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-PreserveDefinitionSemantics'
               - 'SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator-EmitRecursionKindForms'
             tests:
-              - 'ViewBuilderSubsystemTests.ExportDefinition_GeneratesSysmlSnippet'
+              - 'ExportDefinition_GeneratesSysmlSnippet'

@@ -14,9 +14,13 @@ words:
   - Argb
   - axaml
   - BGRA
+  - Blockquotes
   - bursty
   - buildmark
+  - dcterms
   - Dema
+  - doctitle
+  - docversion
   - Dockable
   - Dockables
   - fileassert
@@ -24,6 +28,7 @@ words:
   - LOCALAPPDATA
   - Mvvm
   - Pandoc
+  - pagetitle
   - pasteable
   - postconditions
   - renderable

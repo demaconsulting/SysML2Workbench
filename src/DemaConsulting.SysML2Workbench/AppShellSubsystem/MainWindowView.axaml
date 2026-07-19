@@ -4,6 +4,7 @@
         xmlns:dockControls="using:Dock.Model.Mvvm.Controls"
         x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.MainWindowView"
         Title="SysML2Workbench"
+        Icon="avares://DemaConsulting.SysML2Workbench/Assets/Icon.png"
         Width="1280" Height="800">
 
   <DockPanel>

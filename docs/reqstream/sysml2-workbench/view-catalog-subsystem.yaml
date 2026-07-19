@@ -12,7 +12,7 @@ sections:
               - 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-ListDefinedViews'
               - 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-DescribeViewKinds'
             tests:
-              - 'ViewCatalogSubsystemTests.LoadedModel_ListsSupportedViews'
+              - 'LoadedModel_ListsSupportedViews'
 
           - id: 'SysML2Workbench-ViewCatalogSubsystem-SignalActiveViewSelection'
             title: 'The ViewCatalogSubsystem shall publish the user-selected predefined view for downstream rendering and shell presentation.'
@@ -21,4 +21,4 @@ sections:
             children:
               - 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-TrackSelectedView'
             tests:
-              - 'ViewCatalogSubsystemTests.SelectView_PublishesActiveSelection'
+              - 'SelectView_PublishesActiveSelection'

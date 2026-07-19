@@ -10,7 +10,7 @@ sections:
           - 'SysML2Workbench-WorkspaceSubsystem-ManageWorkspace'
           - 'SysML2Workbench-WorkspaceSubsystem-RefreshWorkspaceState'
         tests:
-          - 'SysML2WorkbenchTests.OpenWorkspace_LoadsAndRefreshesWorkspace'
+          - 'OpenWorkspace_LoadsAndRefreshesWorkspace'
 
       - id: 'SysML2Workbench-BrowsePredefinedViews'
         title: 'The SysML2Workbench shall let users browse supported predefined SysML views from the loaded model and render the selected view in the desktop shell.'
@@ -21,7 +21,7 @@ sections:
           - 'SysML2Workbench-LayoutRenderingSubsystem-RenderSelectedView'
           - 'SysML2Workbench-AppShellSubsystem-PresentSelectedView'
         tests:
-          - 'SysML2WorkbenchTests.SelectPredefinedView_RendersDiagram'
+          - 'SelectPredefinedView_RendersDiagram'
 
       - id: 'SysML2Workbench-AuthorCustomViews'
         title: 'The SysML2Workbench shall let users build ad hoc custom views, preview them, and export equivalent SysML view text for promotion into model files.'
@@ -33,7 +33,7 @@ sections:
           - 'SysML2Workbench-LayoutRenderingSubsystem-RenderCustomView'
           - 'SysML2Workbench-AppShellSubsystem-HostCustomViewWorkflow'
         tests:
-          - 'SysML2WorkbenchTests.BuildCustomView_PreviewsAndExportsSnippet'
+          - 'BuildCustomView_PreviewsAndExportsSnippet'
 
       - id: 'SysML2Workbench-PresentWorkspaceDiagnostics'
         title: 'The SysML2Workbench shall collect parser and reference-resolution diagnostics for the whole workspace and present them in a dedicated diagnostics panel.'
@@ -43,7 +43,7 @@ sections:
           - 'SysML2Workbench-WorkspaceSubsystem-AggregateWorkspaceDiagnostics'
           - 'SysML2Workbench-DiagnosticsPanelSubsystem-DisplayWorkspaceDiagnostics'
         tests:
-          - 'SysML2WorkbenchTests.OpenWorkspace_ShowsWorkspaceDiagnostics'
+          - 'OpenWorkspace_ShowsWorkspaceDiagnostics'
 
       - id: 'SysML2Workbench-OperateAsDesktopShell'
         title: 'The SysML2Workbench shall provide a cross-platform desktop shell with local rolling logs for navigating workspaces, rendered diagrams, and diagnostics during a user session.'
@@ -53,4 +53,4 @@ sections:
           - 'SysML2Workbench-LoggingSubsystem-PersistOperationalEvents'
           - 'SysML2Workbench-AppShellSubsystem-CoordinateSessionWorkspace'
         tests:
-          - 'SysML2WorkbenchTests.StartSession_OpensShellAndWritesOperationalLogs'
+          - 'StartSession_OpensShellAndWritesOperationalLogs'

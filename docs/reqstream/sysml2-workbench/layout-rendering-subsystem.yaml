@@ -12,7 +12,7 @@ sections:
               - 'SysML2Workbench-LayoutRenderingSubsystem-LayoutInvoker-BuildPredefinedViewLayout'
               - 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-DisplayRenderedSvg'
             tests:
-              - 'LayoutRenderingSubsystemTests.RenderPredefinedView_DisplaysSvgDiagram'
+              - 'RenderPredefinedView_DisplaysSvgDiagram'
 
           - id: 'SysML2Workbench-LayoutRenderingSubsystem-RenderCustomView'
             title: 'The LayoutRenderingSubsystem shall render GUI-defined custom views and support pan-and-zoom navigation over the resulting diagram.'
@@ -22,4 +22,4 @@ sections:
               - 'SysML2Workbench-LayoutRenderingSubsystem-LayoutInvoker-BuildCustomViewLayout'
               - 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-SupportPanAndZoom'
             tests:
-              - 'LayoutRenderingSubsystemTests.RenderCustomView_SupportsPanAndZoom'
+              - 'RenderCustomView_SupportsPanAndZoom'

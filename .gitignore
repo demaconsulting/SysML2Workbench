@@ -5,6 +5,8 @@
 bin/
 obj/
 artifacts/
+publish/
+package/
 
 # .NET
 *.user

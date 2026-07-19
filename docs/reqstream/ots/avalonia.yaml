@@ -9,11 +9,11 @@ sections:
             justification: |
               Avalonia provides the cross-platform desktop UI surface required by the product's Windows, Linux, and macOS scope.
             tests:
-              - 'AvaloniaTests.Startup_HostsDesktopShellControls'
+              - 'Startup_HostsDesktopShellControls'
 
           - id: 'Avalonia-HostInteractiveDiagramSurface'
             title: 'The SysML2Workbench shall use Avalonia to host the interactive SVG diagram surface and supporting workspace and diagnostics panels.'
             justification: |
               The workbench depends on Avalonia to compose the major UI regions around the rendered SVG viewer.
             tests:
-              - 'AvaloniaTests.MainWindow_HostsDiagramAndDiagnosticsPanels'
+              - 'MainWindow_HostsDiagramAndDiagnosticsPanels'
