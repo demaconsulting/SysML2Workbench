@@ -23,9 +23,10 @@ public abstract class WorkspaceTreeNode
 
 /// <summary>
 ///     A tree node representing one <see cref="WorkspaceSource" />. Has no children for a
-///     <see cref="WorkspaceSourceKind.File" /> source (a leaf, with no expand arrow); has one
-///     <see cref="WorkspaceFileNode" /> child per discovered file for a <see cref="WorkspaceSourceKind.Folder" />
-///     source.
+///     <see cref="WorkspaceSourceKind.File" /> source (a leaf, with no expand arrow); has one child per
+///     top-level entry (subfolder or file) discovered under a <see cref="WorkspaceSourceKind.Folder" /> source,
+///     preserving that folder's on-disk hierarchy rather than flattening every discovered file into a single
+///     list (see <see cref="WorkspaceFolderNode" />).
 /// </summary>
 public sealed class WorkspaceSourceNode : WorkspaceTreeNode
 {
@@ -35,13 +36,37 @@ public sealed class WorkspaceSourceNode : WorkspaceTreeNode
     public required WorkspaceSource Source { get; init; }
 
     /// <summary>
-    ///     Files contributed by this source. Empty for a <see cref="WorkspaceSourceKind.File" /> source.
+    ///     Top-level children (subfolders and/or files) contributed by this source. Empty for a
+    ///     <see cref="WorkspaceSourceKind.File" /> source.
     /// </summary>
-    public required IReadOnlyList<WorkspaceFileNode> Children { get; init; }
+    public required IReadOnlyList<WorkspaceTreeNode> Children { get; init; }
 
     /// <inheritdoc />
     public override MaterialIconKind IconKind =>
         Source.Kind == WorkspaceSourceKind.Folder ? MaterialIconKind.Folder : MaterialIconKind.FileOutline;
+}
+
+/// <summary>
+///     An intermediate tree node representing one subfolder discovered under a <see cref="WorkspaceSourceKind.Folder" />
+///     source, preserving that subfolder's on-disk position instead of flattening its files up to the source
+///     node. Purely a display grouping - it carries no identity used for removal (only whole sources are
+///     removable) or file-watching (the source's watch scope already covers everything beneath it).
+/// </summary>
+public sealed class WorkspaceFolderNode : WorkspaceTreeNode
+{
+    /// <summary>
+    ///     The folder's own name (the last path segment), not its full path.
+    /// </summary>
+    public required string Name { get; init; }
+
+    /// <summary>
+    ///     This folder's children: nested <see cref="WorkspaceFolderNode" />s for its subfolders, and
+    ///     <see cref="WorkspaceFileNode" />s for files directly within it.
+    /// </summary>
+    public required IReadOnlyList<WorkspaceTreeNode> Children { get; init; }
+
+    /// <inheritdoc />
+    public override MaterialIconKind IconKind => MaterialIconKind.Folder;
 }
 
 /// <summary>
@@ -60,6 +85,13 @@ public sealed class WorkspaceFileNode : WorkspaceTreeNode
     ///     Identifier of the <see cref="WorkspaceSource" /> that owns this file.
     /// </summary>
     public required string SourceId { get; init; }
+
+    /// <summary>
+    ///     The file's own name (the last path segment), shown in the tree instead of its full path since
+    ///     ancestor <see cref="WorkspaceFolderNode" />/<see cref="WorkspaceSourceNode" /> nodes already convey
+    ///     its directory.
+    /// </summary>
+    public string Name => Path.GetFileName(FilePath);
 
     /// <inheritdoc />
     public override MaterialIconKind IconKind => MaterialIconKind.FileOutline;
@@ -134,15 +166,97 @@ public partial class WorkspacePanelToolViewModel : Dock.Model.Mvvm.Controls.Tool
                     ? sourceFiles
                     : [];
 
-                var children = files
-                    .Select(file => new WorkspaceFileNode { Id = $"{source.Id}::{file}", FilePath = file, SourceId = source.Id })
-                    .ToList();
+                var children = BuildFolderChildren(source, files);
 
                 return (WorkspaceTreeNode)new WorkspaceSourceNode { Id = source.Id, Source = source, Children = children };
             })
             .ToList();
 
         IsEmpty = RootNodes.Count == 0;
+    }
+
+    /// <summary>
+    ///     Builds the nested subfolder/file children of a <see cref="WorkspaceSourceKind.Folder" /> source,
+    ///     grouping the flat <paramref name="files" /> list (absolute paths) by their position relative to
+    ///     <paramref name="source" />'s own path so the tree preserves that folder's on-disk hierarchy instead
+    ///     of flattening every discovered file directly under the source node.
+    /// </summary>
+    /// <param name="source">The source the files were discovered under.</param>
+    /// <param name="files">Absolute paths of every file discovered under <paramref name="source" />.</param>
+    private static IReadOnlyList<WorkspaceTreeNode> BuildFolderChildren(WorkspaceSource source, IReadOnlyList<string> files)
+    {
+        if (files.Count == 0)
+        {
+            return [];
+        }
+
+        var root = new FolderGroup(RelativePath: string.Empty);
+
+        foreach (var file in files)
+        {
+            var relative = Path.GetRelativePath(source.Path, file);
+            var segments = relative.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries);
+
+            var current = root;
+            for (var i = 0; i < segments.Length - 1; i++)
+            {
+                if (!current.Subfolders.TryGetValue(segments[i], out var next))
+                {
+                    next = new FolderGroup(RelativePath: current.RelativePath.Length == 0 ? segments[i] : $"{current.RelativePath}/{segments[i]}");
+                    current.Subfolders[segments[i]] = next;
+                }
+
+                current = next;
+            }
+
+            current.Files.Add(file);
+        }
+
+        return ToTreeNodes(root, source.Id);
+    }
+
+    /// <summary>
+    ///     Converts a <see cref="FolderGroup" /> built by <see cref="BuildFolderChildren" /> into the immutable
+    ///     <see cref="WorkspaceTreeNode" /> shape the tree binds to, listing subfolders before files and sorting
+    ///     each alphabetically by name.
+    /// </summary>
+    private static IReadOnlyList<WorkspaceTreeNode> ToTreeNodes(FolderGroup group, string sourceId)
+    {
+        var nodes = new List<WorkspaceTreeNode>();
+
+        foreach (var (name, subfolder) in group.Subfolders.OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            nodes.Add(new WorkspaceFolderNode
+            {
+                Id = $"{sourceId}::{subfolder.RelativePath}",
+                Name = name,
+                Children = ToTreeNodes(subfolder, sourceId),
+            });
+        }
+
+        foreach (var file in group.Files.OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+        {
+            nodes.Add(new WorkspaceFileNode { Id = $"{sourceId}::{file}", FilePath = file, SourceId = sourceId });
+        }
+
+        return nodes;
+    }
+
+    /// <summary>
+    ///     A mutable, in-progress grouping of one folder level while <see cref="BuildFolderChildren" /> walks a
+    ///     source's flat discovered-file list; converted to immutable <see cref="WorkspaceTreeNode" />s by
+    ///     <see cref="ToTreeNodes" /> once fully populated. <see cref="RelativePath" /> is this folder's own
+    ///     path relative to the source root (empty for the root group itself), kept so descendant node ids stay
+    ///     unique even when two different subfolders share the same leaf name (for example <c>a/sub</c> and
+    ///     <c>b/sub</c>).
+    /// </summary>
+    private sealed class FolderGroup(string RelativePath)
+    {
+        public string RelativePath { get; } = RelativePath;
+
+        public Dictionary<string, FolderGroup> Subfolders { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public List<string> Files { get; } = [];
     }
 
     /// <summary>

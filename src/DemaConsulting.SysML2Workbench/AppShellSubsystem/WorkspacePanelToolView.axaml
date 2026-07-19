@@ -34,10 +34,16 @@
             <TextBlock Text="{Binding Source.Path}" />
           </StackPanel>
         </TreeDataTemplate>
+        <TreeDataTemplate DataType="local:WorkspaceFolderNode" ItemsSource="{Binding Children}">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <mi:MaterialIcon Kind="{Binding IconKind}" Width="16" Height="16" />
+            <TextBlock Text="{Binding Name}" />
+          </StackPanel>
+        </TreeDataTemplate>
         <TreeDataTemplate DataType="local:WorkspaceFileNode">
           <StackPanel Orientation="Horizontal" Spacing="4">
             <mi:MaterialIcon Kind="{Binding IconKind}" Width="16" Height="16" />
-            <TextBlock Text="{Binding FilePath}" />
+            <TextBlock Text="{Binding Name}" />
           </StackPanel>
         </TreeDataTemplate>
       </TreeView.DataTemplates>

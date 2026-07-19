@@ -39,6 +39,12 @@ produces an empty `RootNodes` list and `IsEmpty == true`. Verified by
 `WorkspaceSourceNode` whose `Children` list contains one `WorkspaceFileNode` per file discovered under that folder.
 Verified by `WorkspacePanelToolViewModelTests.RebuildTree_FolderSource_ProducesSourceNodeWithFileChildren`.
 
+**RebuildTree_FolderSourceWithSubfolders_PreservesOnDiskHierarchy**: Adding a folder source whose discovered files
+span multiple nested subfolders produces intermediate `WorkspaceFolderNode`s mirroring that on-disk hierarchy
+(subfolders before files, each level sorted alphabetically) instead of flattening every file directly under the
+source node. Verified by
+`WorkspacePanelToolViewModelTests.RebuildTree_FolderSourceWithSubfolders_PreservesOnDiskHierarchy`.
+
 **RebuildTree_FileSource_ProducesLeafSourceNodeWithNoChildren**: Adding a file source and rebuilding produces a
 `WorkspaceSourceNode` with an empty `Children` list (a leaf, no expand arrow). Verified by
 `WorkspacePanelToolViewModelTests.RebuildTree_FileSource_ProducesLeafSourceNodeWithNoChildren`.

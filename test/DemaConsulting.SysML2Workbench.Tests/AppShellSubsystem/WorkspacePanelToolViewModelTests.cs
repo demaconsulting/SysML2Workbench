@@ -94,8 +94,48 @@ public sealed class WorkspacePanelToolViewModelTests : IDisposable
         var sourceNode = Assert.IsType<WorkspaceSourceNode>(Assert.Single(viewModel.RootNodes));
         Assert.Equal(WorkspaceSourceKind.Folder, sourceNode.Source.Kind);
         Assert.Equal(2, sourceNode.Children.Count);
-        Assert.All(sourceNode.Children, child => Assert.Equal(sourceNode.Source.Id, child.SourceId));
+        Assert.All(sourceNode.Children, child => Assert.Equal(sourceNode.Source.Id, Assert.IsType<WorkspaceFileNode>(child).SourceId));
         Assert.False(viewModel.IsEmpty);
+    }
+
+    /// <summary>
+    ///     Validates that files discovered in subfolders are grouped under intermediate
+    ///     <see cref="WorkspaceFolderNode" />s mirroring the on-disk hierarchy, instead of being flattened
+    ///     directly under the source node - this is the whole point of the tree being expandable rather than a
+    ///     flat file list.
+    /// </summary>
+    [Fact]
+    public async Task RebuildTree_FolderSourceWithSubfolders_PreservesOnDiskHierarchy()
+    {
+        // Arrange: A.sysml directly under the root, B.sysml one level down in "Sub", C.sysml two levels down.
+        Directory.CreateDirectory(Path.Combine(_tempRoot, "Sub", "Nested"));
+        await WriteFileAsync(Path.Combine(_tempRoot, "A.sysml"), "package A {\n    part def Widget;\n}\n");
+        await WriteFileAsync(Path.Combine(_tempRoot, "Sub", "B.sysml"), "package B {\n    part def Gadget;\n}\n");
+        await WriteFileAsync(Path.Combine(_tempRoot, "Sub", "Nested", "C.sysml"), "package C {\n    part def Doohickey;\n}\n");
+        using var shell = CreateShell();
+        var viewModel = new WorkspacePanelToolViewModel(shell);
+
+        // Act
+        await shell.AddFolderSourceAsync(_tempRoot);
+
+        // Assert: the source node lists "Sub" (a folder) before A.sysml (a file) - folders sort before files.
+        var sourceNode = Assert.IsType<WorkspaceSourceNode>(Assert.Single(viewModel.RootNodes));
+        Assert.Equal(2, sourceNode.Children.Count);
+        var subFolder = Assert.IsType<WorkspaceFolderNode>(sourceNode.Children[0]);
+        Assert.Equal("Sub", subFolder.Name);
+        var rootFile = Assert.IsType<WorkspaceFileNode>(sourceNode.Children[1]);
+        Assert.Equal("A.sysml", rootFile.Name);
+
+        // Assert: "Sub" lists the "Nested" subfolder before B.sysml.
+        Assert.Equal(2, subFolder.Children.Count);
+        var nestedFolder = Assert.IsType<WorkspaceFolderNode>(subFolder.Children[0]);
+        Assert.Equal("Nested", nestedFolder.Name);
+        var subFile = Assert.IsType<WorkspaceFileNode>(subFolder.Children[1]);
+        Assert.Equal("B.sysml", subFile.Name);
+
+        // Assert: "Nested" contains only C.sysml.
+        var nestedFile = Assert.IsType<WorkspaceFileNode>(Assert.Single(nestedFolder.Children));
+        Assert.Equal("C.sysml", nestedFile.Name);
     }
 
     /// <summary>

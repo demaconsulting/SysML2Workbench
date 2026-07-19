@@ -7,13 +7,14 @@ sections:
           - title: 'WorkspacePanel Requirements'
             requirements:
               - id: 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-BuildSourceTree'
-                title: 'The WorkspacePanel shall present the current workspace sources as a tree, with folder sources expanding to their discovered files and file sources as leaves.'
+                title: 'The WorkspacePanel shall present the current workspace sources as a tree, with folder sources expanding to their discovered files preserving on-disk subfolder hierarchy, and file sources as leaves.'
                 justification: |
-                  Users need a visual inventory of every open source and, for folders, the files contributed by each one, distinguishing expandable folder nodes from non-expandable file nodes.
+                  Users need a visual inventory of every open source and, for folders, the files contributed by each one arranged the way they are actually organized on disk (not flattened), distinguishing expandable folder nodes from non-expandable file nodes.
                 tests:
                   - 'Construction_ZeroSources_ReportsEmptyTree'
                   - 'RebuildTree_FolderSource_ProducesSourceNodeWithFileChildren'
                   - 'RebuildTree_FileSource_ProducesLeafSourceNodeWithNoChildren'
+                  - 'RebuildTree_FolderSourceWithSubfolders_PreservesOnDiskHierarchy'
 
               - id: 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-ReflectDedupeInTreeShape'
                 title: 'The WorkspacePanel shall reflect WorkspaceSourceSet overlap dedupe in its tree shape, showing an overlapping file exactly once under its attributed owning source.'
