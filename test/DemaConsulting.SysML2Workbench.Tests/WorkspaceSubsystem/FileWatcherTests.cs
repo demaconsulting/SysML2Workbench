@@ -107,17 +107,47 @@ public sealed class FileWatcherTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that queuing a change before any source is watched is rejected rather than silently
-    ///     accepted.
+    ///     Validates that queuing a change before any source is watched (or after the last source has been
+    ///     unwatched) is silently ignored rather than throwing, since zero watched sources is now a first-class
+    ///     valid state (an empty workspace) and a change notification can legitimately race an unwatch.
     /// </summary>
     [Fact]
-    public void QueueChange_BeforeWatchSource_ThrowsInvalidOperationException()
+    public void QueueChange_WithNoWatchedSources_IsIgnored()
     {
         // Arrange: a watcher that has never started monitoring any source
         var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50));
 
-        // Act / Assert: queuing throws instead of silently doing nothing
-        Assert.Throws<InvalidOperationException>(() => watcher.QueueChange(Path.Combine(_tempRoot, "Model.sysml")));
+        // Act: queuing does not throw
+        watcher.QueueChange(Path.Combine(_tempRoot, "Model.sysml"));
+
+        // Assert: nothing was recorded, and flushing is likewise a harmless no-op
+        Assert.Empty(watcher.PendingChanges);
+        Assert.Empty(watcher.FlushPendingChanges());
+    }
+
+    /// <summary>
+    ///     Regression test: reproduces a change notification for a source's watcher arriving after that source has
+    ///     already been unwatched (e.g. the user removed the last remaining workspace source between the OS event
+    ///     firing and the dispatcher-marshalled callback actually running). Previously this threw an unhandled
+    ///     <see cref="InvalidOperationException" /> on the dispatcher; it must now be a harmless no-op.
+    /// </summary>
+    [Fact]
+    public void QueueChange_AfterSourceUnwatchedToZero_DoesNotThrow()
+    {
+        // Arrange: watch a single folder source, then unwatch it, simulating the watcher count dropping to zero
+        // while a change notification for that same source is still in flight
+        var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50));
+        var source = FolderSource(_tempRoot);
+        watcher.WatchSource(source);
+        watcher.UnwatchSource(source.Id);
+
+        // Act: a stale change notification for the now-unwatched source arrives
+        var exception = Record.Exception(() => watcher.QueueChange(Path.Combine(_tempRoot, "Model.sysml")));
+
+        // Assert: no exception, and the stale notification was not recorded
+        Assert.Null(exception);
+        Assert.Empty(watcher.PendingChanges);
+        Assert.Empty(watcher.FlushPendingChanges());
     }
 
     /// <summary>

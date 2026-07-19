@@ -193,15 +193,24 @@ public sealed class FileWatcher : IDisposable
     /// <summary>
     ///     Records a changed path from an operating-system event.
     /// </summary>
+    /// <remarks>
+    ///     A source's OS-level watcher callback runs on a background thread and is only marshalled onto
+    ///     <see cref="_dispatcher" /> via a posted continuation, so there is always a small window between the
+    ///     event firing and this method actually running. If the owning source is unwatched (its
+    ///     <see cref="FileSystemWatcher" /> disposed and removed) during that window - most commonly by the user
+    ///     removing the last remaining workspace source - the posted callback can run after
+    ///     <see cref="_watchersBySourceId" /> has already dropped to zero. Since zero watched sources is now a
+    ///     first-class, fully supported state (an empty workspace), this is treated as a harmless, moot
+    ///     notification and silently ignored rather than as programmer misuse.
+    /// </remarks>
     /// <param name="path">File or folder path reported by the platform.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="path" /> is null or whitespace.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when no source is currently watched.</exception>
     public void QueueChange(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         if (_watchersBySourceId.Count == 0)
         {
-            throw new InvalidOperationException("WatchSource must be called before changes can be queued.");
+            return;
         }
 
         // Overwriting the timestamp for an already-pending path is what collapses bursty duplicate
@@ -214,15 +223,16 @@ public sealed class FileWatcher : IDisposable
     /// </summary>
     /// <remarks>
     ///     Only paths whose most recent change notification is at least <see cref="DebounceWindow" /> old are
-    ///     returned; paths still within their debounce window remain pending for a later flush.
+    ///     returned; paths still within their debounce window remain pending for a later flush. Zero watched
+    ///     sources (an empty workspace) is a valid, first-class state, so this simply returns an empty list in
+    ///     that case rather than throwing.
     /// </remarks>
     /// <returns>Normalized paths requiring reload.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when no source is currently watched.</exception>
     public IReadOnlyList<string> FlushPendingChanges()
     {
         if (_watchersBySourceId.Count == 0)
         {
-            throw new InvalidOperationException("WatchSource must be called before changes can be flushed.");
+            return [];
         }
 
         var now = _clock();

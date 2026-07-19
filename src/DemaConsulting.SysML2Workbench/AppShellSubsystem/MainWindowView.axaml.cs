@@ -19,6 +19,11 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 /// </summary>
 public partial class MainWindowView : Window
 {
+    private static readonly FilePickerFileType SysmlFileType = new("SysML v2 files")
+    {
+        Patterns = ["*.sysml"],
+    };
+
     private readonly MainWindowShell _shell;
     private readonly PredefinedViewsToolViewModel _predefinedViewsViewModel;
     private readonly CustomViewBuilderToolViewModel _customViewBuilderViewModel;
@@ -206,6 +211,7 @@ public partial class MainWindowView : Window
         {
             Title = "Open SysML2 File",
             AllowMultiple = false,
+            FileTypeFilter = [SysmlFileType],
         });
 
         var filePath = files.Count > 0 ? files[0].TryGetLocalPath() : null;

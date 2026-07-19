@@ -124,14 +124,19 @@ public sealed class WorkbenchDockFactory : Factory
             Id = "CenterVertical",
             Orientation = Orientation.Vertical,
             Proportion = 0.55,
-            VisibleDockables = CreateList<IDockable>(documentDock, diagnosticsDock),
+            VisibleDockables = CreateList<IDockable>(documentDock, CreateProportionalDockSplitter(), diagnosticsDock),
         };
 
         var mainHorizontalDock = new ProportionalDock
         {
             Id = "MainHorizontal",
             Orientation = Orientation.Horizontal,
-            VisibleDockables = CreateList<IDockable>(predefinedViewsDock, centerVerticalDock, customViewBuilderDock),
+            VisibleDockables = CreateList<IDockable>(
+                predefinedViewsDock,
+                CreateProportionalDockSplitter(),
+                centerVerticalDock,
+                CreateProportionalDockSplitter(),
+                customViewBuilderDock),
         };
 
         var root = CreateRootDock();

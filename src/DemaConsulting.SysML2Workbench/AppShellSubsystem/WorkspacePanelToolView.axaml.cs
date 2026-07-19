@@ -35,6 +35,11 @@ public partial class WorkspacePanelToolView : UserControl
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
     }
 
+    private static readonly FilePickerFileType SysmlFileType = new("SysML v2 files")
+    {
+        Patterns = ["*.sysml"],
+    };
+
     private WorkspacePanelToolViewModel? ViewModel => DataContext as WorkspacePanelToolViewModel;
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -58,6 +63,7 @@ public partial class WorkspacePanelToolView : UserControl
         {
             Title = "Add Workspace File",
             AllowMultiple = false,
+            FileTypeFilter = [SysmlFileType],
         });
 
         var filePath = files.Count > 0 ? files[0].TryGetLocalPath() : null;
@@ -66,7 +72,14 @@ public partial class WorkspacePanelToolView : UserControl
             return;
         }
 
-        await viewModel.Shell.AddFileSourceAsync(filePath);
+        try
+        {
+            await viewModel.Shell.AddFileSourceAsync(filePath);
+        }
+        catch (Exception ex)
+        {
+            viewModel.StatusMessage = $"Failed to add workspace file: {ex.Message}";
+        }
     }
 
     private async void OnRequestAddFolder(object? sender, EventArgs e)
@@ -89,7 +102,14 @@ public partial class WorkspacePanelToolView : UserControl
             return;
         }
 
-        await viewModel.Shell.AddFolderSourceAsync(folderPath);
+        try
+        {
+            await viewModel.Shell.AddFolderSourceAsync(folderPath);
+        }
+        catch (Exception ex)
+        {
+            viewModel.StatusMessage = $"Failed to add workspace folder: {ex.Message}";
+        }
     }
 
     private void OnDragOver(object? sender, DragEventArgs e)
@@ -112,13 +132,20 @@ public partial class WorkspacePanelToolView : UserControl
                 continue;
             }
 
-            if (Directory.Exists(path))
+            try
             {
-                await viewModel.Shell.AddFolderSourceAsync(path);
+                if (Directory.Exists(path))
+                {
+                    await viewModel.Shell.AddFolderSourceAsync(path);
+                }
+                else if (File.Exists(path))
+                {
+                    await viewModel.Shell.AddFileSourceAsync(path);
+                }
             }
-            else if (File.Exists(path))
+            catch (Exception ex)
             {
-                await viewModel.Shell.AddFileSourceAsync(path);
+                viewModel.StatusMessage = $"Failed to add dropped workspace source '{path}': {ex.Message}";
             }
         }
     }
