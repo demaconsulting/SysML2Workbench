@@ -33,24 +33,38 @@ public sealed class WorkspaceModelTests : IDisposable
     }
 
     /// <summary>
+    ///     Loads a single folder source into a fresh <see cref="WorkspaceSourceSet" /> and returns both the
+    ///     sources and the resolution, for tests that only care about the resulting <see cref="WorkspaceModel" />
+    ///     state rather than the source-set mechanics themselves.
+    /// </summary>
+    private static (IReadOnlyList<WorkspaceSource> Sources, WorkspaceSourceResolution Resolution) ResolveFolder(string folderPath)
+    {
+        var sourceSet = new WorkspaceSourceSet();
+        sourceSet.AddFolder(folderPath);
+        return (sourceSet.Sources, sourceSet.Resolve());
+    }
+
+    /// <summary>
     ///     Validates that loading a workspace folder builds a tracked file tree covering every discovered file.
     /// </summary>
     [Fact]
-    public async Task OpenWorkspace_BuildsTrackedFileTree()
+    public async Task LoadWorkspaceAsync_BuildsTrackedFileTree()
     {
         // Arrange: a workspace folder containing a single valid SysML file
         var filePath = Path.Combine(_tempRoot, "Sample.sysml");
         await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
         var model = new WorkspaceModel();
+        var (sources, resolution) = ResolveFolder(_tempRoot);
 
         // Act: load the workspace
-        var snapshot = await model.LoadWorkspaceAsync(_tempRoot);
+        var snapshot = await model.LoadWorkspaceAsync(sources, resolution);
 
-        // Assert: the tracked file tree reflects the discovered file and the workspace root
-        Assert.Equal(Path.GetFullPath(_tempRoot), model.RootPath);
+        // Assert: the tracked file tree reflects the discovered file and the resolved sources
+        Assert.Single(model.Sources);
         Assert.Single(model.Files);
         Assert.True(model.Files.ContainsKey(filePath));
         Assert.Single(snapshot.Files);
+        Assert.Single(snapshot.Sources);
     }
 
     /// <summary>
@@ -58,7 +72,7 @@ public sealed class WorkspaceModelTests : IDisposable
     ///     resolution across those discovered files.
     /// </summary>
     [Fact]
-    public async Task ResolveInputs_FindsDiscoveredAndImportedFiles()
+    public async Task LoadWorkspaceAsync_FindsDiscoveredAndImportedFiles()
     {
         // Arrange: two files where the second imports a definition declared in the first
         await WriteFileAsync(
@@ -68,9 +82,10 @@ public sealed class WorkspaceModelTests : IDisposable
             Path.Combine(_tempRoot, "B.sysml"),
             "package PackageB {\n    import PackageA::*;\n    part myWidget : Widget;\n}\n");
         var model = new WorkspaceModel();
+        var (sources, resolution) = ResolveFolder(_tempRoot);
 
         // Act: load the workspace
-        var snapshot = await model.LoadWorkspaceAsync(_tempRoot);
+        var snapshot = await model.LoadWorkspaceAsync(sources, resolution);
 
         // Assert: both files were discovered and the cross-file import resolved without errors
         Assert.Equal(2, snapshot.Files.Count);
@@ -92,7 +107,8 @@ public sealed class WorkspaceModelTests : IDisposable
         await WriteFileAsync(unaffectedPath, "package Unaffected {\n    part def Widget;\n}\n");
         await WriteFileAsync(affectedPath, "package Affected {\n    part def Gadget;\n}\n");
         var model = new WorkspaceModel();
-        await model.LoadWorkspaceAsync(_tempRoot);
+        var (sources, resolution) = ResolveFolder(_tempRoot);
+        await model.LoadWorkspaceAsync(sources, resolution);
         var unaffectedBefore = model.Files[unaffectedPath];
         var affectedBefore = model.Files[affectedPath];
 
@@ -108,18 +124,51 @@ public sealed class WorkspaceModelTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that loading from a folder that does not exist reports a clear, propagated failure rather
-    ///     than an empty workspace.
+    ///     Validates that a zero-source, zero-file resolution is first-class: it produces a valid,
+    ///     diagnostic-free, standard-library-only snapshot rather than throwing.
     /// </summary>
     [Fact]
-    public async Task LoadWorkspaceAsync_MissingRootFolder_ThrowsDirectoryNotFoundException()
+    public async Task LoadWorkspaceAsync_EmptyResolution_ProducesValidStdlibOnlySnapshot()
     {
-        // Arrange: a path that does not exist on disk
-        var missingPath = Path.Combine(_tempRoot, "does-not-exist");
+        // Arrange: an empty source set, resolved to zero sources and zero files
         var model = new WorkspaceModel();
+        var sourceSet = new WorkspaceSourceSet();
+        var resolution = sourceSet.Resolve();
 
-        // Act / Assert: loading throws instead of silently producing an empty workspace
-        await Assert.ThrowsAsync<DirectoryNotFoundException>(() => model.LoadWorkspaceAsync(missingPath));
+        // Act: load the empty resolution
+        var snapshot = await model.LoadWorkspaceAsync(sourceSet.Sources, resolution);
+
+        // Assert: a valid, non-throwing, diagnostic-free snapshot with no sources and no files
+        Assert.Empty(snapshot.Sources);
+        Assert.Empty(snapshot.Files);
+        Assert.Empty(snapshot.Diagnostics);
+        Assert.NotNull(snapshot.Workspace);
+    }
+
+    /// <summary>
+    ///     Validates that reloading against a current resolution that has since become empty (0 sources, 0
+    ///     files) is a valid, non-throwing no-op recomputation rather than an error.
+    /// </summary>
+    [Fact]
+    public async Task ReloadFilesAsync_AfterResolutionBecomesEmpty_ProducesValidEmptySnapshot()
+    {
+        // Arrange: load a non-empty workspace, then reset it to an empty resolution (mirrors what
+        // MainWindowShell does after removing the last source).
+        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
+        var model = new WorkspaceModel();
+        var (sources, resolution) = ResolveFolder(_tempRoot);
+        await model.LoadWorkspaceAsync(sources, resolution);
+
+        var emptySourceSet = new WorkspaceSourceSet();
+        await model.LoadWorkspaceAsync(emptySourceSet.Sources, emptySourceSet.Resolve());
+
+        // Act: reload against the now-empty resolution
+        var snapshot = await model.ReloadFilesAsync([]);
+
+        // Assert: a valid, empty snapshot, and no lingering per-file state
+        Assert.Empty(snapshot.Files);
+        Assert.Empty(model.Files);
     }
 
     /// <summary>

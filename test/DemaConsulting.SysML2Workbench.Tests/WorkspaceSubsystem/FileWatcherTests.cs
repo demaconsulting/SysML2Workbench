@@ -21,6 +21,16 @@ public sealed class FileWatcherTests : IDisposable
         }
     }
 
+    private static WorkspaceSource FolderSource(string path)
+    {
+        return new WorkspaceSource(Guid.NewGuid().ToString("N"), WorkspaceSourceKind.Folder, Path.GetFullPath(path));
+    }
+
+    private static WorkspaceSource FileSource(string path)
+    {
+        return new WorkspaceSource(Guid.NewGuid().ToString("N"), WorkspaceSourceKind.File, Path.GetFullPath(path));
+    }
+
     /// <summary>
     ///     Validates that an externally reported file change is recorded as a pending path and is returned by a
     ///     flush once its debounce window has elapsed.
@@ -31,7 +41,7 @@ public sealed class FileWatcherTests : IDisposable
         // Arrange: a watcher with a fake clock so the debounce window can be advanced deterministically
         var now = DateTimeOffset.UtcNow;
         var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50), () => now);
-        watcher.StartWatching(_tempRoot);
+        watcher.WatchSource(FolderSource(_tempRoot));
         var changedPath = Path.Combine(_tempRoot, "Model.sysml");
 
         // Act: simulate an external change notification, then advance the clock past the debounce window
@@ -55,7 +65,7 @@ public sealed class FileWatcherTests : IDisposable
         // Arrange: a watcher with a fake clock
         var now = DateTimeOffset.UtcNow;
         var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50), () => now);
-        watcher.StartWatching(_tempRoot);
+        watcher.WatchSource(FolderSource(_tempRoot));
         var changedPath = Path.Combine(_tempRoot, "Model.sysml");
 
         // Act: raise a burst of notifications for the same path in quick succession
@@ -84,7 +94,7 @@ public sealed class FileWatcherTests : IDisposable
         // Arrange: a watcher with a fake clock and a change just registered
         var now = DateTimeOffset.UtcNow;
         var watcher = new FileWatcher(TimeSpan.FromSeconds(1), () => now);
-        watcher.StartWatching(_tempRoot);
+        watcher.WatchSource(FolderSource(_tempRoot));
         var changedPath = Path.Combine(_tempRoot, "Model.sysml");
         watcher.QueueChange(changedPath);
 
@@ -97,13 +107,13 @@ public sealed class FileWatcherTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that queuing a change before monitoring has started is rejected rather than silently
+    ///     Validates that queuing a change before any source is watched is rejected rather than silently
     ///     accepted.
     /// </summary>
     [Fact]
-    public void QueueChange_BeforeStartWatching_ThrowsInvalidOperationException()
+    public void QueueChange_BeforeWatchSource_ThrowsInvalidOperationException()
     {
-        // Arrange: a watcher that has never started monitoring
+        // Arrange: a watcher that has never started monitoring any source
         var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50));
 
         // Act / Assert: queuing throws instead of silently doing nothing
@@ -111,33 +121,119 @@ public sealed class FileWatcherTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that calling <see cref="FileWatcher.StartWatching" /> a second time with a different root
-    ///     retargets monitoring instead of throwing, and discards any pending state accumulated against the
-    ///     previously watched root so it cannot leak into the newly watched root's pending set.
+    ///     Validates that <see cref="FileWatcher.WatchSource" /> tracks each distinct source id independently, so
+    ///     watching two different sources results in both ids being reported as watched.
     /// </summary>
     [Fact]
-    public void StartWatching_CalledTwice_RetargetsToNewRootAndDiscardsPendingChanges()
+    public void WatchSource_TwoDistinctSources_BothTrackedIndependently()
     {
-        // Arrange: watch root A and queue a pending change against it
+        // Arrange
+        var folderA = FolderSource(_tempRoot);
+        var otherRoot = Directory.CreateTempSubdirectory("sysml2workbench-tests-").FullName;
+        try
+        {
+            var folderB = FolderSource(otherRoot);
+            var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50));
+
+            // Act
+            watcher.WatchSource(folderA);
+            watcher.WatchSource(folderB);
+
+            // Assert
+            Assert.Equal(2, watcher.WatchedSourceIds.Count);
+            Assert.Contains(folderA.Id, watcher.WatchedSourceIds);
+            Assert.Contains(folderB.Id, watcher.WatchedSourceIds);
+        }
+        finally
+        {
+            Directory.Delete(otherRoot, recursive: true);
+        }
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="FileWatcher.UnwatchSource" /> stops monitoring only the given source,
+    ///     leaving other currently watched sources - and their pending changes - untouched: a change queued
+    ///     under folder A before A is unwatched must not be discarded just because A stopped being watched, and
+    ///     folder B's own pending state must be unaffected by the operation.
+    /// </summary>
+    [Fact]
+    public void UnwatchSource_RemovesOnlyThatWatcher_OthersContinueReporting()
+    {
+        // Arrange: two watched folder sources, each with a pending change queued against it
+        var folderA = FolderSource(_tempRoot);
+        var otherRoot = Directory.CreateTempSubdirectory("sysml2workbench-tests-").FullName;
+        try
+        {
+            var folderB = FolderSource(otherRoot);
+            var now = DateTimeOffset.UtcNow;
+            var watcher = new FileWatcher(TimeSpan.FromSeconds(1), () => now);
+            watcher.WatchSource(folderA);
+            watcher.WatchSource(folderB);
+
+            var pathUnderA = Path.Combine(folderA.Path, "A.sysml");
+            var pathUnderB = Path.Combine(folderB.Path, "B.sysml");
+            watcher.QueueChange(pathUnderA);
+            watcher.QueueChange(pathUnderB);
+
+            // Act: unwatch only source A
+            var removed = watcher.UnwatchSource(folderA.Id);
+
+            // Assert: A is no longer watched, B still is, and neither pending change was discarded
+            Assert.True(removed);
+            Assert.DoesNotContain(folderA.Id, watcher.WatchedSourceIds);
+            Assert.Contains(folderB.Id, watcher.WatchedSourceIds);
+            Assert.Contains(pathUnderA, watcher.PendingChanges);
+            Assert.Contains(pathUnderB, watcher.PendingChanges);
+        }
+        finally
+        {
+            Directory.Delete(otherRoot, recursive: true);
+        }
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="FileWatcher.UnwatchSource" /> returns <see langword="false" /> for a source
+    ///     id that is not currently watched, rather than throwing.
+    /// </summary>
+    [Fact]
+    public void UnwatchSource_UnknownSourceId_ReturnsFalse()
+    {
+        // Arrange
+        var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50));
+
+        // Act
+        var removed = watcher.UnwatchSource("unknown-source-id");
+
+        // Assert
+        Assert.False(removed);
+    }
+
+    /// <summary>
+    ///     Validates that calling <see cref="FileWatcher.WatchSource" /> a second time for the same source id
+    ///     retargets that one source instead of throwing, and does not disturb any other watched source.
+    /// </summary>
+    [Fact]
+    public void WatchSource_CalledTwiceForSameSourceId_RetargetsWithoutThrowing()
+    {
+        // Arrange: watch a folder source, then build a second WorkspaceSource with the same id but a different
+        // path, simulating a source whose path was retargeted while its id stayed stable.
         var rootA = _tempRoot;
         var rootB = Directory.CreateTempSubdirectory("sysml2workbench-tests-").FullName;
         try
         {
-            var now = DateTimeOffset.UtcNow;
-            var watcher = new FileWatcher(TimeSpan.FromSeconds(1), () => now);
-            watcher.StartWatching(rootA);
-            var changedPathUnderA = Path.Combine(rootA, "Model.sysml");
-            watcher.QueueChange(changedPathUnderA);
-            Assert.Contains(changedPathUnderA, watcher.PendingChanges);
+            var sourceId = Guid.NewGuid().ToString("N");
+            var sourceA = new WorkspaceSource(sourceId, WorkspaceSourceKind.Folder, Path.GetFullPath(rootA));
+            var sourceB = new WorkspaceSource(sourceId, WorkspaceSourceKind.Folder, Path.GetFullPath(rootB));
+            var watcher = new FileWatcher(TimeSpan.FromSeconds(1));
+            watcher.WatchSource(sourceA);
 
-            // Act: retarget to root B - must not throw, despite root A never being explicitly stopped
-            var exception = Record.Exception(() => watcher.StartWatching(rootB));
+            // Act: retarget - must not throw, despite the source never being explicitly unwatched
+            var exception = Record.Exception(() => watcher.WatchSource(sourceB));
 
-            // Assert: no exception, watched root updated to B, and A's pending change did not leak into B
+            // Assert: no exception, and the source id is still reported as watched exactly once
             Assert.Null(exception);
-            Assert.Equal(Path.GetFullPath(rootB), watcher.WatchedRootPath);
-            Assert.Empty(watcher.PendingChanges);
-            Assert.DoesNotContain(changedPathUnderA, watcher.PendingChanges);
+            Assert.Single(watcher.WatchedSourceIds);
+            Assert.Contains(sourceId, watcher.WatchedSourceIds);
         }
         finally
         {
@@ -146,29 +242,28 @@ public sealed class FileWatcherTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that after retargeting from root A to root B, a real operating-system file-system event
-    ///     raised under B is actually detected, proving the underlying <see cref="FileSystemWatcher" /> was truly
-    ///     rebuilt against the new root rather than merely having <see cref="FileWatcher.WatchedRootPath" />
-    ///     relabeled.
+    ///     Validates that a real operating-system file-system event raised under one watched folder source is
+    ///     detected as a pending change, while a change under a second, independently watched folder source does
+    ///     not get attributed to the first - proving each source genuinely has its own isolated watch scope.
     /// </summary>
     /// <remarks>
-    ///     Uses the real system clock and a real <see cref="FileSystemWatcher" /> (no fake clock, unlike this
-    ///     file's other tests), and polls with a bounded timeout since OS file-system notifications are
-    ///     delivered asynchronously and are not deterministic in timing.
+    ///     Uses the real system clock and real <see cref="System.IO.FileSystemWatcher" /> instances (no fake
+    ///     clock, unlike this file's other tests), and polls with a bounded timeout since OS file-system
+    ///     notifications are delivered asynchronously and are not deterministic in timing.
     /// </remarks>
     [Fact]
-    public async Task StartWatching_RetargetedRoot_DetectsRealFileChangeUnderNewRoot()
+    public async Task WatchSource_TwoFolders_ChangeUnderOneIsNotAttributedToTheOther()
     {
-        // Arrange: watch root A, then retarget to root B
+        // Arrange: watch two independent folder sources
         var rootA = _tempRoot;
         var rootB = Directory.CreateTempSubdirectory("sysml2workbench-tests-").FullName;
         try
         {
             var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50));
-            watcher.StartWatching(rootA);
-            watcher.StartWatching(rootB);
+            watcher.WatchSource(FolderSource(rootA));
+            watcher.WatchSource(FolderSource(rootB));
 
-            // Act: write a real file under the newly targeted root B
+            // Act: write a real file under root B only
             var changedPathUnderB = Path.Combine(rootB, "Model.sysml");
             await File.WriteAllTextAsync(changedPathUnderB, "part def Vehicle;", TestContext.Current.CancellationToken);
 
@@ -195,8 +290,10 @@ public sealed class FileWatcherTests : IDisposable
                 }
             }
 
-            // Assert: the real OS-level change under the new root B was detected
-            Assert.True(detected, $"Expected '{changedPathUnderB}' to be reported as a pending change under the retargeted root.");
+            // Assert: the real OS-level change under B was detected, and nothing under root A was ever written,
+            // so no path under A can appear as a false-positive pending change.
+            Assert.True(detected, $"Expected '{changedPathUnderB}' to be reported as a pending change under root B.");
+            Assert.DoesNotContain(watcher.PendingChanges, path => path.StartsWith(rootA, StringComparison.OrdinalIgnoreCase));
         }
         finally
         {

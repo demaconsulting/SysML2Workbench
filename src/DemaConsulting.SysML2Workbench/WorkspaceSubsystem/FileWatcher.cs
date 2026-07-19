@@ -60,9 +60,9 @@ public sealed class FileWatcher : IDisposable
     private readonly IUiDispatcher _dispatcher;
 
     /// <summary>
-    ///     Operating-system watcher configured for recursive observation of the workspace root.
+    ///     Operating-system watchers, one per currently watched source, keyed by <see cref="WorkspaceSource.Id" />.
     /// </summary>
-    private FileSystemWatcher? _watcher;
+    private readonly Dictionary<string, FileSystemWatcher> _watchersBySourceId = new(StringComparer.Ordinal);
 
     /// <summary>
     ///     Initializes a new <see cref="FileWatcher" />.
@@ -78,10 +78,9 @@ public sealed class FileWatcher : IDisposable
     }
 
     /// <summary>
-    ///     Workspace root currently monitored for external changes, or <see langword="null" /> before
-    ///     <see cref="StartWatching" /> is called.
+    ///     Identifiers of every source currently being monitored for external changes.
     /// </summary>
-    public string? WatchedRootPath { get; private set; }
+    public IReadOnlySet<string> WatchedSourceIds => _watchersBySourceId.Keys.ToHashSet(StringComparer.Ordinal);
 
     /// <summary>
     ///     Minimum delay used to merge rapid change bursts into a single reload batch.
@@ -94,38 +93,101 @@ public sealed class FileWatcher : IDisposable
     public IReadOnlySet<string> PendingChanges => new HashSet<string>(_pending.Keys, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    ///     Begins monitoring the given workspace root. Calling this while already watching a (possibly
-    ///     different) root retargets monitoring to <paramref name="rootPath" /> instead of throwing: the
-    ///     previous <see cref="FileSystemWatcher" /> is disposed and any pending change state accumulated
-    ///     against the previous root is discarded, so no stale path can leak into the newly watched root's
-    ///     pending set.
+    ///     Begins monitoring the given source. Calling this again for a source whose id is already watched
+    ///     retargets that one source instead of throwing: its previous <see cref="FileSystemWatcher" /> is
+    ///     disposed and replaced, without disturbing any other currently watched source or its pending change
+    ///     state. A <see cref="WorkspaceSourceKind.Folder" /> source is watched recursively; a
+    ///     <see cref="WorkspaceSourceKind.File" /> source is watched non-recursively on its containing directory,
+    ///     filtered to that file's name.
     /// </summary>
-    /// <param name="rootPath">Folder to observe.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="rootPath" /> is null or whitespace.</exception>
-    /// <exception cref="DirectoryNotFoundException">Thrown when <paramref name="rootPath" /> does not exist.</exception>
-    public void StartWatching(string rootPath)
+    /// <param name="source">Source to observe.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="source" /> is null.</exception>
+    /// <exception cref="DirectoryNotFoundException">
+    ///     Thrown when the source's folder path (or, for a file source, its containing directory) does not exist.
+    /// </exception>
+    public void WatchSource(WorkspaceSource source)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(rootPath);
-        if (!Directory.Exists(rootPath))
+        ArgumentNullException.ThrowIfNull(source);
+
+        if (_watchersBySourceId.Remove(source.Id, out var previous))
         {
-            throw new DirectoryNotFoundException($"Workspace root folder was not found: {rootPath}");
+            previous.Dispose();
         }
 
-        _watcher?.Dispose();
-        _watcher = null;
-        _pending.Clear();
+        var watcher = source.Kind == WorkspaceSourceKind.Folder
+            ? CreateFolderWatcher(source.Path)
+            : CreateFileWatcher(source.Path);
 
-        WatchedRootPath = Path.GetFullPath(rootPath);
-        _watcher = new FileSystemWatcher(WatchedRootPath)
+        watcher.Changed += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
+        watcher.Created += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
+        watcher.Deleted += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
+        watcher.Renamed += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
+        watcher.EnableRaisingEvents = true;
+
+        _watchersBySourceId[source.Id] = watcher;
+    }
+
+    /// <summary>
+    ///     Stops monitoring the given source, if it is currently watched.
+    /// </summary>
+    /// <remarks>
+    ///     Deliberately does not clear <see cref="_pending" />: pending changes contributed by other still-watched
+    ///     sources must survive an unrelated source being removed, since each source's watcher is now independent
+    ///     rather than one global watcher covering the whole workspace.
+    /// </remarks>
+    /// <param name="sourceId">Identifier of the source to stop watching.</param>
+    /// <returns><see langword="true" /> when a watcher was found and removed; otherwise <see langword="false" />.</returns>
+    public bool UnwatchSource(string sourceId)
+    {
+        if (!_watchersBySourceId.Remove(sourceId, out var watcher))
+        {
+            return false;
+        }
+
+        watcher.Dispose();
+        return true;
+    }
+
+    /// <summary>
+    ///     Creates a recursive watcher covering an entire folder.
+    /// </summary>
+    /// <param name="folderPath">Folder to observe.</param>
+    /// <returns>A configured, not-yet-enabled watcher.</returns>
+    /// <exception cref="DirectoryNotFoundException">Thrown when <paramref name="folderPath" /> does not exist.</exception>
+    private static FileSystemWatcher CreateFolderWatcher(string folderPath)
+    {
+        if (!Directory.Exists(folderPath))
+        {
+            throw new DirectoryNotFoundException($"Workspace folder was not found: {folderPath}");
+        }
+
+        return new FileSystemWatcher(folderPath)
         {
             IncludeSubdirectories = true,
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName,
         };
-        _watcher.Changed += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
-        _watcher.Created += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
-        _watcher.Deleted += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
-        _watcher.Renamed += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
-        _watcher.EnableRaisingEvents = true;
+    }
+
+    /// <summary>
+    ///     Creates a non-recursive watcher scoped to a single file via its containing directory and a name filter.
+    /// </summary>
+    /// <param name="filePath">File to observe.</param>
+    /// <returns>A configured, not-yet-enabled watcher.</returns>
+    /// <exception cref="DirectoryNotFoundException">Thrown when the file's containing directory does not exist.</exception>
+    private static FileSystemWatcher CreateFileWatcher(string filePath)
+    {
+        var directory = Path.GetDirectoryName(filePath);
+        if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+        {
+            throw new DirectoryNotFoundException($"Containing folder for workspace file was not found: {filePath}");
+        }
+
+        return new FileSystemWatcher(directory)
+        {
+            IncludeSubdirectories = false,
+            Filter = Path.GetFileName(filePath),
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName,
+        };
     }
 
     /// <summary>
@@ -133,13 +195,13 @@ public sealed class FileWatcher : IDisposable
     /// </summary>
     /// <param name="path">File or folder path reported by the platform.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="path" /> is null or whitespace.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when monitoring has not started.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no source is currently watched.</exception>
     public void QueueChange(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        if (WatchedRootPath is null)
+        if (_watchersBySourceId.Count == 0)
         {
-            throw new InvalidOperationException("StartWatching must be called before changes can be queued.");
+            throw new InvalidOperationException("WatchSource must be called before changes can be queued.");
         }
 
         // Overwriting the timestamp for an already-pending path is what collapses bursty duplicate
@@ -155,12 +217,12 @@ public sealed class FileWatcher : IDisposable
     ///     returned; paths still within their debounce window remain pending for a later flush.
     /// </remarks>
     /// <returns>Normalized paths requiring reload.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when monitoring has not started.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no source is currently watched.</exception>
     public IReadOnlyList<string> FlushPendingChanges()
     {
-        if (WatchedRootPath is null)
+        if (_watchersBySourceId.Count == 0)
         {
-            throw new InvalidOperationException("StartWatching must be called before changes can be flushed.");
+            throw new InvalidOperationException("WatchSource must be called before changes can be flushed.");
         }
 
         var now = _clock();
@@ -180,7 +242,11 @@ public sealed class FileWatcher : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        _watcher?.Dispose();
-        _watcher = null;
+        foreach (var watcher in _watchersBySourceId.Values)
+        {
+            watcher.Dispose();
+        }
+
+        _watchersBySourceId.Clear();
     }
 }
