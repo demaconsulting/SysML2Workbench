@@ -11,6 +11,7 @@
 version: '0.2'
 language: en
 words:
+  - APFS
   - Argb
   - axaml
   - BGRA
@@ -21,12 +22,15 @@ words:
   - Dema
   - doctitle
   - docversion
+  - Dedupe
+  - dedupe
   - Dockable
   - Dockables
   - fileassert
   - Hmmssfff
   - LOCALAPPDATA
   - Mvvm
+  - ordinally
   - Pandoc
   - pagetitle
   - pasteable
@@ -46,8 +50,19 @@ words:
   - sonar
   - sonarmark
   - Stdlib
+  - Subfolders
+  - subfolders
   - sysml
   - timeslice
+  - TOCTOU
+  - uncontended
+  - unioned
+  - Unwatch
+  - unwatch
+  - Unwatches
+  - unwatches
+  - Unwatching
+  - unwatching
   - versionmark
   - Weasyprint
   - xunit

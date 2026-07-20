@@ -4,6 +4,7 @@ includes:
   - docs/reqstream/sysml2-workbench/platform-requirements.yaml
   - docs/reqstream/sysml2-workbench/workspace-subsystem.yaml
   - docs/reqstream/sysml2-workbench/workspace-subsystem/workspace-model.yaml
+  - docs/reqstream/sysml2-workbench/workspace-subsystem/workspace-source-set.yaml
   - docs/reqstream/sysml2-workbench/workspace-subsystem/file-watcher.yaml
   - docs/reqstream/sysml2-workbench/workspace-subsystem/diagnostics-aggregator.yaml
   - docs/reqstream/sysml2-workbench/view-catalog-subsystem.yaml
@@ -20,6 +21,7 @@ includes:
   - docs/reqstream/sysml2-workbench/logging-subsystem/rolling-file-logger.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem/main-window-shell.yaml
+  - docs/reqstream/sysml2-workbench/app-shell-subsystem/workspace-panel.yaml
   - docs/reqstream/ots/sysml2-tools.yaml
   - docs/reqstream/ots/rendering.yaml
   - docs/reqstream/ots/avalonia.yaml

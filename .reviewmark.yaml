@@ -118,6 +118,20 @@ reviews:
       - docs/verification/sysml2-workbench/workspace-subsystem/diagnostics-aggregator.md
       - src/**/WorkspaceSubsystem/DiagnosticsAggregator.cs
       - test/**/WorkspaceSubsystem/DiagnosticsAggregatorTests.cs
+  - id: SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet
+    title: Review that SysML2Workbench WorkspaceSubsystem WorkspaceSourceSet Implementation
+      is Correct
+    context:
+      - docs/design/sysml2-workbench.md
+      - docs/reqstream/sysml2-workbench.yaml
+      - docs/design/sysml2-workbench/workspace-subsystem.md
+      - docs/reqstream/sysml2-workbench/workspace-subsystem.yaml
+    paths:
+      - docs/reqstream/sysml2-workbench/workspace-subsystem/workspace-source-set.yaml
+      - docs/design/sysml2-workbench/workspace-subsystem/workspace-source-set.md
+      - docs/verification/sysml2-workbench/workspace-subsystem/workspace-source-set.md
+      - src/**/WorkspaceSubsystem/WorkspaceSourceSet.cs
+      - test/**/WorkspaceSubsystem/WorkspaceSourceSetTests.cs
   - id: SysML2Workbench-ViewCatalogSubsystem
     title: Review that SysML2Workbench ViewCatalogSubsystem Satisfies Subsystem Requirements
     context:
@@ -292,6 +306,22 @@ reviews:
       - docs/verification/sysml2-workbench/app-shell-subsystem/main-window-shell.md
       - src/**/AppShellSubsystem/MainWindowShell.cs
       - test/**/AppShellSubsystem/MainWindowShellTests.cs
+  - id: SysML2Workbench-AppShellSubsystem-WorkspacePanel
+    title: Review that SysML2Workbench AppShellSubsystem WorkspacePanel Implementation
+      is Correct
+    context:
+      - docs/design/sysml2-workbench.md
+      - docs/reqstream/sysml2-workbench.yaml
+      - docs/design/sysml2-workbench/app-shell-subsystem.md
+      - docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml
+    paths:
+      - docs/reqstream/sysml2-workbench/app-shell-subsystem/workspace-panel.yaml
+      - docs/design/sysml2-workbench/app-shell-subsystem/workspace-panel.md
+      - docs/verification/sysml2-workbench/app-shell-subsystem/workspace-panel.md
+      - src/**/AppShellSubsystem/WorkspacePanelToolViewModel.cs
+      - src/**/AppShellSubsystem/WorkspacePanelToolView.axaml
+      - src/**/AppShellSubsystem/WorkspacePanelToolView.axaml.cs
+      - test/**/AppShellSubsystem/WorkspacePanelToolViewModelTests.cs
   - id: OTS-DemaConsultingSysML2Tools
     title: Review that DemaConsulting.SysML2Tools Provides Required Functionality
     paths:

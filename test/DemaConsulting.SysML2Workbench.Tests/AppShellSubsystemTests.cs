@@ -72,7 +72,7 @@ public sealed class AppShellSubsystemTests : IDisposable
         using var shell = CreateShell();
 
         // Act
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         shell.SelectPredefinedView(shell.ViewCatalog.AvailableViews[0].QualifiedName);
 
         // Assert: catalog, diagram, and diagnostics regions are all populated together
@@ -91,7 +91,7 @@ public sealed class AppShellSubsystemTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var initialViewCount = shell.ViewCatalog.AvailableViews.Count;
 
         // Act: an external edit adds a second view
@@ -115,7 +115,7 @@ public sealed class AppShellSubsystemTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
         definition.AddExposeTarget("Sample::Engine");

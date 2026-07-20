@@ -19,3 +19,28 @@ sections:
                   Editors and source-control operations often emit multiple low-level events, and the workspace refresh pipeline needs stable, actionable reload requests.
                 tests:
                   - 'NotificationBurst_CoalescesIntoSingleReloadTrigger'
+                  - 'FlushPendingChanges_WithinDebounceWindow_RetainsPathForLaterFlush'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-WatchPerSourceScope'
+                title: 'The FileWatcher shall watch each workspace source independently, using a recursive watcher for a folder source and a single-file-filtered watcher for a file source, and shall isolate changes so a change under one source is never attributed to another.'
+                justification: |
+                  Folder sources need broad recursive coverage while file sources must not trigger reloads for unrelated sibling files, and users adding multiple independent sources rely on their watch scopes never leaking into one another.
+                tests:
+                  - 'WatchSource_TwoDistinctSources_BothTrackedIndependently'
+                  - 'WatchSource_TwoFolders_ChangeUnderOneIsNotAttributedToTheOther'
+                  - 'WatchSource_CalledTwiceForSameSourceId_RetargetsWithoutThrowing'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-UnwatchSource'
+                title: 'The FileWatcher shall stop watching a source by id without disturbing other still-watched sources'' watchers or pending change state, and shall treat unwatching an unknown id as a no-op.'
+                justification: |
+                  Removing one workspace source must not silently drop pending changes accumulated for other sources that remain open, and a stale or already-removed source id must not surface as an error.
+                tests:
+                  - 'UnwatchSource_RemovesOnlyThatWatcher_OthersContinueReporting'
+                  - 'UnwatchSource_UnknownSourceId_ReturnsFalse'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-RequireWatchBeforeQueue'
+                title: 'The FileWatcher shall silently ignore queuing a change when no source is currently being watched.'
+                justification: |
+                  Zero watched sources is a first-class, valid empty-workspace state, and a change notification can legitimately race an unwatch; queuing must not accumulate unattributable pending state or throw.
+                tests:
+                  - 'QueueChange_WithNoWatchedSources_IsIgnored'

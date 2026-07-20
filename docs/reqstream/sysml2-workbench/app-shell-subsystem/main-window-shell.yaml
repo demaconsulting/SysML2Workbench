@@ -33,3 +33,20 @@ sections:
                   Users need shell regions to stay in sync as they browse the workspace and interact with rendered or custom views.
                 tests:
                   - 'SessionStateChanges_SynchronizeVisibleRegions'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ManageMultipleSources'
+                title: 'The MainWindowShell shall support adding and removing individual file and folder workspace sources, additively watching and unwatching each source, and raising SourcesChanged whenever the source set changes.'
+                justification: |
+                  Users build up a workspace from an arbitrary combination of files and folders rather than a single root folder, and every panel needs a reliable notification to stay synchronized as sources come and go.
+                tests:
+                  - 'AddFolderSourceAsync_SecondDistinctFolder_IsAdditiveAndWatchesBothSources'
+                  - 'SourcesChanged_RaisedOnAdd_NotRaisedAtConstruction'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SupportEmptyWorkspace'
+                title: 'The MainWindowShell shall start with a valid, non-null empty workspace snapshot at construction, and shall correctly return to that empty state - clearing every open tab - when the last remaining source is removed.'
+                justification: |
+                  Zero sources open is a first-class, valid application state rather than an error, both before the user has opened anything and after removing everything they had opened.
+                tests:
+                  - 'Construction_EstablishesValidEmptySnapshot'
+                  - 'RemoveSourceAsync_DownToZeroSources_ProducesEmptySnapshotAndUnwatchesEverything'
+                  - 'SelectPredefinedView_NoWorkspaceOpened_ThrowsInvalidOperationException'

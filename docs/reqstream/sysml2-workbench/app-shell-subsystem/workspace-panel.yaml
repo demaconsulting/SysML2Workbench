@@ -1,0 +1,42 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'AppShellSubsystem Requirements'
+        sections:
+          - title: 'WorkspacePanel Requirements'
+            requirements:
+              - id: 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-BuildSourceTree'
+                title: 'The WorkspacePanel shall present the current workspace sources as a tree, with folder sources expanding to their discovered files preserving on-disk subfolder hierarchy, and file sources as leaves.'
+                justification: |
+                  Users need a visual inventory of every open source and, for folders, the files contributed by each one arranged the way they are actually organized on disk (not flattened), distinguishing expandable folder nodes from non-expandable file nodes.
+                tests:
+                  - 'Construction_ZeroSources_ReportsEmptyTree'
+                  - 'RebuildTree_FolderSource_ProducesSourceNodeWithFileChildren'
+                  - 'RebuildTree_FileSource_ProducesLeafSourceNodeWithNoChildren'
+                  - 'RebuildTree_FolderSourceWithSubfolders_PreservesOnDiskHierarchy'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-ReflectDedupeInTreeShape'
+                title: 'The WorkspacePanel shall reflect WorkspaceSourceSet overlap dedupe in its tree shape, showing an overlapping file exactly once under its attributed owning source.'
+                justification: |
+                  Presenting an overlapping file under more than one source node would misrepresent the single, deduplicated file resolution the rest of the workspace already operates on.
+                tests:
+                  - 'RebuildTree_OverlappingFileAndFolder_DedupeReflectedInTreeShape'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-RefreshOnSourcesChanged'
+                title: 'The WorkspacePanel shall rebuild its tree whenever MainWindowShell reports that the set of workspace sources has changed, including removal down to zero sources.'
+                justification: |
+                  The panel must stay synchronized with the shell as the user adds and removes sources, and must correctly return to its empty state rather than showing stale nodes.
+                tests:
+                  - 'SourcesChanged_TriggersRebuild_AndRemovalRestoresEmptyState'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-WireAddRemoveCommands'
+                title: 'The WorkspacePanel shall wire its Add File, Add Folder, and Remove commands to MainWindowShell, resolving Remove against the selected node''s owning source.'
+                justification: |
+                  Add/Remove are the panel''s only mutation entry points, and Remove must correctly resolve the owning source whether a source node or one of its file children is selected.
+                tests:
+                  - 'AddFileCommand_RaisesRequestAddFile'
+                  - 'AddFolderCommand_RaisesRequestAddFolder'
+                  - 'RemoveSelectedCommand_WithSourceNodeSelected_RemovesOwningSource'
+                  - 'RemoveSelectedCommand_WithFileNodeSelected_RemovesOwningSource'
+                  - 'RemoveSelectedCommand_NoSelection_IsNoOp'

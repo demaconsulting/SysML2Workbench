@@ -35,7 +35,9 @@ public sealed class WorkspaceSubsystemTests : IDisposable
         var model = new WorkspaceModel();
 
         // Act
-        var snapshot = await model.LoadWorkspaceAsync(_tempRoot);
+        var sourceSet = new WorkspaceSourceSet();
+        sourceSet.AddFolder(_tempRoot);
+        var snapshot = await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
 
         // Assert: the file tree, semantic workspace, and diagnostics are all populated from the same load pass
         Assert.Single(snapshot.Files);
@@ -57,11 +59,13 @@ public sealed class WorkspaceSubsystemTests : IDisposable
             "package Sample {\n    part def Engine;\n}\n",
             TestContext.Current.CancellationToken);
         var model = new WorkspaceModel();
-        await model.LoadWorkspaceAsync(_tempRoot);
+        var sourceSet = new WorkspaceSourceSet();
+        sourceSet.AddFolder(_tempRoot);
+        await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
 
         var now = DateTimeOffset.UtcNow;
         var watcher = new FileWatcher(TimeSpan.FromMilliseconds(1), () => now);
-        watcher.StartWatching(_tempRoot);
+        watcher.WatchSource(sourceSet.Sources[0]);
 
         // Act: an external process adds a new file, the watcher observes it, and the debounce window elapses
         var newFilePath = Path.Combine(_tempRoot, "Extra.sysml");
@@ -69,7 +73,7 @@ public sealed class WorkspaceSubsystemTests : IDisposable
         watcher.QueueChange(newFilePath);
         now = now.AddSeconds(1);
         var changed = watcher.FlushPendingChanges();
-        var refreshed = await model.ReloadFilesAsync(changed);
+        var refreshed = await model.ReloadFilesAsync(changed, sourceSet.Resolve());
 
         // Assert: the refreshed workspace state now includes the new file
         Assert.Equal(2, refreshed.Files.Count);
@@ -98,7 +102,9 @@ public sealed class WorkspaceSubsystemTests : IDisposable
         var model = new WorkspaceModel();
 
         // Act
-        var snapshot = await model.LoadWorkspaceAsync(_tempRoot);
+        var sourceSet = new WorkspaceSourceSet();
+        sourceSet.AddFolder(_tempRoot);
+        var snapshot = await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
         var aggregator = new DiagnosticsAggregator();
         aggregator.ReplaceWorkspaceDiagnostics(snapshot.Diagnostics);
         var ordered = aggregator.RebuildAggregate();

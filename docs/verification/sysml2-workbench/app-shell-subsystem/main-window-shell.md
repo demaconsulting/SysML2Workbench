@@ -63,3 +63,25 @@ Verified by `MainWindowShellTests.SelectPredefinedView_TabsHaveIndependentCanvas
 **SessionStateChanges_SynchronizeVisibleRegions**: Reloading the workspace after an external change resynchronizes
 visible shell regions (diagnostics and catalog) and resets stale active-view state. Verified by
 `MainWindowShellTests.SessionStateChanges_SynchronizeVisibleRegions`.
+
+**AddFolderSourceAsync_SecondDistinctFolder_IsAdditiveAndWatchesBothSources**: Adding a second, distinct folder
+source is additive - both folders' files are merged into the workspace and both sources are independently watched,
+without disturbing the first source. Verified by
+`MainWindowShellTests.AddFolderSourceAsync_SecondDistinctFolder_IsAdditiveAndWatchesBothSources`.
+
+**SourcesChanged_RaisedOnAdd_NotRaisedAtConstruction**: `SourcesChanged` is raised when a source is added, but is
+not raised merely by constructing the shell (which establishes its initial empty snapshot without any source
+mutation). Verified by `MainWindowShellTests.SourcesChanged_RaisedOnAdd_NotRaisedAtConstruction`.
+
+**Construction_EstablishesValidEmptySnapshot**: Constructing the shell establishes a valid, non-null
+`CurrentWorkspace` with zero sources and zero files, rather than leaving workspace state unset until the first
+source is added. Verified by `MainWindowShellTests.Construction_EstablishesValidEmptySnapshot`.
+
+**RemoveSourceAsync_DownToZeroSources_ProducesEmptySnapshotAndUnwatchesEverything**: Removing the last remaining
+source produces a valid empty snapshot (zero sources, zero files), clears every open tab, and unwatches every
+source's file watcher. Verified by
+`MainWindowShellTests.RemoveSourceAsync_DownToZeroSources_ProducesEmptySnapshotAndUnwatchesEverything`.
+
+**SelectPredefinedView_NoWorkspaceOpened_ThrowsInvalidOperationException**: Selecting a predefined view while zero
+workspace sources are open throws `InvalidOperationException` rather than rendering against an empty workspace.
+Verified by `MainWindowShellTests.SelectPredefinedView_NoWorkspaceOpened_ThrowsInvalidOperationException`.

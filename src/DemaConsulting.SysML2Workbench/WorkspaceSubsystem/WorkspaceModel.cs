@@ -1,4 +1,3 @@
-using DemaConsulting.SysML2Tools.Io;
 using DemaConsulting.SysML2Tools.Parser;
 using DemaConsulting.SysML2Tools.Semantic;
 using DemaConsulting.SysML2Tools.Stdlib;
@@ -17,32 +16,16 @@ public sealed record WorkspaceFileState(
     DateTimeOffset LoadedUtc);
 
 /// <summary>
-///     Options controlling how <see cref="WorkspaceModel" /> discovers and loads workspace files.
-/// </summary>
-/// <param name="GlobPatterns">Glob patterns (relative to the workspace root) selecting candidate model files.</param>
-/// <param name="FileExtensions">
-///     Extensions considered when a glob pattern's final segment is a bare wildcard. Ignored by patterns
-///     that already name an extension (for example <c>**/*.sysml</c>).
-/// </param>
-public sealed record WorkspaceLoadOptions(IReadOnlyList<string> GlobPatterns, IReadOnlyList<string> FileExtensions)
-{
-    /// <summary>
-    ///     Default options matching the SysML2Tools CLI's own default: every <c>.sysml</c> file anywhere
-    ///     under the workspace root.
-    /// </summary>
-    public static WorkspaceLoadOptions Default { get; } = new(["**/*.sysml"], []);
-}
-
-/// <summary>
 ///     Immutable snapshot of a loaded workspace at a point in time.
 /// </summary>
-/// <param name="RootPath">Absolute workspace root folder the snapshot was loaded from.</param>
+/// <param name="Sources">Ordered file/folder sources the snapshot was resolved from. Empty for a first-class,
+///     zero-source workspace.</param>
 /// <param name="Files">Discovered files that were combined into the workspace.</param>
 /// <param name="Workspace">Semantic workspace produced by SysML2Tools for the discovered files.</param>
 /// <param name="Diagnostics">All parser and semantic diagnostics produced by the load.</param>
 /// <param name="RevisionId">Opaque token that changes every time a new snapshot is published.</param>
 public sealed record WorkspaceSnapshot(
-    string RootPath,
+    IReadOnlyList<WorkspaceSource> Sources,
     IReadOnlyList<string> Files,
     SysmlWorkspace Workspace,
     IReadOnlyList<SysmlDiagnostic> Diagnostics,
@@ -62,7 +45,9 @@ public sealed record WorkspaceSnapshot(
 ///     dependency edges. <see cref="ReloadFilesAsync" /> therefore performs a full workspace re-load rather than
 ///     a dependency-scoped partial reload; per-file state entries whose diagnostics are unchanged after a reload
 ///     keep their original <see cref="WorkspaceFileState.LoadedUtc" /> value so callers can still tell which
-///     files were actually affected by the last reload.
+///     files were actually affected by the last reload. File discovery itself is no longer this unit's concern:
+///     <see cref="WorkspaceSourceSet" /> resolves the caller's file/folder sources into a merged file list, and
+///     <see cref="WorkspaceModel" /> only ever loads the files it is handed.
 /// </remarks>
 public sealed class WorkspaceModel
 {
@@ -77,10 +62,19 @@ public sealed class WorkspaceModel
     private SysmlWorkspace? _workspace;
 
     /// <summary>
-    ///     Absolute path to the workspace folder currently loaded, or <see langword="null" /> before the first
-    ///     load.
+    ///     Resolution used by the most recent load, defaulting to an empty resolution so
+    ///     <see cref="ReloadFilesAsync" /> is well-defined even before the first <see cref="LoadWorkspaceAsync" />
+    ///     call.
     /// </summary>
-    public string? RootPath { get; private set; }
+    private WorkspaceSourceResolution _resolution = new(
+        [],
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase));
+
+    /// <summary>
+    ///     Ordered file/folder sources currently loaded, or an empty list before the first load.
+    /// </summary>
+    public IReadOnlyList<WorkspaceSource> Sources { get; private set; } = [];
 
     /// <summary>
     ///     Maps normalized file paths to the latest known parse result and file metadata.
@@ -88,39 +82,29 @@ public sealed class WorkspaceModel
     public IReadOnlyDictionary<string, WorkspaceFileState> Files => _files;
 
     /// <summary>
-    ///     Glob patterns, standard library inclusion, and reload behavior that remain consistent for the life of
-    ///     the loaded workspace.
-    /// </summary>
-    public WorkspaceLoadOptions LoadOptions { get; private set; } = WorkspaceLoadOptions.Default;
-
-    /// <summary>
-    ///     Creates a workspace snapshot from a root folder.
+    ///     Loads a workspace snapshot from an already-resolved set of sources.
     /// </summary>
     /// <remarks>
-    ///     Discovers candidate files via <see cref="GlobFileCollector" />, loads the SysML standard library
-    ///     symbols needed by the parser pipeline, parses and resolves imports across the discovered file set via
-    ///     <see cref="WorkspaceLoader" />, and records diagnostics per file before publishing the initial
-    ///     snapshot.
+    ///     Loads the SysML standard library symbols needed by the parser pipeline, parses and resolves imports
+    ///     across <paramref name="resolution" />'s merged file set via <see cref="WorkspaceLoader" />, and records
+    ///     diagnostics per file before publishing the snapshot. A zero-source, zero-file resolution is a
+    ///     first-class, valid input: <see cref="WorkspaceLoader.LoadAsync" /> called with an empty file list does
+    ///     not throw and produces a valid, diagnostic-free, standard-library-only workspace.
     /// </remarks>
-    /// <param name="rootPath">Folder to scan for <c>.sysml</c> content.</param>
-    /// <param name="options">Discovery and load options. Defaults to <see cref="WorkspaceLoadOptions.Default" />.</param>
-    /// <returns>Normalized state for the full discovered workspace.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="rootPath" /> is null or whitespace.</exception>
-    /// <exception cref="DirectoryNotFoundException">Thrown when <paramref name="rootPath" /> does not exist.</exception>
-    public async Task<WorkspaceSnapshot> LoadWorkspaceAsync(string rootPath, WorkspaceLoadOptions? options = null)
+    /// <param name="sources">Ordered file/folder sources the resolution was computed from.</param>
+    /// <param name="resolution">Already-resolved merged file set, typically from <see cref="WorkspaceSourceSet.Resolve" />.</param>
+    /// <returns>Normalized state for the resolved workspace.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="sources" /> or <paramref name="resolution" /> is null.</exception>
+    public async Task<WorkspaceSnapshot> LoadWorkspaceAsync(IReadOnlyList<WorkspaceSource> sources, WorkspaceSourceResolution resolution)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(rootPath);
-        if (!Directory.Exists(rootPath))
-        {
-            throw new DirectoryNotFoundException($"Workspace root folder was not found: {rootPath}");
-        }
+        ArgumentNullException.ThrowIfNull(sources);
+        ArgumentNullException.ThrowIfNull(resolution);
 
-        // Normalize the root path once so all subsequent file-path comparisons are consistent
-        RootPath = Path.GetFullPath(rootPath);
-        LoadOptions = options ?? WorkspaceLoadOptions.Default;
+        Sources = sources;
+        _resolution = resolution;
         _files.Clear();
 
-        var snapshot = await LoadInternalAsync(RootPath, LoadOptions).ConfigureAwait(false);
+        var snapshot = await LoadInternalAsync(sources, resolution.MergedFiles).ConfigureAwait(false);
         _workspace = snapshot.Workspace;
         return snapshot;
     }
@@ -131,22 +115,33 @@ public sealed class WorkspaceModel
     /// <remarks>
     ///     See the remarks on <see cref="WorkspaceModel" /> for why this recomputes the whole workspace rather
     ///     than a dependency-scoped subset: the real semantic model does not expose per-file import edges, so a
-    ///     coherent reload requires reprocessing the full discovered file set. Only file entries whose
-    ///     diagnostics actually changed receive a fresh <see cref="WorkspaceFileState.LoadedUtc" />.
+    ///     coherent reload requires reprocessing the full resolved file set. Only file entries whose diagnostics
+    ///     actually changed receive a fresh <see cref="WorkspaceFileState.LoadedUtc" />. Recomputes against the
+    ///     current resolution even if it is empty (0 sources, 0 files) - this is a valid, non-throwing state.
+    ///     When <paramref name="updatedResolution" /> is supplied, it replaces the stored resolution before
+    ///     recomputation - needed so a file created or deleted externally under a still-registered folder source
+    ///     (as opposed to a source being explicitly added/removed) is picked up: an external file-system change
+    ///     does not go through <see cref="LoadWorkspaceAsync" />, so without a fresh resolution here, this method
+    ///     would keep recomputing against the file list captured at the last explicit source-set mutation. When
+    ///     omitted, the previously stored resolution is reused unchanged.
     /// </remarks>
     /// <param name="changedPaths">Normalized files affected by an external change.</param>
+    /// <param name="updatedResolution">
+    ///     Freshly recomputed resolution to adopt before reloading, or <see langword="null" /> to keep reloading
+    ///     against the resolution from the most recent <see cref="LoadWorkspaceAsync" /> call.
+    /// </param>
     /// <returns>Updated workspace state after recomputation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="changedPaths" /> is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when no workspace has been loaded yet.</exception>
-    public async Task<WorkspaceSnapshot> ReloadFilesAsync(IReadOnlyList<string> changedPaths)
+    public async Task<WorkspaceSnapshot> ReloadFilesAsync(IReadOnlyList<string> changedPaths, WorkspaceSourceResolution? updatedResolution = null)
     {
         ArgumentNullException.ThrowIfNull(changedPaths);
-        if (RootPath is null)
+
+        if (updatedResolution is not null)
         {
-            throw new InvalidOperationException("A workspace must be loaded before it can be reloaded.");
+            _resolution = updatedResolution;
         }
 
-        var snapshot = await LoadInternalAsync(RootPath, LoadOptions).ConfigureAwait(false);
+        var snapshot = await LoadInternalAsync(Sources, _resolution.MergedFiles).ConfigureAwait(false);
         _workspace = snapshot.Workspace;
         return snapshot;
     }
@@ -167,17 +162,14 @@ public sealed class WorkspaceModel
     }
 
     /// <summary>
-    ///     Discovers, parses, and semantically resolves the workspace files rooted at <paramref name="rootPath" />,
-    ///     then merges the resulting per-file diagnostics into <see cref="_files" />.
+    ///     Parses and semantically resolves <paramref name="discoveredFiles" />, then merges the resulting
+    ///     per-file diagnostics into <see cref="_files" />.
     /// </summary>
-    /// <param name="rootPath">Absolute workspace root folder.</param>
-    /// <param name="options">Discovery and load options to apply.</param>
+    /// <param name="sources">Ordered file/folder sources the snapshot is published for.</param>
+    /// <param name="discoveredFiles">Already-resolved, merged file set to load.</param>
     /// <returns>The freshly computed workspace snapshot.</returns>
-    private async Task<WorkspaceSnapshot> LoadInternalAsync(string rootPath, WorkspaceLoadOptions options)
+    private async Task<WorkspaceSnapshot> LoadInternalAsync(IReadOnlyList<WorkspaceSource> sources, IReadOnlyList<string> discoveredFiles)
     {
-        // Mirror the SysML2Tools CLI's own multi-file discovery so imports across files resolve the same way
-        var discoveredFiles = GlobFileCollector.Collect(options.GlobPatterns, options.FileExtensions, rootPath);
-
         // The standard library symbol table is required so references into the SysML standard packages resolve
         var (symbolTable, _) = StdlibProvider.GetSymbolTable();
 
@@ -209,6 +201,6 @@ public sealed class WorkspaceModel
             _files[path] = state;
         }
 
-        return new WorkspaceSnapshot(rootPath, discoveredFiles, loadResult.Workspace!, loadResult.Diagnostics, Guid.NewGuid().ToString("N"));
+        return new WorkspaceSnapshot(sources, discoveredFiles, loadResult.Workspace!, loadResult.Diagnostics, Guid.NewGuid().ToString("N"));
     }
 }

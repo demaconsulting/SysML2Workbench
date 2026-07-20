@@ -91,7 +91,7 @@ public sealed class MainWindowShellTests : IDisposable
         using var shell = CreateShell();
 
         // Act
-        var snapshot = await shell.OpenWorkspaceAsync(_tempRoot);
+        var snapshot = await shell.AddFolderSourceAsync(_tempRoot);
 
         // Assert: the workspace is loaded and downstream regions were refreshed
         Assert.Same(snapshot, shell.CurrentWorkspace);
@@ -109,7 +109,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var view = shell.ViewCatalog.AvailableViews[0];
 
         // Act: select the predefined view twice - the second selection must not duplicate the tab
@@ -142,7 +142,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var view = shell.ViewCatalog.AvailableViews[0];
         shell.SelectPredefinedView(view.QualifiedName);
         Assert.NotNull(shell.ActivePredefinedView);
@@ -170,7 +170,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
 
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.Interconnection);
@@ -191,14 +191,14 @@ public sealed class MainWindowShellTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that opening a workspace is rejected before it exists.
+    ///     Validates that selecting a predefined view is rejected while the workspace has zero sources.
     /// </summary>
     [Fact]
     public async Task SelectPredefinedView_NoWorkspaceOpened_ThrowsInvalidOperationException()
     {
         using var shell = CreateShell();
 
-        await Assert.ThrowsAsync<DirectoryNotFoundException>(() => shell.OpenWorkspaceAsync(Path.Combine(_tempRoot, "missing")));
+        await Assert.ThrowsAsync<DirectoryNotFoundException>(() => shell.AddFolderSourceAsync(Path.Combine(_tempRoot, "missing")));
         Assert.Throws<InvalidOperationException>(() => shell.SelectPredefinedView("anything"));
     }
 
@@ -212,7 +212,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
 
         var first = new ViewDefinitionModel();
         first.SetViewKind(ViewKind.General);
@@ -246,7 +246,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var view = shell.ViewCatalog.AvailableViews[0];
         shell.SelectPredefinedView(view.QualifiedName);
         var predefinedTabId = shell.ActiveTabId;
@@ -275,7 +275,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
 
         var definition = new ViewDefinitionModel();
         definition.SetViewKind(ViewKind.General);
@@ -300,7 +300,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
 
         // Act
         var newTab = shell.OpenNewCustomPreviewTab();
@@ -331,7 +331,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var views = shell.ViewCatalog.AvailableViews;
         shell.SelectPredefinedView(views[0].QualifiedName);
         var firstTabId = shell.ActiveTabId!;
@@ -364,7 +364,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var view = shell.ViewCatalog.AvailableViews[0];
         shell.SelectPredefinedView(view.QualifiedName);
         var activeTabId = shell.ActiveTabId;
@@ -387,7 +387,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var views = shell.ViewCatalog.AvailableViews;
 
         // Act
@@ -411,15 +411,15 @@ public sealed class MainWindowShellTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that opening a second workspace with a different root retargets the shell's file watcher to
-    ///     the newly opened root - not just the first-ever opened one - and discards any pending change state
-    ///     that had accumulated against the previously watched root.
+    ///     Validates that adding a second, distinct folder source is additive (not a replacement): both folders'
+    ///     files remain in the workspace, both sources' ids are watched, and no previously accumulated pending
+    ///     change state under the first folder is discarded just because a second source was added.
     /// </summary>
     [Fact]
-    public async Task OpenWorkspaceAsync_ReopenedWithDifferentRoot_RetargetsFileWatcherAndDiscardsStalePendingChanges()
+    public async Task AddFolderSourceAsync_SecondDistinctFolder_IsAdditiveAndWatchesBothSources()
     {
         // Arrange: a second, distinct temporary workspace root, and a locally held file watcher reference so its
-        // watched root and pending state can be inspected directly.
+        // watched sources and pending state can be inspected directly.
         var secondRoot = Directory.CreateTempSubdirectory("sysml2workbench-tests-").FullName;
         try
         {
@@ -432,23 +432,92 @@ public sealed class MainWindowShellTests : IDisposable
             var fileWatcher = new FileWatcher(TimeSpan.FromMilliseconds(1));
             using var shell = CreateShell(fileWatcher);
 
-            // Act: open workspace A, queue a pending change against A directly on the watcher, then open
-            // workspace B.
-            await shell.OpenWorkspaceAsync(_tempRoot);
-            Assert.Equal(Path.GetFullPath(_tempRoot), fileWatcher.WatchedRootPath);
+            // Act: add folder source A, queue a pending change against A directly on the watcher, then add
+            // folder source B.
+            await shell.AddFolderSourceAsync(_tempRoot);
+            Assert.Single(fileWatcher.WatchedSourceIds);
             var stalePathUnderA = Path.Combine(_tempRoot, "Stale.sysml");
             fileWatcher.QueueChange(stalePathUnderA);
             Assert.Contains(stalePathUnderA, fileWatcher.PendingChanges);
 
-            await shell.OpenWorkspaceAsync(secondRoot);
+            var snapshot = await shell.AddFolderSourceAsync(secondRoot);
 
-            // Assert: the watcher is retargeted to B (the second root), not left on A (the first)
-            Assert.Equal(Path.GetFullPath(secondRoot), fileWatcher.WatchedRootPath);
-            Assert.DoesNotContain(stalePathUnderA, fileWatcher.PendingChanges);
+            // Assert: both sources are now registered and watched, both folders' files are present, and A's
+            // pending change survived the addition of B (additive, not a replacement/retarget).
+            Assert.Equal(2, shell.CurrentWorkspace.Sources.Count);
+            Assert.Equal(2, fileWatcher.WatchedSourceIds.Count);
+            Assert.Equal(2, snapshot.Files.Count);
+            Assert.Contains(stalePathUnderA, fileWatcher.PendingChanges);
         }
         finally
         {
             Directory.Delete(secondRoot, recursive: true);
         }
+    }
+
+    /// <summary>
+    ///     Validates that removing sources down to zero produces a valid, non-throwing empty snapshot, unwatches
+    ///     every previously watched source, and raises <see cref="MainWindowShell.SourcesChanged" /> for both the
+    ///     add and the remove.
+    /// </summary>
+    [Fact]
+    public async Task RemoveSourceAsync_DownToZeroSources_ProducesEmptySnapshotAndUnwatchesEverything()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        var fileWatcher = new FileWatcher(TimeSpan.FromMilliseconds(1));
+        using var shell = CreateShell(fileWatcher);
+        var sourcesChangedCount = 0;
+        shell.SourcesChanged += (_, _) => sourcesChangedCount++;
+
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var sourceId = shell.CurrentWorkspace.Sources[0].Id;
+
+        // Act
+        var snapshot = await shell.RemoveSourceAsync(sourceId);
+
+        // Assert: a valid, empty snapshot; the source is no longer watched; and both mutations raised the event.
+        Assert.Empty(snapshot.Sources);
+        Assert.Empty(snapshot.Files);
+        Assert.Empty(fileWatcher.WatchedSourceIds);
+        Assert.Equal(2, sourcesChangedCount);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.SourcesChanged" /> is raised for each add mutation, and that
+    ///     it is not raised at construction time (construction only establishes the initial empty snapshot; it
+    ///     does not represent a source-set mutation).
+    /// </summary>
+    [Fact]
+    public async Task SourcesChanged_RaisedOnAdd_NotRaisedAtConstruction()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        var raisedCount = 0;
+        shell.SourcesChanged += (_, _) => raisedCount++;
+
+        // Act
+        await shell.AddFolderSourceAsync(_tempRoot);
+
+        // Assert
+        Assert.Equal(1, raisedCount);
+    }
+
+    /// <summary>
+    ///     Validates that a freshly constructed shell already has a valid, non-null, zero-source
+    ///     <see cref="MainWindowShell.CurrentWorkspace" /> snapshot, per the eager-empty-snapshot-at-construction
+    ///     contract.
+    /// </summary>
+    [Fact]
+    public void Construction_EstablishesValidEmptySnapshot()
+    {
+        // Arrange / Act
+        using var shell = CreateShell();
+
+        // Assert
+        Assert.Empty(shell.CurrentWorkspace.Sources);
+        Assert.Empty(shell.CurrentWorkspace.Files);
+        Assert.NotNull(shell.CurrentWorkspace.Workspace);
     }
 }

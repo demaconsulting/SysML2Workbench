@@ -7,6 +7,7 @@
   <DockPanel Margin="4">
     <TextBlock DockPanel.Dock="Top" Text="Predefined Views" FontWeight="Bold" />
     <TextBlock DockPanel.Dock="Bottom" Name="StatusTextBlock" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="Red" />
+    <TextBlock DockPanel.Dock="Top" Name="EmptyStateTextBlock" IsVisible="{Binding IsWorkspaceEmpty}" Text="No workspace open - add a file or folder from the Workspace panel." TextWrapping="Wrap" />
     <ListBox Name="PredefinedViewsListBox"
              ItemsSource="{Binding AvailableViews}"
              SelectedItem="{Binding SelectedView, Mode=TwoWay}"

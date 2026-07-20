@@ -35,6 +35,9 @@ public partial class CustomViewBuilderToolViewModel : Dock.Model.Mvvm.Controls.T
     [ObservableProperty]
     private string? _statusMessage;
 
+    [ObservableProperty]
+    private bool _isWorkspaceEmpty;
+
     /// <summary>
     ///     Creates the custom-view builder tool view model.
     /// </summary>
@@ -42,6 +45,8 @@ public partial class CustomViewBuilderToolViewModel : Dock.Model.Mvvm.Controls.T
     public CustomViewBuilderToolViewModel(MainWindowShell shell)
     {
         Shell = shell ?? throw new ArgumentNullException(nameof(shell));
+        Shell.SourcesChanged += (_, _) => RefreshFromWorkspace();
+        RefreshFromWorkspace();
     }
 
     /// <summary>
@@ -71,7 +76,7 @@ public partial class CustomViewBuilderToolViewModel : Dock.Model.Mvvm.Controls.T
     /// </summary>
     public void RefreshFromWorkspace()
     {
-        AvailableExposeTargets = Shell.CurrentWorkspace is null
+        AvailableExposeTargets = Shell.CurrentWorkspace.Sources.Count == 0
             ? []
             : Shell.CurrentWorkspace.Workspace.Declarations
                 .Where(kvp => !Shell.CurrentWorkspace.Workspace.StdlibNames.Contains(kvp.Key))
@@ -82,6 +87,7 @@ public partial class CustomViewBuilderToolViewModel : Dock.Model.Mvvm.Controls.T
 
         BuilderDefinition = new ViewDefinitionModel();
         StatusMessage = null;
+        IsWorkspaceEmpty = Shell.CurrentWorkspace.Sources.Count == 0;
         BuilderReset?.Invoke(this, EventArgs.Empty);
     }
 }

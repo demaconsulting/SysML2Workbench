@@ -42,7 +42,11 @@ public sealed class ViewCatalogPresenterTests : IDisposable
             TestContext.Current.CancellationToken);
 
         var model = new WorkspaceModel();
-        return await model.LoadWorkspaceAsync(_tempRoot);
+
+        var sourceSet = new WorkspaceSourceSet();
+
+        sourceSet.AddFolder(_tempRoot);
+        return await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
     }
 
     /// <summary>
@@ -135,7 +139,9 @@ public sealed class ViewCatalogPresenterTests : IDisposable
             "package Empty {\n}\n",
             TestContext.Current.CancellationToken);
         var model = new WorkspaceModel();
-        var emptySnapshot = await model.LoadWorkspaceAsync(_tempRoot);
+        var sourceSet = new WorkspaceSourceSet();
+        sourceSet.AddFolder(_tempRoot);
+        var emptySnapshot = await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
 
         // Act: refresh the catalog from the now view-less workspace
         presenter.RefreshCatalog(emptySnapshot.Workspace, emptySnapshot.RevisionId);

@@ -12,25 +12,50 @@ for setup prerequisites.
 1. Launch the application (`dotnet run --project
    src/DemaConsulting.SysML2Workbench.Desktop`, or run the published
    executable).
-2. Choose **File > Open Workspace...** and pick the folder containing your
-   `.sysml` files.
-3. SysML2Workbench discovers every `.sysml` file under the folder (matching
-   the same glob-based discovery the SysML2Tools CLI uses), parses them, and
-   resolves `import` relationships across files, exactly as the CLI would.
-4. Once loaded, the **Predefined Views** list (left panel) is populated with
-   every view usage declared in the workspace, and the **Diagnostics** panel
+2. Build up your workspace from any combination of files and folders:
+   - Choose **File > Open Folder...** and pick a folder containing `.sysml`
+     files, or
+   - Choose **File > Open File...** and pick a single `.sysml` file, or
+   - Drag files and/or folders from your file manager onto the main window
+     or the **Workspace** panel.
+
+   Each addition is additive - adding a second folder does not replace the
+   first, so a workspace can be assembled from several unrelated folders
+   and/or individual files at once. If a file happens to fall both inside an
+   added folder and is also added individually, it is only loaded once;
+   overlapping folders are deduplicated the same way.
+3. For each added folder, SysML2Workbench discovers every `.sysml` file
+   under it (matching the same glob-based discovery the SysML2Tools CLI
+   uses); each added file is loaded directly. All discovered/added files are
+   merged, parsed, and `import` relationships resolved across the whole set,
+   exactly as the CLI would.
+4. Once loaded, the **Workspace** panel (left side, dockable) lists every
+   added source as a tree - folders expand to show the files discovered
+   under them, files appear as non-expandable entries - and lets you add
+   more sources or remove one via its toolbar or a right-click/selection
+   plus **Remove**. The **Predefined Views** list is populated with every
+   view usage declared in the workspace, and the **Diagnostics** panel
    (bottom) lists any parser or reference-resolution problems found across
    the whole workspace. Panels are docked in this default arrangement but can
    be resized, floated, or closed like any other dockable panel. If you
-   close the **Predefined Views**, **Custom View Builder**, or
+   close the **Workspace**, **Predefined Views**, **Custom View Builder**, or
    **Diagnostics** panel, reopen it from the **View** menu - selecting it
    there restores the panel to its original dock without losing any
    in-progress state (for example, a partially-built custom view).
+5. Removing every source returns the workspace to its empty starting state:
+   the **Predefined Views**, **Custom View Builder**, and **Diagnostics**
+   panels each show a friendly "workspace is empty" message instead of
+   rendering against nothing, and any open diagram tabs are closed. This is
+   the same state the application starts in before any source is added, not
+   an error condition.
 
-While a workspace is open, SysML2Workbench watches the folder for external
-changes. If you edit a `.sysml` file in another editor, or `git pull` new
+While a workspace is open, SysML2Workbench watches every added file and
+folder independently for external changes. If you edit a `.sysml` file in
+another editor, add a new file under a watched folder, or `git pull` new
 changes, the workspace is incrementally reloaded and the active diagram and
-diagnostics list refresh automatically - no need to reopen the folder.
+diagnostics list refresh automatically - no need to reopen anything. A
+change under one added folder never affects another added folder's watch
+scope.
 
 ## Browsing Predefined Views
 

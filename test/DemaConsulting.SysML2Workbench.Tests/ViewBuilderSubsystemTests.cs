@@ -35,7 +35,9 @@ public sealed class ViewBuilderSubsystemTests : IDisposable
             "package Sample {\n    part def Engine;\n    part def Wheel;\n}\n",
             TestContext.Current.CancellationToken);
         var model = new WorkspaceModel();
-        var snapshot = await model.LoadWorkspaceAsync(_tempRoot);
+        var sourceSet = new WorkspaceSourceSet();
+        sourceSet.AddFolder(_tempRoot);
+        var snapshot = await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
         var definition = new ViewDefinitionModel();
 
         // Act: the user makes a sequence of builder selections

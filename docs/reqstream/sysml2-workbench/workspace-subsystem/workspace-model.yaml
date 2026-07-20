@@ -7,18 +7,18 @@ sections:
           - title: 'WorkspaceModel Requirements'
             requirements:
               - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-MaintainWorkspaceTree'
-                title: 'The WorkspaceModel shall maintain an in-memory representation of the open workspace folder and its tracked SysML files.'
+                title: 'The WorkspaceModel shall maintain an in-memory representation of the currently resolved workspace sources and their tracked SysML files.'
                 justification: |
-                  Users interact with a folder-based workspace, so the unit must keep the current file tree available to the rest of the application.
+                  Users interact with a multi-source workspace, so the unit must keep the current file tree available to the rest of the application.
                 tests:
-                  - 'OpenWorkspace_BuildsTrackedFileTree'
+                  - 'LoadWorkspaceAsync_BuildsTrackedFileTree'
 
               - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-ResolveWorkspaceInputs'
-                title: 'The WorkspaceModel shall determine the set of model files to load by combining workspace discovery rules with SysML import resolution.'
+                title: 'The WorkspaceModel shall load the set of model files handed to it by a WorkspaceSourceResolution, including SysML import resolution.'
                 justification: |
-                  The workbench must mirror the multi-file loading behavior users expect from existing SysML2Tools workflows.
+                  The workbench must mirror the multi-file loading behavior users expect from existing SysML2Tools workflows, while leaving file discovery itself to WorkspaceSourceSet.
                 tests:
-                  - 'ResolveInputs_FindsDiscoveredAndImportedFiles'
+                  - 'LoadWorkspaceAsync_FindsDiscoveredAndImportedFiles'
 
               - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-TrackPerFileLoadState'
                 title: 'The WorkspaceModel shall retain per-file load state, including successful parses and file-specific failures, so reloads can update only affected content.'
@@ -26,3 +26,11 @@ sections:
                   Incremental reload behavior depends on knowing the current state of each tracked file rather than recomputing the entire workspace blindly.
                 tests:
                   - 'ReloadFile_UpdatesOnlyAffectedFileState'
+
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-SupportEmptyResolution'
+                title: 'The WorkspaceModel shall produce a valid, non-throwing, stdlib-only snapshot when loaded or reloaded against a zero-file resolution.'
+                justification: |
+                  A workspace with zero sources open is a first-class, valid state rather than a failure, and every downstream consumer relies on WorkspaceModel never throwing for that case.
+                tests:
+                  - 'LoadWorkspaceAsync_EmptyResolution_ProducesValidStdlibOnlySnapshot'
+                  - 'ReloadFilesAsync_AfterResolutionBecomesEmpty_ProducesValidEmptySnapshot'

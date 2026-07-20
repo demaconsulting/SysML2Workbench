@@ -112,7 +112,7 @@ public sealed class AvaloniaTests : IDisposable
         Assert.Null(FindByName<Image>(window, "DiagramImage"));
 
         // Act: opening the workspace and selecting the predefined view through the shell
-        await shell.OpenWorkspaceAsync(_tempRoot);
+        await shell.AddFolderSourceAsync(_tempRoot);
         var view = shell.ViewCatalog.AvailableViews[0];
         shell.SelectPredefinedView(view.QualifiedName);
         Dispatcher.UIThread.RunJobs();

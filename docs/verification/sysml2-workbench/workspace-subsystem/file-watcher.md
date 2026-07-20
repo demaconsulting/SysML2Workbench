@@ -10,8 +10,10 @@ tense.
 
 #### Test Environment
 
-Tests run under the standard .NET test runner with deterministic timestamps and manually queued file-change
-notifications. No real OS watcher, network, or external services are required.
+Tests run under the standard .NET test runner. Most scenarios use deterministic timestamps and manually queued
+file-change notifications and require no real OS watcher. The per-source isolation scenario
+(`WatchSource_TwoFolders_ChangeUnderOneIsNotAttributedToTheOther`) uses real `FileSystemWatcher` instances over two
+temporary folders to prove isolation end-to-end. No network or other external services are required.
 
 #### Acceptance Criteria
 
@@ -32,3 +34,33 @@ returned by a flush once its debounce window has elapsed. Verified by
 **NotificationBurst_CoalescesIntoSingleReloadTrigger**: Repeated notifications for the same path within the debounce
 window collapse into a single reload trigger instead of one trigger per notification. Verified by
 `FileWatcherTests.NotificationBurst_CoalescesIntoSingleReloadTrigger`.
+
+**FlushPendingChanges_WithinDebounceWindow_RetainsPathForLaterFlush**: A pending change flushed before its debounce
+window has elapsed is retained rather than discarded, and is returned by a later flush once the window elapses.
+Verified by `FileWatcherTests.FlushPendingChanges_WithinDebounceWindow_RetainsPathForLaterFlush`.
+
+**WatchSource_TwoDistinctSources_BothTrackedIndependently**: Watching two distinct sources tracks both independently
+in `WatchedSourceIds`, and each source's watcher operates without disturbing the other. Verified by
+`FileWatcherTests.WatchSource_TwoDistinctSources_BothTrackedIndependently`.
+
+**WatchSource_TwoFolders_ChangeUnderOneIsNotAttributedToTheOther**: With two independently watched folder sources, a
+real file-system change under one folder is reported as pending, while the other folder's watcher contributes
+nothing for that change - direct proof that per-source watch scope is isolated. Verified by
+`FileWatcherTests.WatchSource_TwoFolders_ChangeUnderOneIsNotAttributedToTheOther`.
+
+**WatchSource_CalledTwiceForSameSourceId_RetargetsWithoutThrowing**: Calling `WatchSource` twice for the same source
+id disposes and replaces that source's watcher without throwing and without disturbing any other still-watched
+source. Verified by `FileWatcherTests.WatchSource_CalledTwiceForSameSourceId_RetargetsWithoutThrowing`.
+
+**UnwatchSource_RemovesOnlyThatWatcher_OthersContinueReporting**: Unwatching one source disposes only that source's
+watcher and removes it from `WatchedSourceIds`, while other still-watched sources continue reporting changes and
+their previously queued pending state survives. Verified by
+`FileWatcherTests.UnwatchSource_RemovesOnlyThatWatcher_OthersContinueReporting`.
+
+**UnwatchSource_UnknownSourceId_ReturnsFalse**: Unwatching an id that is not currently watched returns `false`
+without throwing. Verified by `FileWatcherTests.UnwatchSource_UnknownSourceId_ReturnsFalse`.
+
+**QueueChange_WithNoWatchedSources_IsIgnored**: Queuing a change when no source is currently watched (before any
+source has been watched, or after the last one has been unwatched) is silently ignored rather than throwing or
+accumulating unattributable pending state, since zero watched sources is a first-class, valid empty-workspace
+state. Verified by `FileWatcherTests.QueueChange_WithNoWatchedSources_IsIgnored`.
