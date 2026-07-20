@@ -1,4 +1,6 @@
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using AvaloniaEdit;
 using AvaloniaEdit.Highlighting;
 using AvaloniaEdit.Highlighting.Xshd;
@@ -78,6 +80,35 @@ public sealed class AvaloniaEditTests
         // Assert: the resulting pattern matches a real SysML v2 keyword.
         Assert.Contains("part", keywords);
         Assert.Matches(pattern, "part def Engine;");
+    }
+
+    /// <summary>
+    ///     Validates that hosting a real <see cref="TextEditor" /> inside a real, shown <see cref="Window" /> under
+    ///     this assembly's headless <c>App</c> (see <see cref="TestAppBuilder" />, which boots the real
+    ///     <c>DemaConsulting.SysML2Workbench.App</c> composition root and its <c>App.axaml</c> styles) produces an
+    ///     actual visual tree for the editor - guarding against the regression where <c>App.axaml</c> omitted
+    ///     AvaloniaEdit's required <c>avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml</c> style include,
+    ///     which left <see cref="TextEditor" /> with no control theme/template applied at all: the control's
+    ///     <c>Text</c> property still read back correctly (so a data-binding-only test could not have caught it),
+    ///     but nothing was ever actually drawn on screen. This test would have failed before that style include was
+    ///     added, because a templated control with no theme applied has no realized visual children at all.
+    /// </summary>
+    [AvaloniaFact]
+    public void TextEditor_HostedInRealWindow_GetsAControlThemeAndVisualTemplate()
+    {
+        // Arrange
+        var editor = new TextEditor { Text = "package Sample {}\n", ShowLineNumbers = true };
+        var window = new Window { Content = editor, Width = 400, Height = 300 };
+
+        // Act
+        window.Show();
+
+        // Assert: a themed TemplatedControl always realizes at least one visual child from its control theme's
+        // template once shown; a control with no theme applied (the pre-fix regression) has none.
+        Assert.NotNull(editor.Template);
+        Assert.True(editor.GetVisualChildren().Any());
+
+        window.Close();
     }
 
     /// <summary>
