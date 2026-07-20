@@ -59,21 +59,21 @@ public partial class WorkspacePanelToolView : UserControl
             return;
         }
 
-        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = "Add Workspace File",
-            AllowMultiple = false,
-            FileTypeFilter = [SysmlFileType],
-        });
-
-        var filePath = files.Count > 0 ? files[0].TryGetLocalPath() : null;
-        if (string.IsNullOrEmpty(filePath))
-        {
-            return;
-        }
-
         try
         {
+            var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Add Workspace File",
+                AllowMultiple = false,
+                FileTypeFilter = [SysmlFileType],
+            });
+
+            var filePath = files.Count > 0 ? files[0].TryGetLocalPath() : null;
+            if (string.IsNullOrEmpty(filePath))
+            {
+                return;
+            }
+
             await viewModel.Shell.AddFileSourceAsync(filePath);
         }
         catch (Exception ex)
@@ -90,20 +90,20 @@ public partial class WorkspacePanelToolView : UserControl
             return;
         }
 
-        var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-        {
-            Title = "Add Workspace Folder",
-            AllowMultiple = false,
-        });
-
-        var folderPath = folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
-        if (string.IsNullOrEmpty(folderPath))
-        {
-            return;
-        }
-
         try
         {
+            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Add Workspace Folder",
+                AllowMultiple = false,
+            });
+
+            var folderPath = folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
+            if (string.IsNullOrEmpty(folderPath))
+            {
+                return;
+            }
+
             await viewModel.Shell.AddFolderSourceAsync(folderPath);
         }
         catch (Exception ex)

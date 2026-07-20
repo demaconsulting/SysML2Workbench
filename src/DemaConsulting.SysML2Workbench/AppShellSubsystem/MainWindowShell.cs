@@ -337,23 +337,46 @@ public sealed class MainWindowShell : IDisposable
     ///     <see cref="SourcesChanged" />.
     /// </summary>
     /// <returns>The freshly resolved and loaded workspace snapshot.</returns>
+    /// <remarks>
+    ///     Newly added sources are watched <em>before</em> any snapshot/dictionary state is applied and before
+    ///     <see cref="SourcesChanged" /> is raised. <see cref="FileWatcher.WatchSource" /> can throw (for
+    ///     example <see cref="DirectoryNotFoundException" /> if a folder was deleted or became inaccessible in
+    ///     the narrow window between <see cref="WorkspaceSourceSet.AddFolder" />'s own upfront check and this
+    ///     call - a real TOCTOU race, not a theoretical one). If it does, the failing source is rolled back out
+    ///     of <see cref="_sourceSet" /> and the exception rethrown before any other shell state is touched, so
+    ///     the shell never ends up with a source that is registered in <see cref="_sourceSet" /> yet invisible in
+    ///     the UI (which only rebuilds from <see cref="SourcesChanged" />) and permanently unwatchable (once its
+    ///     id were marked watched despite the watcher never having been created).
+    /// </remarks>
     private async Task<WorkspaceSnapshot> ApplySourceSetChangeAsync()
     {
+        // Start watching every newly added source (idempotent for sources already watched) before applying any
+        // other state, so a watch failure can be rolled back cleanly - see remarks above.
+        foreach (var source in _sourceSet.Sources)
+        {
+            if (_watchedSourceIds.Contains(source.Id))
+            {
+                continue;
+            }
+
+            try
+            {
+                _fileWatcher.WatchSource(source);
+                _watchedSourceIds.Add(source.Id);
+            }
+            catch (Exception)
+            {
+                _sourceSet.RemoveSource(source.Id);
+                throw;
+            }
+        }
+
         var resolution = _sourceSet.Resolve();
         var snapshot = await _workspaceModel.LoadWorkspaceAsync(_sourceSet.Sources, resolution).ConfigureAwait(false);
         ApplyWorkspaceSnapshot(snapshot);
         CurrentSourceIdToFiles = resolution.SourceIdToFiles;
 
         var currentSourceIds = _sourceSet.Sources.Select(s => s.Id).ToHashSet();
-
-        // Start watching every newly added source (idempotent for sources already watched).
-        foreach (var source in _sourceSet.Sources)
-        {
-            if (_watchedSourceIds.Add(source.Id))
-            {
-                _fileWatcher.WatchSource(source);
-            }
-        }
 
         // Stop watching every source no longer present in the set.
         foreach (var staleSourceId in _watchedSourceIds.Where(id => !currentSourceIds.Contains(id)).ToList())
