@@ -88,7 +88,10 @@ corresponding `Definition` property and re-render the live preview.
 - *Postconditions*: Never throws: an incomplete or invalid definition (for
   example no view kind selected yet) is reported through `StatusMessage`
   instead, since this method runs after every single control edit and a
-  mid-edit definition is routinely incomplete.
+  mid-edit definition is routinely incomplete. On failure, `PreviewCanvas` is
+  cleared via `SvgCanvasHost.Clear` so a previously-rendered SVG never
+  lingers on screen once the current configuration no longer corresponds to
+  it.
 
 **TryCommit**: Commits the current `Definition` as a brand-new diagram tab.
 

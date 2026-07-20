@@ -30,3 +30,6 @@ state. Verified by `SvgCanvasHostTests.LoadSvgDocument_DisplaysDiagramCanvas`.
 
 **UserInteraction_PansAndZoomsDiagram**: User interaction can both pan and zoom a loaded diagram, and that out-of-range
 zoom requests are clamped rather than rejected. Verified by `SvgCanvasHostTests.UserInteraction_PansAndZoomsDiagram`.
+
+**Clear_ContentLoaded_DiscardsSvgAndResetsViewport**: Clearing a loaded diagram discards its SVG content and resets
+zoom and pan to their defaults. Verified by `SvgCanvasHostTests.Clear_ContentLoaded_DiscardsSvgAndResetsViewport`.

@@ -76,6 +76,11 @@ definition loads content into `PreviewCanvas`, clears `StatusMessage`, and never
 `OpenTabs`/`ActiveTabId`. Verified by
 `ViewBuilderDialogViewModelTests.RenderPreview_ValidDefinition_LoadsPreviewCanvasAndClearsStatusMessage`.
 
+**RenderPreview_BecomesInvalidAfterSuccess_ClearsPreviewCanvas**: A stale, previously-rendered preview is cleared
+rather than left on screen once a subsequent edit makes the definition invalid (for example removing the last
+expose target). Verified by
+`ViewBuilderDialogViewModelTests.RenderPreview_BecomesInvalidAfterSuccess_ClearsPreviewCanvas`.
+
 **TryCommit_ValidDefinition_OpensExactlyOneNewTabAndReturnsTrue**: Committing a valid definition opens exactly
 one new tab on the shell, rendered with that definition, made the active tab, and returns `true` with a `null`
 error. Verified by

@@ -53,6 +53,20 @@ currently available.
 - *Preconditions*: Content is loaded.
 - *Postconditions*: `ViewportOffset` reflects the accepted pan movement.
 
+**Clear**: Discards the currently displayed diagram and resets zoom and pan to
+their defaults.
+
+- *Parameters*: none.
+- *Returns*: `void` — canvas state updates in place.
+- *Preconditions*: none.
+- *Postconditions*: `CurrentSvg` is `null`, `IsContentLoaded` is `false`, and
+  `ZoomLevel`/`ViewportOffset` are reset to their defaults, mirroring
+  `LoadSvg`'s `resetViewport: true` behavior. Intended for callers whose
+  current configuration no longer corresponds to any renderable content (for
+  example `ViewBuilderDialogViewModel.RenderPreview` after an edit makes its
+  definition invalid), so a stale, previously-rendered diagram is never left
+  on screen.
+
 #### Error Handling
 
 SvgCanvasHost handles out-of-range zoom requests locally by clamping them to

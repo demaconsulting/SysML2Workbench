@@ -293,6 +293,33 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
     }
 
     /// <summary>
+    ///     Validates that a stale, previously-rendered preview is cleared rather than left on screen once a
+    ///     subsequent edit makes the definition invalid (for example removing the last expose target), so the
+    ///     dialog never shows a diagram that no longer corresponds to the current configuration.
+    /// </summary>
+    [Fact]
+    public async Task RenderPreview_BecomesInvalidAfterSuccess_ClearsPreviewCanvas()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+        viewModel.SetViewKind(ViewKind.General);
+        viewModel.AddExposeTarget("Sample::Engine");
+        Assert.True(viewModel.PreviewCanvas.IsContentLoaded);
+        var recursionKind = viewModel.Definition.ExposeTargets[0].RecursionKind;
+
+        // Act: remove the only expose target, making the definition invalid again
+        viewModel.RemoveExposeTarget("Sample::Engine", recursionKind);
+
+        // Assert
+        Assert.False(viewModel.PreviewCanvas.IsContentLoaded);
+        Assert.Null(viewModel.PreviewCanvas.CurrentSvg);
+        Assert.NotNull(viewModel.StatusMessage);
+    }
+
+    /// <summary>
     ///     Validates the OK-commit happy path: a valid definition opens exactly one new tab, rendered with that
     ///     definition, and is made the active tab.
     /// </summary>

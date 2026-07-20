@@ -33,16 +33,20 @@ sections:
                 title: 'The ViewBuilderDialog shall re-render its own live SVG preview after every view-kind,
                   expose-target, filter-expression, or display-name edit, without mutating any shell-tracked
                   diagram tab, and shall surface an incomplete or invalid definition through StatusMessage
-                  rather than throwing.'
+                  rather than throwing, clearing any previously-rendered preview so a stale diagram is never
+                  left on screen once the current configuration no longer corresponds to it.'
                 justification: |
                   The user-facing goal is that "every change should update the rendered SVG view", and a
                   mid-edit definition is routinely incomplete, so the preview must degrade to a friendly message
-                  instead of crashing the dialog.
+                  instead of crashing the dialog. A user editing a previously-valid definition into an invalid
+                  one (for example removing all expose targets) must not be misled by a stale, previously
+                  rendered diagram that no longer matches the current configuration.
                 tests:
                   - 'SetViewKind_UpdatesDefinitionAndRaisesPreviewChanged'
                   - 'SetFilterExpression_UpdatesDefinitionAndRaisesPreviewChanged'
                   - 'RenderPreview_IncompleteDefinition_SetsStatusMessageInsteadOfThrowing'
                   - 'RenderPreview_ValidDefinition_LoadsPreviewCanvasAndClearsStatusMessage'
+                  - 'RenderPreview_BecomesInvalidAfterSuccess_ClearsPreviewCanvas'
 
               - id: 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-CommitCreatesNewDiagramTab'
                 title: 'The ViewBuilderDialog shall, on OK, open exactly one new diagram tab rendered with the

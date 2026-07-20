@@ -71,4 +71,28 @@ public sealed class SvgCanvasHostTests
         Assert.Throws<InvalidOperationException>(() => host.SetZoom(1.5));
         Assert.Throws<InvalidOperationException>(() => host.PanViewport(new Point(1, 1)));
     }
+
+    /// <summary>
+    ///     Validates that clearing a loaded diagram discards its SVG content and resets zoom and pan to their
+    ///     defaults, so a caller whose current configuration no longer corresponds to any renderable content can
+    ///     blank the canvas rather than leaving a stale diagram on screen.
+    /// </summary>
+    [Fact]
+    public void Clear_ContentLoaded_DiscardsSvgAndResetsViewport()
+    {
+        // Arrange
+        var host = new SvgCanvasHost();
+        host.LoadSvg(SampleSvg);
+        host.SetZoom(2.5);
+        host.PanViewport(new Point(20, -10));
+
+        // Act
+        host.Clear();
+
+        // Assert
+        Assert.False(host.IsContentLoaded);
+        Assert.Null(host.CurrentSvg);
+        Assert.Equal(1.0, host.ZoomLevel);
+        Assert.Equal(default, host.ViewportOffset);
+    }
 }

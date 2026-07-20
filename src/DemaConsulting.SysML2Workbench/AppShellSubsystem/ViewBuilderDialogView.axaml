@@ -11,13 +11,18 @@
   <DockPanel Margin="12">
 
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
-      <Button Name="OkButton" Content="OK" IsDefault="True" Click="OnOkButtonClick" MinWidth="80" />
-      <Button Name="CancelButton" Content="Cancel" IsCancel="True" Click="OnCancelButtonClick" MinWidth="80" />
+      <Button Name="OkButton" Content="OK" IsDefault="True" Click="OnOkButtonClick" MinWidth="80" HorizontalContentAlignment="Center" />
+      <Button Name="CancelButton" Content="Cancel" IsCancel="True" Click="OnCancelButtonClick" MinWidth="80" HorizontalContentAlignment="Center" />
     </StackPanel>
 
     <TextBlock DockPanel.Dock="Bottom" Name="StatusTextBlock" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="Red" Margin="0,8,0,0" />
 
-    <Grid ColumnDefinitions="260,12,*">
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="260" MinWidth="150" />
+        <ColumnDefinition Width="5" />
+        <ColumnDefinition Width="*" MinWidth="300" />
+      </Grid.ColumnDefinitions>
 
       <!-- Left: live SVG preview -->
       <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Background="White">
@@ -26,6 +31,9 @@
           <Image Name="PreviewImage" Stretch="Uniform" Margin="4" />
         </Panel>
       </Border>
+
+      <!-- Draggable splitter between the preview pane and the tabs -->
+      <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" ResizeDirection="Columns" Background="Transparent" />
 
       <!-- Right: view-kind / expose-targets / filter-and-name tabs -->
       <TabControl Grid.Column="2">

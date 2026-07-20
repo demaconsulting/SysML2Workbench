@@ -181,7 +181,9 @@ public sealed partial class ViewBuilderDialogViewModel : ObservableObject
     ///     the result into <see cref="PreviewCanvas" />, then raises <see cref="PreviewChanged" />. Never throws:
     ///     an incomplete or invalid definition (for example no view kind selected yet) is reported through
     ///     <see cref="StatusMessage" /> instead, since this method runs after every single control edit and a
-    ///     mid-edit definition is routinely incomplete.
+    ///     mid-edit definition is routinely incomplete. On failure, <see cref="PreviewCanvas" /> is cleared via
+    ///     <see cref="SvgCanvasHost.Clear" /> so a previously-rendered SVG never lingers on screen once the
+    ///     current configuration no longer corresponds to it.
     /// </summary>
     public void RenderPreview()
     {
@@ -193,6 +195,7 @@ public sealed partial class ViewBuilderDialogViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            PreviewCanvas.Clear();
             StatusMessage = $"Preview unavailable: {ex.Message}";
         }
         finally
