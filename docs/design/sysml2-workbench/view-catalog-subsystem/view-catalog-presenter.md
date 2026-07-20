@@ -49,6 +49,27 @@ underlying workspace snapshot has changed and the catalog must be rebuilt.
 - *Postconditions*: The returned descriptor matches the current catalog
   revision.
 
+**BuildViewDefinition**: Derives a `ViewDefinitionModel` that faithfully
+reconstructs a predefined view's real `view` declaration from the loaded
+workspace.
+
+- *Parameters*: `SemanticWorkspace workspace` — loaded model content;
+  `string viewId` — qualified name of the predefined view, as published in
+  `AvailableViews`.
+- *Returns*: `ViewDefinitionModel?` — a populated definition (view kind, every
+  expose member with its own recursion kind and optional bracket-filter
+  expression, filter expression, display name), or `null` when `viewId` is
+  not in the current catalog, does not resolve to a view node, its render
+  target does not map to a supported `ViewKind`, or it declares zero expose
+  members.
+- *Preconditions*: `RefreshCatalog` has been called against `workspace`.
+- *Postconditions*: The zero-expose-members case ("expose everything, no
+  scoping" - valid SysML v2) intentionally yields `null` rather than an
+  empty-but-technically-valid definition, since `SysmlSnippetGenerator` has
+  no finite expose list to serialize for it. Used by `MainWindowShell` to
+  populate a predefined-view diagram tab's `SourceDefinition` for its
+  "Copy as SysML" context-menu action.
+
 #### Error Handling
 
 ViewCatalogPresenter handles invalid or disappearing selections locally by
@@ -63,6 +84,9 @@ resolved before exposing the catalog.
 - **WorkspaceModel** — provides the semantic workspace snapshot used for
   discovery.
 - **LayoutInvoker** — consumes the selected descriptor to generate a layout.
+- **ViewDefinitionModel** — populated by `BuildViewDefinition` for consumers
+  that need a concrete, reusable view definition rather than just a
+  `ViewDescriptor`.
 - **SysML2Tools** — supplies the view usage concepts and semantic model types.
 - **AppShellSubsystem** — hosts the UI surface that binds the catalog output.
 

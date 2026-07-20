@@ -145,6 +145,38 @@ public sealed class ViewDefinitionModel
     }
 
     /// <summary>
+    ///     Adds a fully-specified expose target selection - qualified name, recursion kind, and optional
+    ///     bracket-filter expression - directly, without the string overload's fixed
+    ///     <see cref="ExposeRecursionKind.MembershipRecursive" /> default.
+    /// </summary>
+    /// <remarks>
+    ///     Deduplicates by the exact (<see cref="ExposeTargetSelection.QualifiedName" />,
+    ///     <see cref="ExposeTargetSelection.RecursionKind" />) pair, mirroring <see cref="AddExposeTarget(string)" />'s
+    ///     own dedupe contract: if a selection already exists for that exact pair, this is a no-op and the existing
+    ///     selection (including its own bracket filter) is preserved rather than overwritten by
+    ///     <paramref name="selection" />'s. This lets a caller (for example
+    ///     <c>ViewCatalogPresenter.BuildViewDefinition</c>) reconstruct an arbitrary real
+    ///     <see cref="DemaConsulting.SysML2Tools.Semantic.Model.ExposeMember" /> - any of the four recursion kinds
+    ///     plus an optional bracket filter - in a single call, without the multi-call
+    ///     add-then-retarget-then-filter sequence the string overload plus <see cref="SetExposeRecursionKind" />/
+    ///     <see cref="SetExposeBracketFilter" /> would otherwise require (which risks colliding with an
+    ///     already-present sibling selection under the target recursion kind).
+    /// </remarks>
+    /// <param name="selection">Fully-specified target selection to add.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="selection" /> is null.</exception>
+    public void AddExposeTarget(ExposeTargetSelection selection)
+    {
+        ArgumentNullException.ThrowIfNull(selection);
+
+        if (_exposeTargets.Any(t => t.QualifiedName == selection.QualifiedName && t.RecursionKind == selection.RecursionKind))
+        {
+            return;
+        }
+
+        _exposeTargets.Add(selection);
+    }
+
+    /// <summary>
     ///     Removes a qualified name/recursion kind pair from the <c>expose</c> target set.
     /// </summary>
     /// <remarks>

@@ -1,10 +1,20 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:DemaConsulting.SysML2Workbench.AppShellSubsystem"
+             xmlns:mi="using:Material.Icons.Avalonia"
              x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.DiagramDocumentView"
              x:DataType="local:DiagramDocumentViewModel">
 
   <Border Name="DiagramBorder" Background="White" ClipToBounds="True">
+    <Border.ContextMenu>
+      <ContextMenu>
+        <MenuItem Name="CopyAsSysmlMenuItem" Header="Copy as SysML" Click="OnCopyAsSysmlMenuItemClick" IsEnabled="{Binding CanCopyAsSysml}">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="ContentCopy" />
+          </MenuItem.Icon>
+        </MenuItem>
+      </ContextMenu>
+    </Border.ContextMenu>
     <Image Name="DiagramImage" Stretch="Uniform" />
   </Border>
 

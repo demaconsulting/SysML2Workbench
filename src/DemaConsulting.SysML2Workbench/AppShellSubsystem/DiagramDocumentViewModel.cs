@@ -57,10 +57,42 @@ public sealed class DiagramDocumentViewModel : Dock.Model.Mvvm.Controls.Document
     public event EventHandler? DiagramChanged;
 
     /// <summary>
+    ///     Clipboard write seam used by <see cref="CopyAsSysmlAsync" />. Left unset (<see langword="null" />)
+    ///     until the owning <see cref="DiagramDocumentView" /> attaches to the visual tree and assigns a real
+    ///     <see cref="AvaloniaClipboardService" />; unit tests instead assign a fake test double directly so the
+    ///     generate-and-copy orchestration can be verified without any live UI/OS clipboard.
+    /// </summary>
+    public IClipboardService? ClipboardService { get; set; }
+
+    /// <summary>
+    ///     Reports whether this tab currently has enough information to export its diagram as a SysML snippet,
+    ///     backing the enabled/disabled state of the tab's "Copy as SysML" context-menu item.
+    /// </summary>
+    public bool CanCopyAsSysml => Shell.CanExportTabAsSysml(TabId);
+
+    /// <summary>
+    ///     Generates this tab's SysML <c>view</c> snippet and copies it to the clipboard via
+    ///     <see cref="ClipboardService" />. A safe no-op - not an exception - when no snippet can be derived for
+    ///     this tab (<see cref="MainWindowShell.ExportTabAsSysmlSnippet" /> already logs the reason) or when no
+    ///     <see cref="ClipboardService" /> is available yet.
+    /// </summary>
+    public async Task CopyAsSysmlAsync()
+    {
+        var snippet = Shell.ExportTabAsSysmlSnippet(TabId);
+        if (snippet is null || ClipboardService is null)
+        {
+            return;
+        }
+
+        await ClipboardService.SetTextAsync(snippet);
+    }
+
+    /// <summary>
     ///     Notifies the diagram view that it should reload this tab's current diagram.
     /// </summary>
     public void RaiseDiagramChanged()
     {
         DiagramChanged?.Invoke(this, EventArgs.Empty);
+        OnPropertyChanged(nameof(CanCopyAsSysml));
     }
 }

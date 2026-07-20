@@ -85,3 +85,15 @@ is reported as a diagnostic. Verified by
 
 **DefinitionState_ReportsRenderAndExportReadiness**: The definition reports whether it has enough information to render
 a preview or export a snippet. Verified by `ViewDefinitionModelTests.DefinitionState_ReportsRenderAndExportReadiness`.
+
+**AddExposeTarget_SelectionOverload_AppendsAndDedupesByQualifiedNameAndRecursionKind**: The `ExposeTargetSelection`
+overload appends a fully-specified selection (qualified name, recursion kind, and bracket-filter expression) in a
+single call, is a no-op when the exact (qualified name, recursion kind) pair is already present (preserving the
+originally-added selection's bracket filter), and allows the same qualified name to be added again under a
+different recursion kind. Verified by
+`ViewDefinitionModelTests.AddExposeTarget_SelectionOverload_AppendsAndDedupesByQualifiedNameAndRecursionKind`.
+
+**AddExposeTarget_SelectionOverload_NullSelection_ThrowsArgumentNullException**: Passing a `null` selection to the
+`ExposeTargetSelection` overload throws `ArgumentNullException` rather than silently ignoring it or throwing a
+`NullReferenceException`. Verified by
+`ViewDefinitionModelTests.AddExposeTarget_SelectionOverload_NullSelection_ThrowsArgumentNullException`.

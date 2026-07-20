@@ -47,3 +47,11 @@ sections:
                   The shell and snippet generator need to know when a user's current selections form a usable custom view definition.
                 tests:
                   - 'DefinitionState_ReportsRenderAndExportReadiness'
+
+              - id: 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-AddExposeTargetSelectionDirectly'
+                title: 'The ViewDefinitionModel shall accept a fully-specified ExposeTargetSelection (qualified name, recursion kind, and optional bracket-filter expression) in a single call, deduplicated by the exact (qualified name, recursion kind) pair.'
+                justification: |
+                  Reconstructing an arbitrary real expose member - any of the four recursion kinds plus an optional bracket filter - from a workspace's predefined view requires a single-call add that does not risk colliding with an already-present sibling selection, unlike the string overload's fixed default recursion kind plus a separate retarget/filter call sequence.
+                tests:
+                  - 'AddExposeTarget_SelectionOverload_AppendsAndDedupesByQualifiedNameAndRecursionKind'
+                  - 'AddExposeTarget_SelectionOverload_NullSelection_ThrowsArgumentNullException'

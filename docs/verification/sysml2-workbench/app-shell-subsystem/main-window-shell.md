@@ -85,3 +85,23 @@ source's file watcher. Verified by
 **SelectPredefinedView_NoWorkspaceOpened_ThrowsInvalidOperationException**: Selecting a predefined view while zero
 workspace sources are open throws `InvalidOperationException` rather than rendering against an empty workspace.
 Verified by `MainWindowShellTests.SelectPredefinedView_NoWorkspaceOpened_ThrowsInvalidOperationException`.
+
+**ExportTabAsSysmlSnippet_PredefinedViewTab_ReturnsSnippet**: A rendered predefined-view diagram tab exports a
+SysML snippet reflecting its derived view definition, and `CanExportTabAsSysml` reports it as exportable. Verified
+by `MainWindowShellTests.ExportTabAsSysmlSnippet_PredefinedViewTab_ReturnsSnippet`.
+
+**ExportTabAsSysmlSnippet_CustomPreviewTab_ReturnsSnippet**: A rendered custom-view-preview diagram tab exports a
+SysML snippet reflecting the definition it was previewed from. Verified by
+`MainWindowShellTests.ExportTabAsSysmlSnippet_CustomPreviewTab_ReturnsSnippet`.
+
+**ExportTabAsSysmlSnippet_UnknownTabId_ReturnsNull**: An unknown tab id is reported as not exportable and returns
+`null` rather than throwing. Verified by `MainWindowShellTests.ExportTabAsSysmlSnippet_UnknownTabId_ReturnsNull`.
+
+**ExportTabAsSysmlSnippet_PredefinedViewWithNoExposeMembers_ReturnsNull**: A predefined view with zero expose
+members (a valid, unscoped "expose everything" view) cannot be exported, since there is no finite expose list to
+serialize - it is reported gracefully rather than throwing. Verified by
+`MainWindowShellTests.ExportTabAsSysmlSnippet_PredefinedViewWithNoExposeMembers_ReturnsNull`.
+
+**CanExportTabAsSysml_MirrorsExportability**: `CanExportTabAsSysml` mirrors the same true/false outcomes as
+`ExportTabAsSysmlSnippet` across the exportable and unknown-tab cases. Verified by
+`MainWindowShellTests.CanExportTabAsSysml_MirrorsExportability`.

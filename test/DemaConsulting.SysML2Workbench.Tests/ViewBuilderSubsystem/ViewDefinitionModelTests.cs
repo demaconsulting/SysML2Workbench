@@ -336,6 +336,51 @@ public sealed class ViewDefinitionModelTests : IDisposable
     }
 
     /// <summary>
+    ///     Validates that the <see cref="ExposeTargetSelection" /> overload appends a fully-specified selection
+    ///     and is a no-op when the exact (qualified name, recursion kind) pair is already present.
+    /// </summary>
+    [Fact]
+    public void AddExposeTarget_SelectionOverload_AppendsAndDedupesByQualifiedNameAndRecursionKind()
+    {
+        // Arrange: a definition with one selection added via the selection overload
+        var definition = new ViewDefinitionModel();
+        var selection = new ExposeTargetSelection("Sample::Engine", ExposeRecursionKind.NamespaceRecursive, "@Safety");
+        definition.AddExposeTarget(selection);
+
+        // Assert: the selection was appended verbatim
+        var stored = Assert.Single(definition.ExposeTargets);
+        Assert.Equal("Sample::Engine", stored.QualifiedName);
+        Assert.Equal(ExposeRecursionKind.NamespaceRecursive, stored.RecursionKind);
+        Assert.Equal("@Safety", stored.BracketFilterExpression);
+
+        // Act: re-add the exact same (qualified name, recursion kind) pair but with a different bracket filter
+        definition.AddExposeTarget(new ExposeTargetSelection("Sample::Engine", ExposeRecursionKind.NamespaceRecursive, "@Different"));
+
+        // Assert: the re-add was a no-op, preserving the originally-added selection's bracket filter
+        var afterReAdd = Assert.Single(definition.ExposeTargets);
+        Assert.Equal("@Safety", afterReAdd.BracketFilterExpression);
+
+        // Act: add the same qualified name under a different recursion kind
+        definition.AddExposeTarget(new ExposeTargetSelection("Sample::Engine", ExposeRecursionKind.MembershipExact));
+
+        // Assert: both selections are now present, one per recursion kind
+        Assert.Equal(2, definition.ExposeTargets.Count);
+        Assert.Contains(definition.ExposeTargets, t => t.RecursionKind == ExposeRecursionKind.NamespaceRecursive);
+        Assert.Contains(definition.ExposeTargets, t => t.RecursionKind == ExposeRecursionKind.MembershipExact);
+    }
+
+    /// <summary>
+    ///     Validates that the <see cref="ExposeTargetSelection" /> overload rejects a null selection.
+    /// </summary>
+    [Fact]
+    public void AddExposeTarget_SelectionOverload_NullSelection_ThrowsArgumentNullException()
+    {
+        var definition = new ViewDefinitionModel();
+
+        Assert.Throws<ArgumentNullException>(() => definition.AddExposeTarget((ExposeTargetSelection)null!));
+    }
+
+    /// <summary>
     ///     Validates that a definition targeting real workspace elements validates without diagnostics.
     /// </summary>
     [Fact]

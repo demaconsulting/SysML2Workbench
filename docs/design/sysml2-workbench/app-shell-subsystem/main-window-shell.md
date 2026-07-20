@@ -37,6 +37,12 @@ own focus-change signal via `NotifyActiveDiagramTab`.
 WorkspacePanel to build its tree without owning its own `WorkspaceSourceSet`
 instance.
 
+Each `WorkbenchTab` also carries a `SourceDefinition: ViewDefinitionModel?` —
+the definition that produced the tab's currently rendered diagram, or `null`
+when none could be derived (an unscoped predefined view with zero expose
+members, or a brand-new custom-preview tab that has not rendered anything
+yet). This backs the tab's "Copy as SysML" context-menu action.
+
 #### Key Methods
 
 **AddFileSource**: Adds a single file as a new workspace source.
@@ -128,6 +134,26 @@ UI focus.
   clearing a still-valid `ActiveTabId`). Called by the Avalonia-aware UI layer
   when Dock reports a focus change onto a diagram document - never by
   `MainWindowShell` itself, which stays Dock-agnostic.
+
+**CanExportTabAsSysml**: Reports whether an open diagram tab has a derivable
+source definition and can export its diagram as a SysML snippet.
+
+- *Parameters*: `string tabId` — identifier of an open tab.
+- *Returns*: `bool` — `true` when the tab exists and its `SourceDefinition` is
+  ready to export.
+- *Postconditions*: None (read-only). Backs the enabled/disabled state of
+  every diagram tab's "Copy as SysML" context-menu item.
+
+**ExportTabAsSysmlSnippet**: Generates copy-pasteable SysML `view` text for
+the diagram currently rendered in an open tab.
+
+- *Parameters*: `string tabId` — identifier of an open tab.
+- *Returns*: `string?` — the SysML snippet, or `null` when
+  `CanExportTabAsSysml` would report `false` for that tab.
+- *Postconditions*: A `null` result is logged at `Info` level with the reason
+  (an expected, valid outcome, not a failure) rather than thrown; a
+  successful export is also logged at `Info` level, mirroring
+  `ExportCustomViewSnippet`'s existing style.
 
 #### Error Handling
 

@@ -26,3 +26,12 @@ sections:
                   Rendering begins from a single active catalog selection, so the presenter must expose that selection change.
                 tests:
                   - 'SelectView_PublishesCurrentSelection'
+
+              - id: 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-BuildViewDefinitionFromWorkspaceView'
+                title: 'The ViewCatalogPresenter shall derive a ViewDefinitionModel that faithfully reconstructs a predefined view''s view kind, every expose member (recursion kind and bracket filter included), filter expression, and display name from the loaded workspace, and shall return null when no finite expose list can be determined.'
+                justification: |
+                  Predefined-view diagram tabs need a concrete, reusable view definition - not just a display descriptor - so the shared "Copy as SysML" export path can generate a snippet for them the same way it does for custom-view-builder previews.
+                tests:
+                  - 'BuildViewDefinition_ResolvesKindExposeAndFilter'
+                  - 'BuildViewDefinition_UnknownViewId_ReturnsNull'
+                  - 'BuildViewDefinition_NoExposeMembers_ReturnsNull'

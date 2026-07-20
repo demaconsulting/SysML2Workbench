@@ -28,13 +28,20 @@ public enum WorkbenchTabKind
 /// <param name="Title">User-facing tab label.</param>
 /// <param name="Kind">Content category shown by the tab.</param>
 /// <param name="Canvas">This tab's own diagram surface state.</param>
+/// <param name="SourceDefinition">
+///     The <see cref="ViewDefinitionModel" /> that produced this tab's currently rendered diagram, or
+///     <see langword="null" /> when no concrete definition could be derived for it (an unscoped predefined view
+///     with zero expose members, or a brand-new custom-preview tab that has not rendered anything yet). Used by
+///     <see cref="MainWindowShell.CanExportTabAsSysml" />/<see cref="MainWindowShell.ExportTabAsSysmlSnippet" /> to
+///     back the diagram tab's "Copy as SysML" context-menu action.
+/// </param>
 /// <remarks>
 ///     Because <see cref="Canvas" /> is a mutable reference type, two <see cref="WorkbenchTab" /> instances are
 ///     no longer meaningfully value-equal to each other once its state diverges. Nothing in
 ///     <see cref="MainWindowShell" /> compares <see cref="WorkbenchTab" /> instances by equality; all lookups are
 ///     by <see cref="Id" />.
 /// </remarks>
-public sealed record WorkbenchTab(string Id, string Title, WorkbenchTabKind Kind, SvgCanvasHost Canvas);
+public sealed record WorkbenchTab(string Id, string Title, WorkbenchTabKind Kind, SvgCanvasHost Canvas, ViewDefinitionModel? SourceDefinition = null);
 
 /// <summary>
 ///     MainWindowShell is the desktop composition root that coordinates workspace lifecycle, view selection,
@@ -444,7 +451,14 @@ public sealed class MainWindowShell : IDisposable
         try
         {
             var svg = _layoutInvoker.RenderPredefinedView(CurrentWorkspace.Workspace, descriptor);
+            var definition = _viewCatalogPresenter.BuildViewDefinition(CurrentWorkspace.Workspace, descriptor.QualifiedName);
             var tab = EnsureTabOpen(descriptor.QualifiedName, descriptor.DisplayName, WorkbenchTabKind.PredefinedView);
+            if (tab.SourceDefinition != definition)
+            {
+                tab = tab with { SourceDefinition = definition };
+                _openTabs[_openTabs.FindIndex(t => t.Id == tab.Id)] = tab;
+            }
+
             tab.Canvas.LoadSvg(svg);
             ActivePredefinedView = descriptor;
             ActiveCustomView = null;
@@ -496,13 +510,13 @@ public sealed class MainWindowShell : IDisposable
             WorkbenchTab tab;
             if (ActiveTab is { Kind: WorkbenchTabKind.CustomViewPreview } activeTab)
             {
-                // Re-render in place: same tab identity and canvas, refreshed title.
-                tab = activeTab with { Title = title };
+                // Re-render in place: same tab identity and canvas, refreshed title and source definition.
+                tab = activeTab with { Title = title, SourceDefinition = definition };
                 _openTabs[_openTabs.FindIndex(t => t.Id == activeTab.Id)] = tab;
             }
             else
             {
-                tab = CreateTab(NextCustomPreviewTabId(), title, WorkbenchTabKind.CustomViewPreview);
+                tab = CreateTab(NextCustomPreviewTabId(), title, WorkbenchTabKind.CustomViewPreview) with { SourceDefinition = definition };
                 _openTabs.Add(tab);
             }
 
@@ -600,6 +614,50 @@ public sealed class MainWindowShell : IDisposable
 
         var snippet = _snippetGenerator.GenerateSnippet(definition);
         _logger.Log(LogLevel.Info, "Custom view exported as a SysML snippet.");
+        return snippet;
+    }
+
+    /// <summary>
+    ///     Reports whether the given open diagram tab has a derivable source definition and can therefore export
+    ///     its diagram as a SysML <c>view</c> snippet via <see cref="ExportTabAsSysmlSnippet" />. Backs the
+    ///     enabled/disabled state of every diagram tab's "Copy as SysML" context-menu item.
+    /// </summary>
+    /// <param name="tabId">Identifier of an open tab.</param>
+    /// <returns>
+    ///     <see langword="true" /> when the tab is open and its <see cref="WorkbenchTab.SourceDefinition" /> is
+    ///     ready to export; <see langword="false" /> when the tab is unknown, has no source definition (for
+    ///     example an empty custom-preview tab, or an unscoped predefined view with zero expose members), or that
+    ///     definition is not yet ready to export.
+    /// </returns>
+    public bool CanExportTabAsSysml(string tabId)
+    {
+        var tab = _openTabs.FirstOrDefault(t => t.Id == tabId);
+        return tab?.SourceDefinition?.IsReadyToExport == true;
+    }
+
+    /// <summary>
+    ///     Generates copy-pasteable SysML <c>view</c> text for the diagram currently rendered in the given open
+    ///     tab, reusing whichever <see cref="ViewDefinitionModel" /> produced that diagram - whether it came from a
+    ///     predefined view or a custom-view-builder preview - so every diagram tab funnels through the same
+    ///     snippet-generation path rather than duplicating it per tab kind.
+    /// </summary>
+    /// <param name="tabId">Identifier of an open tab.</param>
+    /// <returns>
+    ///     Complete SysML view snippet, or <see langword="null" /> when
+    ///     <see cref="CanExportTabAsSysml" /> would report <see langword="false" /> for <paramref name="tabId" /> -
+    ///     this is an expected, valid outcome (not a failure), so it is reported rather than thrown.
+    /// </returns>
+    public string? ExportTabAsSysmlSnippet(string tabId)
+    {
+        var tab = _openTabs.FirstOrDefault(t => t.Id == tabId);
+        if (tab?.SourceDefinition is not { IsReadyToExport: true } definition)
+        {
+            _logger.Log(LogLevel.Info, $"Tab '{tabId}' has no derivable SysML view definition to copy.");
+            return null;
+        }
+
+        var snippet = _snippetGenerator.GenerateSnippet(definition);
+        _logger.Log(LogLevel.Info, $"Diagram tab '{tabId}' copied as a SysML snippet.");
         return snippet;
     }
 

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Svg.Skia;
 
@@ -32,6 +33,7 @@ public partial class DiagramDocumentView : UserControl
         DiagramBorder.PointerPressed += OnDiagramPointerPressed;
         DiagramBorder.PointerMoved += OnDiagramPointerMoved;
         DiagramBorder.PointerReleased += OnDiagramPointerReleased;
+        DiagramBorder.PointerCaptureLost += OnDiagramPointerCaptureLost;
 
         DataContextChanged += OnDataContextChanged;
 
@@ -53,8 +55,19 @@ public partial class DiagramDocumentView : UserControl
         if (_viewModel is not null)
         {
             _viewModel.DiagramChanged += OnDiagramChanged;
+            _viewModel.ClipboardService ??= new AvaloniaClipboardService(this);
             LoadCurrentDiagram();
         }
+    }
+
+    private async void OnCopyAsSysmlMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        await _viewModel.CopyAsSysmlAsync();
     }
 
     private void OnDiagramChanged(object? sender, EventArgs e)
@@ -75,9 +88,16 @@ public partial class DiagramDocumentView : UserControl
         e.Handled = true;
     }
 
+    /// <summary>
+    ///     Begins a left-button pan gesture. The right button is deliberately excluded: it opens the diagram's
+    ///     context menu (the "Copy as SysML" item) instead, and a right-button press was previously starting a
+    ///     pan here too - since opening the context menu on release consumes that pointer release before
+    ///     <see cref="OnDiagramPointerReleased" /> could observe it, panning was left stuck on until the next
+    ///     unrelated pointer press, making the diagram appear to drag itself after every right-click.
+    /// </summary>
     private void OnDiagramPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (_viewModel is null || !_viewModel.Canvas.IsContentLoaded)
+        if (_viewModel is null || !_viewModel.Canvas.IsContentLoaded || !e.GetCurrentPoint(DiagramBorder).Properties.IsLeftButtonPressed)
         {
             return;
         }
@@ -102,6 +122,16 @@ public partial class DiagramDocumentView : UserControl
     }
 
     private void OnDiagramPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        _isPanning = false;
+    }
+
+    /// <summary>
+    ///     Defensive backstop: if pointer capture is lost mid-pan for any reason other than a normal release
+    ///     (for example another control or popup stealing capture), panning must still stop rather than staying
+    ///     stuck on until the next pointer press.
+    /// </summary>
+    private void OnDiagramPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
         _isPanning = false;
     }

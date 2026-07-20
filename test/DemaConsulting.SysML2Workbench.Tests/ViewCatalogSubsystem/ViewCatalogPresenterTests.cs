@@ -1,3 +1,4 @@
+using DemaConsulting.SysML2Tools.Semantic.Model;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
 using DemaConsulting.SysML2Workbench.ViewCatalogSubsystem;
 using DemaConsulting.SysML2Workbench.WorkspaceSubsystem;
@@ -149,5 +150,108 @@ public sealed class ViewCatalogPresenterTests : IDisposable
         // Assert: the stale selection was cleared
         Assert.Null(presenter.SelectedViewId);
         Assert.Null(presenter.GetSelectedView());
+    }
+
+    /// <summary>
+    ///     Loads a small workspace containing a view with multiple expose members (differing recursion kinds and
+    ///     a bracket filter on the recursive one) and a filter expression, so <see cref="ViewCatalogPresenter.BuildViewDefinition" />
+    ///     has real fidelity to check.
+    /// </summary>
+    private async Task<WorkspaceSnapshot> LoadRichViewWorkspaceAsync()
+    {
+        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        await File.WriteAllTextAsync(
+            filePath,
+            "package Sample {\n"
+            + "    part def Engine;\n"
+            + "    part def Wheel;\n"
+            + "    view MyView {\n"
+            + "        expose Engine;\n"
+            + "        expose Wheel::**[@Safety];\n"
+            + "        render asGeneralDiagram;\n"
+            + "        filter @Critical;\n"
+            + "    }\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+
+        var model = new WorkspaceModel();
+        var sourceSet = new WorkspaceSourceSet();
+        sourceSet.AddFolder(_tempRoot);
+        return await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="ViewCatalogPresenter.BuildViewDefinition" /> faithfully reconstructs a
+    ///     predefined view's kind, every expose member (recursion kind and bracket filter included), filter
+    ///     expression, and display name.
+    /// </summary>
+    [Fact]
+    public async Task BuildViewDefinition_ResolvesKindExposeAndFilter()
+    {
+        // Arrange
+        var snapshot = await LoadRichViewWorkspaceAsync();
+        var presenter = new ViewCatalogPresenter();
+        presenter.RefreshCatalog(snapshot.Workspace, snapshot.RevisionId);
+
+        // Act
+        var definition = presenter.BuildViewDefinition(snapshot.Workspace, "Sample::MyView");
+
+        // Assert
+        Assert.NotNull(definition);
+        Assert.Equal(ViewKind.General, definition!.ViewKind);
+        Assert.Equal("MyView", definition.DisplayName);
+        Assert.Equal("@Critical", definition.FilterExpression);
+        Assert.Equal(2, definition.ExposeTargets.Count);
+        Assert.Contains(definition.ExposeTargets, t => t.QualifiedName == "Sample::Engine" && t.RecursionKind == ExposeRecursionKind.MembershipExact);
+        Assert.Contains(definition.ExposeTargets, t =>
+            t.QualifiedName == "Sample::Wheel"
+            && t.RecursionKind == ExposeRecursionKind.NamespaceRecursive
+            && t.BracketFilterExpression == "@Safety");
+    }
+
+    /// <summary>
+    ///     Validates that an unknown view identifier produces <see langword="null" /> rather than throwing.
+    /// </summary>
+    [Fact]
+    public async Task BuildViewDefinition_UnknownViewId_ReturnsNull()
+    {
+        var snapshot = await LoadSingleViewWorkspaceAsync();
+        var presenter = new ViewCatalogPresenter();
+        presenter.RefreshCatalog(snapshot.Workspace, snapshot.RevisionId);
+
+        var definition = presenter.BuildViewDefinition(snapshot.Workspace, "Sample::DoesNotExist");
+
+        Assert.Null(definition);
+    }
+
+    /// <summary>
+    ///     Validates that a predefined view with zero expose members - a valid, unscoped "expose everything" view
+    ///     - produces <see langword="null" /> since there is no finite expose list to reconstruct.
+    /// </summary>
+    [Fact]
+    public async Task BuildViewDefinition_NoExposeMembers_ReturnsNull()
+    {
+        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        await File.WriteAllTextAsync(
+            filePath,
+            "package Sample {\n"
+            + "    part def Engine;\n"
+            + "    view MyView {\n"
+            + "        render asGeneralDiagram;\n"
+            + "    }\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+
+        var model = new WorkspaceModel();
+        var sourceSet = new WorkspaceSourceSet();
+        sourceSet.AddFolder(_tempRoot);
+        var snapshot = await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
+
+        var presenter = new ViewCatalogPresenter();
+        presenter.RefreshCatalog(snapshot.Workspace, snapshot.RevisionId);
+
+        var definition = presenter.BuildViewDefinition(snapshot.Workspace, "Sample::MyView");
+
+        Assert.Null(definition);
     }
 }

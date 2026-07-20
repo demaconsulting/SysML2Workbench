@@ -2,6 +2,7 @@ using DemaConsulting.SysML2Tools.Rendering;
 using DemaConsulting.SysML2Tools.Semantic;
 using DemaConsulting.SysML2Tools.Semantic.Model;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
+using DemaConsulting.SysML2Workbench.ViewBuilderSubsystem;
 
 namespace DemaConsulting.SysML2Workbench.ViewCatalogSubsystem;
 
@@ -139,5 +140,68 @@ public sealed class ViewCatalogPresenter
     public ViewDescriptor? GetSelectedView()
     {
         return SelectedViewId is null ? null : _availableViews.FirstOrDefault(d => d.QualifiedName == SelectedViewId);
+    }
+
+    /// <summary>
+    ///     Derives a <see cref="ViewDefinitionModel" /> that faithfully reconstructs a predefined view's real
+    ///     <c>view</c> declaration - view kind, every <c>expose</c> member (with its own recursion kind and
+    ///     optional bracket-filter expression), filter expression, and display name - from the loaded workspace.
+    /// </summary>
+    /// <remarks>
+    ///     This is the shared derivation path used both by the view catalog (should it ever need a definition
+    ///     rather than just a <see cref="ViewDescriptor" />) and by "Copy as SysML" for a predefined-view diagram
+    ///     tab, so a single unit owns "convert a workspace's predefined view usage into UI-ready data" rather than
+    ///     splitting that responsibility across the catalog and the shell.
+    /// </remarks>
+    /// <param name="workspace">Loaded model content.</param>
+    /// <param name="viewId">Qualified name of the predefined view, as published in <see cref="AvailableViews" />.</param>
+    /// <returns>
+    ///     A populated <see cref="ViewDefinitionModel" />, or <see langword="null" /> when <paramref name="viewId" />
+    ///     does not resolve to a <see cref="SysmlViewNode" /> in <paramref name="workspace" />, its render target
+    ///     does not map to a supported <see cref="ViewKind" />, or it has zero <c>ExposeMembers</c> (the "expose
+    ///     everything, no scoping" case - valid SysML v2, but with no finite expose list for
+    ///     <c>SysmlSnippetGenerator</c> to serialize).
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace" /> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="viewId" /> is null or whitespace.</exception>
+    public ViewDefinitionModel? BuildViewDefinition(SysmlWorkspace workspace, string viewId)
+    {
+        ArgumentNullException.ThrowIfNull(workspace);
+        ArgumentException.ThrowIfNullOrWhiteSpace(viewId);
+
+        var descriptor = _availableViews.FirstOrDefault(d => d.QualifiedName == viewId);
+        if (descriptor is null)
+        {
+            return null;
+        }
+
+        if (!workspace.Declarations.TryGetValue(viewId, out var node) || node is not SysmlViewNode viewNode)
+        {
+            return null;
+        }
+
+        var kind = ViewKindExtensions.FromRenderTargetName(viewNode.RenderTargetName);
+        if (kind is null)
+        {
+            return null;
+        }
+
+        if (viewNode.ExposeMembers.Count == 0)
+        {
+            return null;
+        }
+
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(kind.Value);
+
+        foreach (var (member, resolvedQualifiedName) in viewNode.ResolvedExposeMembers)
+        {
+            definition.AddExposeTarget(new ExposeTargetSelection(resolvedQualifiedName, member.RecursionKind, member.BracketFilterExpressionText));
+        }
+
+        definition.SetFilterExpression(viewNode.FilterExpressionText);
+        definition.SetDisplayName(descriptor.DisplayName);
+
+        return definition;
     }
 }
