@@ -254,7 +254,7 @@ public partial class WorkspacePanelToolViewModel : Dock.Model.Mvvm.Controls.Tool
     {
         public string RelativePath { get; } = RelativePath;
 
-        public Dictionary<string, FolderGroup> Subfolders { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, FolderGroup> Subfolders { get; } = new(StringComparer.Ordinal);
 
         public List<string> Files { get; } = [];
     }

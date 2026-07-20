@@ -90,9 +90,9 @@ public sealed class WorkspaceSourceSet
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
-        var normalized = Path.GetFullPath(path);
+        var normalized = NormalizePathCasing(Path.GetFullPath(path));
         var existing = _sources.FirstOrDefault(s =>
-            s.Kind == WorkspaceSourceKind.File && string.Equals(s.Path, normalized, StringComparison.OrdinalIgnoreCase));
+            s.Kind == WorkspaceSourceKind.File && string.Equals(s.Path, normalized, StringComparison.Ordinal));
         if (existing is not null)
         {
             return existing;
@@ -119,9 +119,9 @@ public sealed class WorkspaceSourceSet
             throw new DirectoryNotFoundException($"Workspace folder was not found: {path}");
         }
 
-        var normalized = Path.GetFullPath(path);
+        var normalized = NormalizePathCasing(Path.GetFullPath(path));
         var existing = _sources.FirstOrDefault(s =>
-            s.Kind == WorkspaceSourceKind.Folder && string.Equals(s.Path, normalized, StringComparison.OrdinalIgnoreCase));
+            s.Kind == WorkspaceSourceKind.Folder && string.Equals(s.Path, normalized, StringComparison.Ordinal));
         if (existing is not null)
         {
             return existing;
@@ -130,6 +130,52 @@ public sealed class WorkspaceSourceSet
         var source = new WorkspaceSource(Guid.NewGuid().ToString("N"), WorkspaceSourceKind.Folder, normalized);
         _sources.Add(source);
         return source;
+    }
+
+    /// <summary>
+    ///     Corrects <paramref name="fullPath" /> (already <see cref="Path.GetFullPath(string)" />'d) so every
+    ///     segment matches its actual on-disk casing, by walking up to the root and matching each segment
+    ///     case-insensitively against its parent folder's real directory entries.
+    /// </summary>
+    /// <remarks>
+    ///     <see cref="Path.GetFullPath(string)" /> only resolves <c>.</c>/<c>..</c> segments and relative paths -
+    ///     it does not correct casing, so two paths to the very same on-disk file that were typed, picked, or
+    ///     dropped with different casing (a routine occurrence on case-insensitive filesystems, where the OS
+    ///     happily accepts either) would otherwise be treated as different <see cref="WorkspaceSource" />s. This
+    ///     normalizes once at the source of truth (here, when the source is first added) so every other
+    ///     identity/dedupe comparison throughout <see cref="WorkspaceSourceSet" /> can safely use an ordinal
+    ///     (case-sensitive) comparison - which is what actually distinguishes two paths on a case-sensitive
+    ///     filesystem such as Linux ext4, where <c>Foo</c> and <c>foo</c> genuinely are different entries and must
+    ///     not be silently conflated. If a parent segment is inaccessible or vanishes mid-walk, that segment (and
+    ///     everything above it) is left as given rather than failing the whole add.
+    /// </remarks>
+    /// <param name="fullPath">An already-absolute path to normalize.</param>
+    /// <returns><paramref name="fullPath" /> with every segment corrected to its actual on-disk casing.</returns>
+    private static string NormalizePathCasing(string fullPath)
+    {
+        var parent = Path.GetDirectoryName(fullPath);
+        var name = Path.GetFileName(fullPath);
+
+        if (string.IsNullOrEmpty(parent) || string.IsNullOrEmpty(name))
+        {
+            // Reached a root (for example "C:\" or "/") - nothing further above it to normalize.
+            return fullPath;
+        }
+
+        var normalizedParent = NormalizePathCasing(parent);
+
+        try
+        {
+            var actualName = Directory.EnumerateFileSystemEntries(normalizedParent)
+                .Select(Path.GetFileName)
+                .FirstOrDefault(entry => string.Equals(entry, name, StringComparison.OrdinalIgnoreCase));
+
+            return Path.Combine(normalizedParent, actualName ?? name);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return Path.Combine(normalizedParent, name);
+        }
     }
 
     /// <summary>
@@ -165,8 +211,8 @@ public sealed class WorkspaceSourceSet
     public WorkspaceSourceResolution Resolve()
     {
         var mergedFiles = new List<string>();
-        var fileToSourceId = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var sourceIdToFiles = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        var fileToSourceId = new Dictionary<string, string>(StringComparer.Ordinal);
+        var sourceIdToFiles = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
 
         foreach (var source in _sources)
         {

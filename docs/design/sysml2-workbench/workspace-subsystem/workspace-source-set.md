@@ -17,8 +17,10 @@ sources currently registered with the workspace.
 **WorkspaceSource**: `record(string Id, WorkspaceSourceKind Kind, string Path)`
 — a single registered source. `Id` is a stable `Guid`-derived string that
 survives reorder/refresh and is used as the file-watcher key and the Workspace
-panel's tree-node key. `Path` is absolute and normalized via
-`Path.GetFullPath`.
+panel's tree-node key. `Path` is absolute (via `Path.GetFullPath`) and further
+corrected, segment by segment, to its actual on-disk casing (see `AddFile`/
+`AddFolder`), so every identity/dedupe comparison elsewhere in this unit can
+safely use an ordinal (case-sensitive) comparison.
 
 **WorkspaceSourceKind**: `enum { File, Folder }` — distinguishes a single-file
 source from a recursively-globbed folder source.
@@ -44,7 +46,11 @@ itself, a `Folder` source maps to its discovered files).
   `File`-kind source if the exact same normalized path is already registered.
 - *Preconditions*: None — existence is not enforced at registration time.
 - *Postconditions*: Idempotent: adding the same normalized path twice returns
-  the original source rather than creating a duplicate entry.
+  the original source rather than creating a duplicate entry. Path identity is
+  compared ordinally (case-sensitively) against each source's already-corrected
+  on-disk casing, so this is correct on both case-insensitive filesystems
+  (Windows, default macOS) and case-sensitive ones (Linux, case-sensitive
+  APFS) alike.
 
 **AddFolder**: Registers a folder as a workspace source.
 
@@ -75,7 +81,12 @@ registered source.
   Files are unioned in source-registration order; on overlap (a file inside a
   registered folder, or a folder nested inside another registered folder) the
   first-registered source silently wins attribution in `FileToSourceId` — no
-  error and no visible "overlap" flag is produced. A zero-source set resolves
+  error and no visible "overlap" flag is produced. File identity for both
+  `FileToSourceId` and `SourceIdToFiles` keys is compared ordinally
+  (case-sensitively), matching each discovered file's actual on-disk casing
+  (as `GlobFileCollector` and the already-corrected `WorkspaceSource.Path`
+  both preserve it), so two files differing only by case on a case-sensitive
+  filesystem are never conflated. A zero-source set resolves
   to `MergedFiles = []` and empty maps; this is a valid, non-error result.
 
 #### Error Handling

@@ -11,6 +11,7 @@
 version: '0.2'
 language: en
 words:
+  - APFS
   - Argb
   - axaml
   - BGRA
@@ -29,6 +30,7 @@ words:
   - Hmmssfff
   - LOCALAPPDATA
   - Mvvm
+  - ordinally
   - Pandoc
   - pagetitle
   - pasteable

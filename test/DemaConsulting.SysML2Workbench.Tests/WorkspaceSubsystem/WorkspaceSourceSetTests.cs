@@ -196,6 +196,40 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     }
 
     /// <summary>
+    ///     Validates that <see cref="WorkspaceSourceSet.AddFolder" /> corrects a differently-cased path to its
+    ///     actual on-disk casing, and that the corrected casing is what makes adding the same folder again
+    ///     (via yet another differently-cased path) idempotent rather than registering a duplicate source -
+    ///     the underlying scenario is two case-distinct paths to the very same on-disk folder, which routinely
+    ///     happens on case-insensitive filesystems (Windows, default macOS) when a path is typed, drag-dropped,
+    ///     or picked with different casing than the real directory entry.
+    /// </summary>
+    [Fact]
+    public void AddFolder_DifferentlyCasedPath_NormalizesToOnDiskCasingAndIsIdempotent()
+    {
+        // Arrange
+        var actualName = Path.GetFileName(_tempRoot);
+        var upperCasedPath = Path.Combine(Path.GetDirectoryName(_tempRoot)!, actualName.ToUpperInvariant());
+        if (!Directory.Exists(upperCasedPath))
+        {
+            // The host filesystem is case-sensitive (for example Linux ext4), so the differently-cased path
+            // genuinely does not resolve to the same directory - the normalization behavior under test only
+            // applies on case-insensitive filesystems (Windows, default macOS).
+            Assert.Skip("Host filesystem is case-sensitive; differently-cased path does not alias the same folder.");
+        }
+
+        var sourceSet = new WorkspaceSourceSet();
+
+        // Act
+        var first = sourceSet.AddFolder(_tempRoot);
+        var second = sourceSet.AddFolder(upperCasedPath);
+
+        // Assert: both additions resolve to the same source, and its Path reflects the real on-disk casing
+        Assert.Equal(first.Id, second.Id);
+        Assert.Single(sourceSet.Sources);
+        Assert.Equal(_tempRoot, first.Path, StringComparer.Ordinal);
+    }
+
+    /// <summary>
     ///     Validates that <see cref="WorkspaceSourceSet.Sources" /> preserves registration order across mixed
     ///     file and folder additions.
     /// </summary>
