@@ -54,10 +54,10 @@ public sealed class AvaloniaTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that Avalonia hosts the desktop shell's window and Dock-composed control tree: the menu,
-    ///     the predefined-views list, and the custom-view builder panel are all real Avalonia controls attached
-    ///     to the window's visual tree, even though each panel now lives in its own separately-named-scoped
-    ///     UserControl hosted by the Dock layout rather than directly in the window.
+    ///     Validates that Avalonia hosts the desktop shell's window and Dock-composed control tree: the menu
+    ///     and the predefined-views list are real Avalonia controls attached to the window's visual tree, even
+    ///     though the panel lives in its own separately-named-scoped UserControl hosted by the Dock layout rather
+    ///     than directly in the window.
     /// </summary>
     [AvaloniaFact]
     public void Startup_HostsDesktopShellControls()
@@ -68,16 +68,11 @@ public sealed class AvaloniaTests : IDisposable
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
-        // Assert: the menu, predefined-view list, and custom-view builder controls are all real, discoverable
-        // Avalonia controls hosted somewhere in the window's visual tree, regardless of which Dock-hosted
-        // UserControl's own NameScope they belong to
+        // Assert: the menu and predefined-view list are all real, discoverable Avalonia controls hosted
+        // somewhere in the window's visual tree, regardless of which Dock-hosted UserControl's own NameScope
+        // they belong to
         Assert.NotNull(window.GetVisualDescendants().OfType<Menu>().FirstOrDefault());
         Assert.NotNull(FindByName<ListBox>(window, "PredefinedViewsListBox"));
-        Assert.NotNull(FindByName<ComboBox>(window, "ViewKindComboBox"));
-        Assert.NotNull(FindByName<ListBox>(window, "AvailableExposeTargetsListBox"));
-        Assert.NotNull(FindByName<Button>(window, "AddExposeTargetButton"));
-        Assert.NotNull(FindByName<Button>(window, "PreviewCustomViewButton"));
-        Assert.NotNull(FindByName<Button>(window, "CopyAsSysmlButton"));
 
         window.Close();
     }

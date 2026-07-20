@@ -45,9 +45,19 @@ is active opens a brand-new, distinct custom-preview tab, leaving the predefined
 **PreviewCustomView_WithNoTabsOpen_OpensNewTab**: Previewing a custom view with zero tabs open opens exactly one new,
 active custom-preview tab. Verified by `MainWindowShellTests.PreviewCustomView_WithNoTabsOpen_OpensNewTab`.
 
-**OpenNewCustomPreviewTab_OpensEmptyActiveTab_AndSubsequentPreviewUpdatesIt**: The "+ New Diagram Tab" affordance opens
+**OpenNewCustomPreviewTab_OpensEmptyActiveTab_AndSubsequentPreviewUpdatesIt**: Opening a new custom-preview tab opens
 an empty, active tab, and a subsequent preview call updates that same tab in place. Verified by
 `MainWindowShellTests.OpenNewCustomPreviewTab_OpensEmptyActiveTab_AndSubsequentPreviewUpdatesIt`.
+
+**RenderCustomViewPreview_DoesNotMutateOpenTabsOrActiveTab**: Rendering a live custom-view preview returns SVG
+markup without mutating `OpenTabs`, `ActiveTabId`, or `ActiveCustomView` - unlike `PreviewCustomView`, it never
+leaks a real tab into the shell's tracked state. Verified by
+`MainWindowShellTests.RenderCustomViewPreview_DoesNotMutateOpenTabsOrActiveTab`.
+
+**RenderCustomViewPreview_NoWorkspaceOpened_ThrowsInvalidOperationException**: Rendering a live custom-view preview
+while zero workspace sources are open throws `InvalidOperationException`, matching `SelectPredefinedView`'s own
+empty-workspace guard. Verified by
+`MainWindowShellTests.RenderCustomViewPreview_NoWorkspaceOpened_ThrowsInvalidOperationException`.
 
 **CloseDiagramTab_RemovesTab_AndReassignsActiveTab**: Closing a diagram tab removes it and reassigns the active tab to
 a neighbor; closing the final tab leaves no open tabs, a null active tab, and an idle (empty) canvas. Verified by

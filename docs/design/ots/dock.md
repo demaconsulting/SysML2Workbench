@@ -7,10 +7,13 @@ four-region `DockPanel` layout.
 ### Purpose
 
 Dock was chosen because it provides a mature, MVVM-friendly docking layout
-engine on top of Avalonia, letting the shell's four Phase-0 panels (predefined
-views, custom view builder, diagnostics, and the diagram surface) become
-independently resizable, floatable, and closable without the workbench
-implementing its own splitter/panel-management code.
+engine on top of Avalonia, letting the shell's three Phase-0 panels (predefined
+views, diagnostics, and the diagram surface) become independently resizable,
+floatable, and closable without the workbench implementing its own
+splitter/panel-management code. Custom-view composition is no longer one of
+these docked panels: it now lives in the modal `ViewBuilderDialog` (a
+`Window` shown via `ShowDialog`, like `AboutDialog`), which has no `Dock`
+dependency at all.
 
 ### Features Used
 
@@ -27,9 +30,8 @@ implementing its own splitter/panel-management code.
 
 ### Integration Pattern
 
-`WorkbenchDockFactory` composes the three Tool panel view models
-(`PredefinedViewsToolViewModel`, `CustomViewBuilderToolViewModel`,
-`DiagnosticsToolViewModel`) into a `ProportionalDock`/`ToolDock`/`DocumentDock`
+`WorkbenchDockFactory` composes the Tool panel view models
+(`PredefinedViewsToolViewModel`, `DiagnosticsToolViewModel`) into a `ProportionalDock`/`ToolDock`/`DocumentDock`
 tree approximating the legacy fixed layout's default proportions, with the
 `DocumentDock` initially empty; `DiagramDocumentViewModel` instances are added
 to and removed from it dynamically at runtime as diagram tabs open and close
@@ -55,7 +57,7 @@ both directions.
 tool isn't currently hidden) followed by `SetActiveDockable(tool)` and
 `SetFocusedDockable(ownerDock, tool)`. `RestoreDockable` re-adds the exact
 existing dockable instance to its original `ToolDock`, so any in-progress
-panel state (for example, an unsaved custom-view-builder definition) is
+panel state (for example, an in-progress workspace-panel filter) is
 preserved across a close/restore cycle. Each menu item's `IsChecked` is
 bound one-way to the panel's `IsOpen` property purely as a visual indicator;
 the `Click` handler never hides an already-open panel, so clicking the
@@ -63,7 +65,7 @@ menu item for a visible panel only (re)focuses it.
 
 ### Diagram Document Tabs
 
-Unlike the three Tool panels, the diagram area hosts zero or more
+Unlike the Tool panels, the diagram area hosts zero or more
 independently closable `Document`s - one `DiagramDocumentViewModel` per open
 `WorkbenchTab` - added and removed dynamically at runtime rather than fixed
 at layout-construction time. This depends on two further Dock APIs beyond
@@ -132,23 +134,23 @@ semantics in this codebase: a closed `Tool` is hidden and restorable via the
 View menu (see above), while a closed diagram `Document` is removed outright
 with no restore path - closing a diagram tab is always a safe operation
 (zero tabs open is a supported, first-class state), and reopening one is one
-click away via the catalog or the "+ New Diagram Tab" button, so no
+click away via the catalog or the `ViewBuilderDialog`'s OK button, so no
 restore mechanism is needed.
 
 ### Diagram Tab "Copy as SysML" Context Menu
 
 Every `DiagramDocumentView` - one per open `WorkbenchTab`, and therefore
 covering all six predefined view kinds (General, Interconnection, State
-Transition, Action Flow, Sequence, Grid) plus a custom-view-builder preview
-tab, since all of them are rendered through this one shared view/view-model
-pair - hosts a single shared `ContextMenu` on its diagram `Border`, with one
-`MenuItem` ("Copy as SysML"). This is the app's first `ContextMenu` usage.
+Transition, Action Flow, Sequence, Grid) plus a `ViewBuilderDialog`-committed
+custom-view preview tab, since all of them are rendered through this one
+shared view/view-model pair - hosts a single shared `ContextMenu` on its
+diagram `Border`, with one `MenuItem` ("Copy as SysML"). This is the app's
+first `ContextMenu` usage.
 
 Clicking the item copies that tab's whole-diagram SysML `view { ... }` text
 (view kind, every `expose` clause, and any `filter` expression) to the OS
-clipboard, reusing the existing `SysmlSnippetGenerator` - the same unit the
-custom view builder's own "Copy as SysML" button already used - so there is
-exactly one snippet-generation code path regardless of which tab kind
+clipboard, reusing the existing `SysmlSnippetGenerator` - the only
+snippet-generation code path in the app, regardless of which tab kind
 triggered it. `MainWindowShell.WorkbenchTab.SourceDefinition` (a
 `ViewDefinitionModel?`) carries the concrete definition each tab's diagram
 was rendered from: for a custom-view-preview tab it is the definition passed

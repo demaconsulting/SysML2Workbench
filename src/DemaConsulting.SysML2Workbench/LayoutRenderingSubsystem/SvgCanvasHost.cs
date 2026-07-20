@@ -64,6 +64,20 @@ public sealed class SvgCanvasHost
     }
 
     /// <summary>
+    ///     Clears the visible diagram, discarding any currently loaded SVG content and resetting zoom and pan to
+    ///     their defaults (mirroring <see cref="LoadSvg" />'s <c>resetViewport: true</c> behavior). Intended for
+    ///     callers whose current configuration no longer corresponds to any renderable content - for example an
+    ///     edited definition that has become invalid - so a stale, previously-rendered diagram is never left on
+    ///     screen alongside on-screen state it no longer describes.
+    /// </summary>
+    public void Clear()
+    {
+        CurrentSvg = null;
+        ZoomLevel = 1.0;
+        ViewportOffset = default;
+    }
+
+    /// <summary>
     ///     Adjusts the current zoom factor.
     /// </summary>
     /// <param name="zoomLevel">Requested scale factor.</param>

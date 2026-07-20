@@ -26,7 +26,6 @@ public partial class MainWindowView : Window
 
     private readonly MainWindowShell _shell;
     private readonly PredefinedViewsToolViewModel _predefinedViewsViewModel;
-    private readonly CustomViewBuilderToolViewModel _customViewBuilderViewModel;
     private readonly DiagnosticsToolViewModel _diagnosticsViewModel;
     private readonly WorkspacePanelToolViewModel _workspacePanelViewModel;
     private readonly WorkbenchDockFactory _dockFactory;
@@ -52,11 +51,10 @@ public partial class MainWindowView : Window
         InitializeComponent();
 
         _predefinedViewsViewModel = new PredefinedViewsToolViewModel(_shell) { Id = "PredefinedViews", Title = "Predefined Views" };
-        _customViewBuilderViewModel = new CustomViewBuilderToolViewModel(_shell) { Id = "CustomViewBuilder", Title = "Custom View Builder" };
         _diagnosticsViewModel = new DiagnosticsToolViewModel(_shell) { Id = "Diagnostics", Title = "Diagnostics" };
         _workspacePanelViewModel = new WorkspacePanelToolViewModel(_shell) { Id = "WorkspacePanel", Title = "Workspace" };
 
-        var factory = new WorkbenchDockFactory(_predefinedViewsViewModel, _customViewBuilderViewModel, _diagnosticsViewModel, _workspacePanelViewModel);
+        var factory = new WorkbenchDockFactory(_predefinedViewsViewModel, _diagnosticsViewModel, _workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
         WorkbenchDockControl.Layout = (IDock)layout;
@@ -74,7 +72,6 @@ public partial class MainWindowView : Window
         // window's own DataContext) so the one-way IsChecked binding above resolves against the panel's
         // IsOpen property without requiring any change to the window's binding context.
         PredefinedViewsMenuItem.DataContext = _predefinedViewsViewModel;
-        CustomViewBuilderMenuItem.DataContext = _customViewBuilderViewModel;
         DiagnosticsMenuItem.DataContext = _diagnosticsViewModel;
         WorkspacePanelMenuItem.DataContext = _workspacePanelViewModel;
 
@@ -88,14 +85,6 @@ public partial class MainWindowView : Window
     private void OnPredefinedViewsMenuItemClick(object? sender, RoutedEventArgs e)
     {
         ShowOrFocusPanel(_predefinedViewsViewModel);
-    }
-
-    /// <summary>
-    ///     Handles the View menu's "Custom View Builder" click by showing or focusing that panel.
-    /// </summary>
-    private void OnCustomViewBuilderMenuItemClick(object? sender, RoutedEventArgs e)
-    {
-        ShowOrFocusPanel(_customViewBuilderViewModel);
     }
 
     /// <summary>
@@ -129,6 +118,18 @@ public partial class MainWindowView : Window
     private async void OnAboutMenuItemClick(object? sender, RoutedEventArgs e)
     {
         var dialog = new AboutDialogView();
+        await dialog.ShowDialog(this);
+    }
+
+    /// <summary>
+    ///     Handles the View menu's "Custom View Builder..." click by opening the modal
+    ///     <see cref="ViewBuilderDialogView" />, owned by this window. Unlike the other View-menu items, this
+    ///     opens a transient dialog (a fresh <see cref="ViewBuilderDialogViewModel" /> per open) rather than
+    ///     showing/focusing a persistent Dock <c>Tool</c>.
+    /// </summary>
+    private async void OnOpenViewBuilderDialogClick(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new ViewBuilderDialogView(_shell);
         await dialog.ShowDialog(this);
     }
 
@@ -245,7 +246,7 @@ public partial class MainWindowView : Window
         }
         catch (Exception ex)
         {
-            _customViewBuilderViewModel.StatusMessage = $"Failed to open file: {ex.Message}";
+            _workspacePanelViewModel.StatusMessage = $"Failed to open file: {ex.Message}";
         }
     }
 
@@ -276,7 +277,7 @@ public partial class MainWindowView : Window
         }
         catch (Exception ex)
         {
-            _customViewBuilderViewModel.StatusMessage = $"Failed to open folder: {ex.Message}";
+            _workspacePanelViewModel.StatusMessage = $"Failed to open folder: {ex.Message}";
         }
     }
 
@@ -313,7 +314,7 @@ public partial class MainWindowView : Window
             }
             catch (Exception ex)
             {
-                _customViewBuilderViewModel.StatusMessage = $"Failed to open dropped path '{path}': {ex.Message}";
+                _workspacePanelViewModel.StatusMessage = $"Failed to open dropped path '{path}': {ex.Message}";
             }
         }
 
@@ -326,14 +327,13 @@ public partial class MainWindowView : Window
     }
 
     /// <summary>
-    ///     Refreshes the three workspace-derived tool panels after a source is added or removed through the File
+    ///     Refreshes the two workspace-derived tool panels after a source is added or removed through the File
     ///     menu or a drag-and-drop drop. The Workspace panel itself refreshes independently via its own
     ///     <see cref="MainWindowShell.SourcesChanged" /> subscription.
     /// </summary>
     private void RefreshPanelsFromWorkspace()
     {
         _predefinedViewsViewModel.RefreshFromWorkspace();
-        _customViewBuilderViewModel.RefreshFromWorkspace();
         _diagnosticsViewModel.RefreshFromWorkspace();
     }
 }

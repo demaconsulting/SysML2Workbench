@@ -416,6 +416,55 @@ public sealed class MainWindowShellTests : IDisposable
     }
 
     /// <summary>
+    ///     Validates that <see cref="MainWindowShell.RenderCustomViewPreview" /> renders successfully without
+    ///     mutating any open-tab state - unlike <see cref="MainWindowShell.PreviewCustomView" />, it must not
+    ///     touch <see cref="MainWindowShell.OpenTabs" />, <see cref="MainWindowShell.ActiveTabId" />, or
+    ///     <see cref="MainWindowShell.ActiveCustomView" />.
+    /// </summary>
+    [Fact]
+    public async Task RenderCustomViewPreview_DoesNotMutateOpenTabsOrActiveTab()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.General);
+        definition.AddExposeTarget("Sample::Engine");
+
+        var openTabsBefore = shell.OpenTabs.Count;
+        var activeTabIdBefore = shell.ActiveTabId;
+        var activeCustomViewBefore = shell.ActiveCustomView;
+
+        // Act
+        var svg = shell.RenderCustomViewPreview(definition);
+
+        // Assert
+        Assert.Contains("<svg", svg, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(openTabsBefore, shell.OpenTabs.Count);
+        Assert.Equal(activeTabIdBefore, shell.ActiveTabId);
+        Assert.Equal(activeCustomViewBefore, shell.ActiveCustomView);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.RenderCustomViewPreview" /> throws when no workspace has
+    ///     been opened yet, matching <see cref="MainWindowShell.PreviewCustomView" />'s own empty-workspace
+    ///     guard.
+    /// </summary>
+    [Fact]
+    public void RenderCustomViewPreview_NoWorkspaceOpened_ThrowsInvalidOperationException()
+    {
+        using var shell = CreateShell();
+
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.General);
+        definition.AddExposeTarget("Sample::Engine");
+
+        Assert.Throws<InvalidOperationException>(() => shell.RenderCustomViewPreview(definition));
+    }
+
+    /// <summary>
     ///     Validates the "+ New Diagram Tab" affordance end to end: it opens an empty, active tab, and a
     ///     subsequent preview call updates that same tab in place (product decision 4).
     /// </summary>

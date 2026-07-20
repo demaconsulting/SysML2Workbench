@@ -9,7 +9,7 @@ sections:
             justification: |
               The Dock panel view models rely on CommunityToolkit.Mvvm to generate bindable properties and change notification without hand-written boilerplate.
             tests:
-              - 'CreateLayout_ComposesFourPanelDockables'
+              - 'CreateLayout_ComposesThreePanelDockables'
 
           - id: 'CommunityToolkitMvvm-NotifySelectionChanges'
             title: 'The SysML2Workbench shall use CommunityToolkit.Mvvm-generated partial change handlers to react to panel selection changes and refresh the diagram.'

@@ -11,6 +11,7 @@ package SysML2WorkbenchArchitecture {
             part mainWindowShell: MainWindowShell;
             part workspacePanel: WorkspacePanel;
             part aboutDialog: AboutDialog;
+            part viewBuilderDialog: ViewBuilderDialog;
         }
     }
 }

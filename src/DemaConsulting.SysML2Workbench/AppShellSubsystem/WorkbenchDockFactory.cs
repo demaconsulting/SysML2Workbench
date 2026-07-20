@@ -6,12 +6,12 @@ using Dock.Model.Mvvm.Controls;
 namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 
 /// <summary>
-///     Composes the four Phase-0 panels plus the Workspace sources panel into a resizable/floatable/closable
+///     Composes the three Phase-0 panels (predefined views, diagnostics, and workspace sources) into a resizable/floatable/closable
 ///     Dock layout, approximating the legacy fixed-<c>DockPanel</c> arrangement's default proportions (left
-///     ~260px, right ~320px, bottom ~180px against the window's default 1280x800 size) as initial
+///     ~260px, bottom ~180px against the window's default 1280x800 size) as initial
 ///     <see cref="Dock.Model.Core.IDockable" /> proportions, while leaving every panel user-resizable, floatable,
 ///     and closable through Dock's own chrome. The Workspace panel shares the Left column with the Predefined
-///     Views panel as a second tab (rather than its own column), keeping the other three panes' proportions
+///     Views panel as a second tab (rather than its own column), keeping the other panes' proportions
 ///     unchanged.
 ///     <c>HideToolsOnClose</c> is set so that closing a <see cref="Dock.Model.Mvvm.Controls.Tool" /> hides it
 ///     (tracked in <see cref="Dock.Model.Controls.IRootDock.HiddenDockables" /> and restorable via
@@ -28,11 +28,13 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 ///     <see cref="DiagramDock" /> itself sets <c>IsCollapsable = false</c> so it (and its parent
 ///     <c>ProportionalDock</c> branch) remains visibly present in the layout even with zero documents open, rather
 ///     than collapsing/disappearing once its last document closes.
+///     Custom-view composition no longer has a docked panel of its own: it is now the modal
+///     <see cref="ViewBuilderDialogView" />, a <c>Window</c> shown via <c>ShowDialog</c> (like
+///     <see cref="AboutDialogView" />), opened from the View menu rather than occupying a permanent Dock region.
 /// </summary>
 public sealed class WorkbenchDockFactory : Factory
 {
     private readonly PredefinedViewsToolViewModel _predefinedViewsViewModel;
-    private readonly CustomViewBuilderToolViewModel _customViewBuilderViewModel;
     private readonly DiagnosticsToolViewModel _diagnosticsViewModel;
     private readonly WorkspacePanelToolViewModel _workspacePanelViewModel;
 
@@ -44,22 +46,19 @@ public sealed class WorkbenchDockFactory : Factory
     public event EventHandler<DiagramDocumentViewModel>? DiagramTabClosed;
 
     /// <summary>
-    ///     Creates the dock layout factory over the four already-constructed Tool panel view models. The diagram
+    ///     Creates the dock layout factory over the three already-constructed Tool panel view models. The diagram
     ///     <see cref="DocumentDock" /> is populated dynamically at runtime rather than at construction time - see
     ///     <see cref="DiagramDock" />.
     /// </summary>
     /// <param name="predefinedViewsViewModel">Predefined-views tool panel.</param>
-    /// <param name="customViewBuilderViewModel">Custom-view builder tool panel.</param>
     /// <param name="diagnosticsViewModel">Diagnostics tool panel.</param>
     /// <param name="workspacePanelViewModel">Workspace sources tool panel.</param>
     public WorkbenchDockFactory(
         PredefinedViewsToolViewModel predefinedViewsViewModel,
-        CustomViewBuilderToolViewModel customViewBuilderViewModel,
         DiagnosticsToolViewModel diagnosticsViewModel,
         WorkspacePanelToolViewModel workspacePanelViewModel)
     {
         _predefinedViewsViewModel = predefinedViewsViewModel ?? throw new ArgumentNullException(nameof(predefinedViewsViewModel));
-        _customViewBuilderViewModel = customViewBuilderViewModel ?? throw new ArgumentNullException(nameof(customViewBuilderViewModel));
         _diagnosticsViewModel = diagnosticsViewModel ?? throw new ArgumentNullException(nameof(diagnosticsViewModel));
         _workspacePanelViewModel = workspacePanelViewModel ?? throw new ArgumentNullException(nameof(workspacePanelViewModel));
 
@@ -83,15 +82,6 @@ public sealed class WorkbenchDockFactory : Factory
             Proportion = 0.20,
             VisibleDockables = CreateList<IDockable>(_predefinedViewsViewModel, _workspacePanelViewModel),
             ActiveDockable = _predefinedViewsViewModel,
-        };
-
-        var customViewBuilderDock = new ToolDock
-        {
-            Id = "CustomViewBuilderPane",
-            Alignment = Alignment.Right,
-            Proportion = 0.25,
-            VisibleDockables = CreateList<IDockable>(_customViewBuilderViewModel),
-            ActiveDockable = _customViewBuilderViewModel,
         };
 
         var diagnosticsDock = new ToolDock
@@ -123,7 +113,7 @@ public sealed class WorkbenchDockFactory : Factory
         {
             Id = "CenterVertical",
             Orientation = Orientation.Vertical,
-            Proportion = 0.55,
+            Proportion = 0.80,
             VisibleDockables = CreateList<IDockable>(documentDock, CreateProportionalDockSplitter(), diagnosticsDock),
         };
 
@@ -134,9 +124,7 @@ public sealed class WorkbenchDockFactory : Factory
             VisibleDockables = CreateList<IDockable>(
                 predefinedViewsDock,
                 CreateProportionalDockSplitter(),
-                centerVerticalDock,
-                CreateProportionalDockSplitter(),
-                customViewBuilderDock),
+                centerVerticalDock),
         };
 
         var root = CreateRootDock();

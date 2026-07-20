@@ -15,8 +15,8 @@ platform-specific UI stacks.
 
 - **Application lifetime hosting** — starts and shuts down the desktop
   application.
-- **Window and control composition** — builds the main shell, catalog, builder,
-  and diagnostics surfaces.
+- **Window and control composition** — builds the main shell, catalog, view
+  builder dialog, and diagnostics surfaces.
 - **Data binding** — keeps shell and subsystem state synchronized with visible
   UI.
 - **Pointer and keyboard input** — supports diagram pan and zoom plus workspace
@@ -27,8 +27,9 @@ platform-specific UI stacks.
   section).
 - **`TopLevel.Clipboard`** — writes the generated SysML snippet to the OS
   clipboard, resolved from the diagram view's own control via
-  `TopLevel.GetTopLevel(control)`; the same API the custom view builder's own
-  "Copy as SysML" button already used.
+  `TopLevel.GetTopLevel(control)`; the only clipboard-copy caller in the
+  app (see `docs/design/ots/dock.md`'s "Diagram Tab 'Copy as SysML' Context
+  Menu" section for the `IClipboardService` seam this uses).
 
 ### Integration Pattern
 

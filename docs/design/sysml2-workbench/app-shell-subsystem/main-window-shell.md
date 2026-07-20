@@ -104,7 +104,23 @@ yet). This backs the tab's "Copy as SysML" context-menu action.
   is itself a custom-view-preview tab, it is re-rendered in place (same tab
   identity and canvas); otherwise a brand-new custom-view-preview tab is
   opened and made active - this covers both "the active tab is a predefined
-  view" and "no tab is open at all".
+  view" and "no tab is open at all". Backs `ViewBuilderDialog`'s OK commit
+  path (immediately preceded by `OpenNewCustomPreviewTab`).
+
+**RenderCustomViewPreview**: Renders a custom-view definition as a live
+preview without mutating any open-tab state.
+
+- *Parameters*: `ViewDefinitionModel definition` — normalized custom-view
+  state.
+- *Returns*: `string` — rendered SVG markup for the given definition.
+- *Preconditions*: `CurrentWorkspace.Sources.Count > 0` and the definition
+  validates against the current workspace (same guard clauses as
+  `PreviewCustomView`).
+- *Postconditions*: None on shell state: unlike `PreviewCustomView`, this
+  method does not mutate `OpenTabs`, `ActiveTabId`, or `ActiveCustomView`,
+  and does not raise `TabsChanged`. Backs `ViewBuilderDialog`'s left-hand
+  live preview pane, which re-renders on every in-progress edit while the
+  dialog is open, before the user has committed via OK.
 
 **OpenNewCustomPreviewTab**: Opens a brand-new, empty custom-view-preview tab
 and makes it active, without rendering anything into it.
@@ -112,7 +128,7 @@ and makes it active, without rendering anything into it.
 - *Parameters*: none.
 - *Returns*: `WorkbenchTab` — the newly opened tab.
 - *Postconditions*: A new tab is appended to `OpenTabs` and becomes
-  `ActiveTabId`. Backs the "+ New Diagram Tab" affordance; a subsequent
+  `ActiveTabId`. Backs `ViewBuilderDialog`'s OK commit path; a subsequent
   `PreviewCustomView` call updates this same tab in place.
 
 **CloseDiagramTab**: Closes the diagram tab with the given identifier.
