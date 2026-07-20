@@ -179,3 +179,15 @@ once it has a view model, and assigns it to the view model's
 `ClipboardService` property; production code never touches
 `TopLevel.Clipboard` directly from the view model, keeping the view model
 UI-framework-agnostic aside from that one injected seam.
+
+Adding this `ContextMenu` exposed a pre-existing pan-gesture bug: the same
+`Border`'s pointer handlers previously started a pan on *any* pointer button,
+including the right button. Since opening a `ContextMenu` on right-button
+release consumes that release before it reaches the `Border`'s own
+`PointerReleased` handler, panning was left permanently "stuck on" after
+every right-click - the very next pointer move (even a plain mouse move with
+no button held) dragged the diagram. `DiagramDocumentView` now only starts a
+pan on `PointerPressed` when `PointerPoint.Properties.IsLeftButtonPressed` is
+true, so the right button is reserved exclusively for the context menu, and
+a `PointerCaptureLost` handler resets the panning flag defensively in case
+capture is ever stolen mid-drag for some other reason.
