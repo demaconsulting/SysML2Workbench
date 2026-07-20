@@ -103,16 +103,25 @@ to it.
 
 1. On the **View Kind** tab, pick a kind (General, Interconnection, State
    Transition, Action Flow, Sequence, or Grid).
-2. On the **Expose Targets** tab, pick an element or package from the loaded
-   workspace and click **Add** to add it to the exposed-targets list. Repeat
-   for every element or package you want exposed - custom views support
-   multiple exposed elements, just like a hand-written SysML view. For each
-   row, choose its **recursion kind** - *This element only*, *This element +
-   everything below (::\*\*)* (the default), *Direct children only (::\*)*,
-   or *All descendants, not itself (::\*::\*\*)* - and optionally enter a
-   **bracket-filter expression** (enabled only for the two recursive kinds)
-   to narrow that target's exposed membership. Click **Remove** to drop a
-   row entirely.
+2. On the **Expose Targets** tab, narrow the picker if needed, then pick an
+   element or package and click **Add** to add it to the exposed-targets
+   list. The picker starts filtered to a single **part** type chip (the most
+   common starting point); click **✕** on a chip to remove it, or click **+**
+   to open a flyout listing every other type label present in the workspace
+   (for example *part def*, *package*, *dependency*) and pick one to add
+   another chip - active chips combine so an element matching any one of
+   them is shown, and removing every chip lifts the type restriction
+   entirely. Use the **Filter by name...** search box alongside the chips to
+   further narrow the list to qualified names containing the typed text,
+   case-insensitively; the type-chip and name-search filters combine
+   together. Repeat **Add** for every element or package you want exposed -
+   custom views support multiple exposed elements, just like a hand-written
+   SysML view. For each row, choose its **recursion kind** - *This element
+   only*, *This element + everything below (::\*\*)* (the default), *Direct
+   children only (::\*)*, or *All descendants, not itself (::\*::\*\*)* - and
+   optionally enter a **bracket-filter expression** (enabled only for the two
+   recursive kinds) to narrow that target's exposed membership. Click
+   **Remove** to drop a row entirely.
 3. On the **Filter & Name** tab, optionally enter a **Filter Expression** to
    narrow what is included, and optionally enter a **View Name** - otherwise
    a default name is used.

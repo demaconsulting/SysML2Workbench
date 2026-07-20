@@ -81,3 +81,25 @@ sections:
                   composition rather than resuming a previous, possibly-cancelled session.
                 tests:
                   - 'Construction_FreshInstance_DoesNotCarryOverPriorInstanceSelections'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-FilterExposeTargetsByTypeAndText'
+                title: 'The ViewBuilderDialog shall let the user narrow the expose-target picker by one or more
+                  type-label chips (OR semantics, defaulting to a single "part" chip when available, or no
+                  restriction when empty) combined with a case-insensitive name-substring search (AND semantics),
+                  computing each candidate''s type label from its underlying SysmlNode subtype.'
+                justification: |
+                  A workspace can contain far more candidate elements than fit comfortably in the picker
+                  ListBox; letting the user narrow by kind (part def, part, package, etc.) and/or name text
+                  makes finding the right expose target practical without scrolling through the entire
+                  workspace, while the "part" default keeps the picker usefully narrowed out of the box.
+                tests:
+                  - 'RefreshFromWorkspace_ComputesTypeLabelsPerNodeKind'
+                  - 'RefreshFromWorkspace_AvailableExposeTargetTypeLabels_IsDistinctAndSorted'
+                  - 'Construction_PartLabelPresent_DefaultsActiveExposeTypeFiltersToPart'
+                  - 'Construction_PartLabelAbsent_ActiveExposeTypeFiltersStartsEmpty'
+                  - 'DisplayedExposeTargets_EmptyChips_ShowsAllTypes'
+                  - 'DisplayedExposeTargets_MultipleChips_AppliesOrSemantics'
+                  - 'DisplayedExposeTargets_TypeFilterAndTextSearch_CombineWithAndSemantics'
+                  - 'AddExposeTypeFilter_DuplicateLabel_DoesNotAddSecondChip'
+                  - 'RemoveExposeTypeFilter_RemovesChipAndNoOpsWhenAbsent'
+                  - 'ExposeTargetSearchTextChanged_RecomputesDisplayedExposeTargets'

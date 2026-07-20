@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DemaConsulting.SysML2Tools.Semantic.Model;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
@@ -31,14 +33,38 @@ public sealed partial class ViewBuilderDialogViewModel : ObservableObject
         typeof(SysmlConnectionNode),
     ];
 
+    /// <summary>
+    ///     Default pre-populated type-filter chip label, matching the most commonly exposed node kind so the
+    ///     picker starts usefully narrowed rather than showing every declaration in the workspace.
+    /// </summary>
+    private const string DefaultTypeFilterLabel = "part";
+
     [ObservableProperty]
     private IReadOnlyList<string> _availableExposeTargets = [];
+
+    [ObservableProperty]
+    private IReadOnlyList<string> _availableExposeTargetTypeLabels = [];
+
+    [ObservableProperty]
+    private string? _exposeTargetSearchText = "";
+
+    [ObservableProperty]
+    private IReadOnlyList<string> _displayedExposeTargets = [];
 
     [ObservableProperty]
     private string? _statusMessage;
 
     [ObservableProperty]
     private bool _isWorkspaceEmpty;
+
+    /// <summary>
+    ///     Master, unfiltered list mapping each candidate expose target's qualified name to its computed
+    ///     type label, in the same order (and over the same candidate set) as <see cref="AvailableExposeTargets" />.
+    ///     Rebuilt alongside it in <see cref="RefreshFromWorkspace" />, and consulted by
+    ///     <see cref="RecomputeDisplayedExposeTargets" /> to apply the active type/text filters without
+    ///     re-querying the workspace on every keystroke or chip change.
+    /// </summary>
+    private IReadOnlyList<(string QualifiedName, string TypeLabel)> _exposeTargetTypeLabels = [];
 
     /// <summary>
     ///     Creates the dialog view model, refreshing the available expose-target picker list from the shell's
@@ -49,6 +75,8 @@ public sealed partial class ViewBuilderDialogViewModel : ObservableObject
     {
         Shell = shell ?? throw new ArgumentNullException(nameof(shell));
         PreviewCanvas = new SvgCanvasHost();
+
+        ActiveExposeTypeFilters.CollectionChanged += OnActiveExposeTypeFiltersCollectionChanged;
 
         RefreshFromWorkspace();
     }
@@ -79,22 +107,190 @@ public sealed partial class ViewBuilderDialogViewModel : ObservableObject
     public event EventHandler? PreviewChanged;
 
     /// <summary>
+    ///     Type labels currently applied as chips over the "Expose Targets" picker, combined with OR semantics:
+    ///     an item is shown when its type label is any one of these. An empty collection means no type
+    ///     restriction is applied (every candidate's type is shown). Pre-populated with just
+    ///     <c>"part"</c> by <see cref="RefreshFromWorkspace" /> when that label is present in the current
+    ///     workspace, since narrowing to part usages is the most common starting point; otherwise starts empty.
+    ///     Mutated via <see cref="AddExposeTypeFilter" />/<see cref="RemoveExposeTypeFilter" /> rather than
+    ///     replaced wholesale, so the view's chip-row <c>ItemsControl</c> can bind to this instance directly.
+    /// </summary>
+    public ObservableCollection<string> ActiveExposeTypeFilters { get; } = new();
+
+    /// <summary>
     ///     Refreshes the available expose-target picker list from current shell state. Called once at
     ///     construction; the dialog is short-lived (opened, edited, closed) so it does not itself subscribe to
     ///     <see cref="MainWindowShell.SourcesChanged" /> the way the old long-lived panel view model did.
     /// </summary>
     public void RefreshFromWorkspace()
     {
-        AvailableExposeTargets = Shell.CurrentWorkspace.Sources.Count == 0
+        var candidates = Shell.CurrentWorkspace.Sources.Count == 0
             ? []
             : Shell.CurrentWorkspace.Workspace.Declarations
                 .Where(kvp => !Shell.CurrentWorkspace.Workspace.StdlibNames.Contains(kvp.Key))
                 .Where(kvp => !DisallowedExposeNodeTypes.Contains(kvp.Value.GetType()))
-                .Select(kvp => kvp.Key)
-                .OrderBy(name => name, StringComparer.Ordinal)
+                .Select(kvp => (QualifiedName: kvp.Key, TypeLabel: GetExposeTypeLabel(kvp.Value)))
+                .OrderBy(entry => entry.QualifiedName, StringComparer.Ordinal)
                 .ToList();
 
+        _exposeTargetTypeLabels = candidates;
+        AvailableExposeTargets = candidates.Select(entry => entry.QualifiedName).ToList();
+        AvailableExposeTargetTypeLabels = candidates
+            .Select(entry => entry.TypeLabel)
+            .Distinct()
+            .OrderBy(label => label, StringComparer.Ordinal)
+            .ToList();
+
         IsWorkspaceEmpty = Shell.CurrentWorkspace.Sources.Count == 0;
+
+        ActiveExposeTypeFilters.Clear();
+        if (AvailableExposeTargetTypeLabels.Contains(DefaultTypeFilterLabel))
+        {
+            ActiveExposeTypeFilters.Add(DefaultTypeFilterLabel);
+        }
+
+        RecomputeDisplayedExposeTargets();
+    }
+
+    /// <summary>
+    ///     Computes the human-readable "type label" for a single candidate expose target's underlying
+    ///     <see cref="SysmlNode" />, mirroring the type-matching style already used by
+    ///     <see cref="DisallowedExposeNodeTypes" />: known node kinds map to a keyword-style label
+    ///     (<see cref="SysmlDefinitionNode.DefinitionKeyword" />, <see cref="SysmlFeatureNode.FeatureKeyword" />,
+    ///     or a fixed literal for kinds with no keyword of their own), and any other node kind not already
+    ///     excluded from the picker falls back to a defensively derived label so it never silently disappears
+    ///     from the list if a new node kind is added upstream.
+    /// </summary>
+    /// <param name="node">The candidate expose target's underlying node.</param>
+    /// <returns>A short, lowercase, human-readable type label such as <c>"part def"</c> or <c>"package"</c>.</returns>
+    private static string GetExposeTypeLabel(SysmlNode node)
+    {
+        return node switch
+        {
+            SysmlDefinitionNode definition => definition.DefinitionKeyword,
+            SysmlFeatureNode feature => feature.FeatureKeyword,
+            SysmlPackageNode => "package",
+            SysmlDependencyNode => "dependency",
+            SysmlSatisfyNode => "satisfy",
+            _ => GetFallbackExposeTypeLabel(node),
+        };
+    }
+
+    /// <summary>
+    ///     Derives a defensive fallback type label for a node kind not otherwise recognized by
+    ///     <see cref="GetExposeTypeLabel" />, by stripping a leading <c>Sysml</c> and/or trailing <c>Node</c>
+    ///     from the node's runtime type name and lowercasing the result, so an unrecognized future node kind
+    ///     still gets a reasonable label instead of crashing or vanishing from the picker.
+    /// </summary>
+    /// <param name="node">The candidate expose target's underlying node.</param>
+    /// <returns>A best-effort, lowercase fallback type label derived from the node's runtime type name.</returns>
+    private static string GetFallbackExposeTypeLabel(SysmlNode node)
+    {
+        var name = node.GetType().Name;
+
+        if (name.StartsWith("Sysml", StringComparison.Ordinal))
+        {
+            name = name["Sysml".Length..];
+        }
+
+        if (name.EndsWith("Node", StringComparison.Ordinal))
+        {
+            name = name[..^"Node".Length];
+        }
+
+        return name.ToLowerInvariant();
+    }
+
+    /// <summary>
+    ///     Recomputes <see cref="DisplayedExposeTargets" /> from the master <see cref="_exposeTargetTypeLabels" />
+    ///     list by applying <see cref="ActiveExposeTypeFilters" /> (OR semantics; empty means no type
+    ///     restriction) and then <see cref="ExposeTargetSearchText" /> (case-insensitive substring match,
+    ///     applied with AND semantics against whatever the type filter already narrowed to). The master list is
+    ///     already sorted ordinally by qualified name, so filtering alone preserves that order.
+    /// </summary>
+    private void RecomputeDisplayedExposeTargets()
+    {
+        IEnumerable<(string QualifiedName, string TypeLabel)> query = _exposeTargetTypeLabels;
+
+        if (ActiveExposeTypeFilters.Count > 0)
+        {
+            query = query.Where(entry => ActiveExposeTypeFilters.Contains(entry.TypeLabel));
+        }
+
+        var searchText = ExposeTargetSearchText;
+        if (!string.IsNullOrEmpty(searchText))
+        {
+            query = query.Where(entry => entry.QualifiedName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        }
+
+        DisplayedExposeTargets = query.Select(entry => entry.QualifiedName).ToList();
+    }
+
+    /// <summary>
+    ///     Computes the set of type labels available to add as a new filter chip: every label present in
+    ///     <see cref="AvailableExposeTargetTypeLabels" /> that is not already active in
+    ///     <see cref="ActiveExposeTypeFilters" />. Computed on demand rather than cached, since it is only
+    ///     consulted when the view's "+" add-filter flyout is opened, at which point it always reflects the
+    ///     current state of both inputs.
+    /// </summary>
+    /// <remarks>Not backed by an auto-generated observable property; recomputed fresh on every call.</remarks>
+    /// <returns>Type labels not currently applied as an active filter chip, in the same order as
+    /// <see cref="AvailableExposeTargetTypeLabels" />.</returns>
+    public IReadOnlyList<string> GetAddableExposeTargetTypeLabels()
+    {
+        return AvailableExposeTargetTypeLabels
+            .Where(label => !ActiveExposeTypeFilters.Contains(label))
+            .ToList();
+    }
+
+    /// <summary>
+    ///     Adds <paramref name="typeLabel" /> to <see cref="ActiveExposeTypeFilters" /> if it is not already
+    ///     present (no duplicate chips), then recomputes <see cref="DisplayedExposeTargets" />.
+    /// </summary>
+    /// <param name="typeLabel">Type label chip to add.</param>
+    public void AddExposeTypeFilter(string typeLabel)
+    {
+        if (!ActiveExposeTypeFilters.Contains(typeLabel))
+        {
+            ActiveExposeTypeFilters.Add(typeLabel);
+        }
+
+        RecomputeDisplayedExposeTargets();
+    }
+
+    /// <summary>
+    ///     Removes <paramref name="typeLabel" /> from <see cref="ActiveExposeTypeFilters" /> if present, then
+    ///     recomputes <see cref="DisplayedExposeTargets" />. A no-op when the label is not currently active.
+    /// </summary>
+    /// <param name="typeLabel">Type label chip to remove.</param>
+    public void RemoveExposeTypeFilter(string typeLabel)
+    {
+        ActiveExposeTypeFilters.Remove(typeLabel);
+
+        RecomputeDisplayedExposeTargets();
+    }
+
+    /// <summary>
+    ///     CommunityToolkit.Mvvm-generated hook invoked whenever <see cref="ExposeTargetSearchText" /> changes
+    ///     (for example via the view's two-way-bound search <c>TextBox</c>), recomputing
+    ///     <see cref="DisplayedExposeTargets" /> so the picker updates live as the user types.
+    /// </summary>
+    /// <param name="value">The new search text value.</param>
+    partial void OnExposeTargetSearchTextChanged(string? value)
+    {
+        RecomputeDisplayedExposeTargets();
+    }
+
+    /// <summary>
+    ///     Handles external mutation of <see cref="ActiveExposeTypeFilters" /> (beyond the
+    ///     <see cref="AddExposeTypeFilter" />/<see cref="RemoveExposeTypeFilter" /> methods, which already
+    ///     recompute directly) by recomputing <see cref="DisplayedExposeTargets" />, since a plain
+    ///     <see cref="ObservableCollection{T}" /> property does not itself participate in
+    ///     CommunityToolkit.Mvvm's change notification.
+    /// </summary>
+    private void OnActiveExposeTypeFiltersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        RecomputeDisplayedExposeTargets();
     }
 
     /// <summary>
