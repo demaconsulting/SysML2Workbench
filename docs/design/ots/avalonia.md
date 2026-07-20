@@ -21,6 +21,14 @@ platform-specific UI stacks.
   UI.
 - **Pointer and keyboard input** — supports diagram pan and zoom plus workspace
   and view interactions.
+- **`ContextMenu`/`MenuItem`** — every diagram tab's right-click "Copy as
+  SysML" action (the app's first `ContextMenu` usage; see
+  `docs/design/ots/dock.md`'s "Diagram Tab 'Copy as SysML' Context Menu"
+  section).
+- **`TopLevel.Clipboard`** — writes the generated SysML snippet to the OS
+  clipboard, resolved from the diagram view's own control via
+  `TopLevel.GetTopLevel(control)`; the same API the custom view builder's own
+  "Copy as SysML" button already used.
 
 ### Integration Pattern
 

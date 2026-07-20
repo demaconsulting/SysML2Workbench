@@ -50,3 +50,14 @@ sections:
                   - 'Construction_EstablishesValidEmptySnapshot'
                   - 'RemoveSourceAsync_DownToZeroSources_ProducesEmptySnapshotAndUnwatchesEverything'
                   - 'SelectPredefinedView_NoWorkspaceOpened_ThrowsInvalidOperationException'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ExportTabAsSysml'
+                title: 'The MainWindowShell shall derive and export a SysML view snippet for any open diagram tab whose originating view definition can be determined, and shall report that a tab has no derivable definition rather than throwing.'
+                justification: |
+                  Every diagram tab - predefined view or custom-view-builder preview - supports a "Copy as SysML" context-menu action that reuses the existing SysmlSnippetGenerator, and a tab whose definition cannot be derived (for example an unscoped predefined view with zero expose members, or an unrendered custom-preview tab) must disable that action gracefully instead of crashing.
+                tests:
+                  - 'ExportTabAsSysmlSnippet_PredefinedViewTab_ReturnsSnippet'
+                  - 'ExportTabAsSysmlSnippet_CustomPreviewTab_ReturnsSnippet'
+                  - 'ExportTabAsSysmlSnippet_UnknownTabId_ReturnsNull'
+                  - 'ExportTabAsSysmlSnippet_PredefinedViewWithNoExposeMembers_ReturnsNull'
+                  - 'CanExportTabAsSysml_MirrorsExportability'

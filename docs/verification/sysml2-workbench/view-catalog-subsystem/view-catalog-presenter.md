@@ -33,3 +33,14 @@ Verified by `ViewCatalogPresenterTests.LoadedModel_ListsSupportedViewDefinitions
 
 **SelectView_PublishesCurrentSelection**: Selecting a predefined view publishes it as the current selection. Verified by
 `ViewCatalogPresenterTests.SelectView_PublishesCurrentSelection`.
+
+**BuildViewDefinition_ResolvesKindExposeAndFilter**: `BuildViewDefinition` faithfully reconstructs a predefined
+view's kind, every expose member (recursion kind and bracket filter included), filter expression, and display
+name. Verified by `ViewCatalogPresenterTests.BuildViewDefinition_ResolvesKindExposeAndFilter`.
+
+**BuildViewDefinition_UnknownViewId_ReturnsNull**: An unknown view identifier produces `null` rather than
+throwing. Verified by `ViewCatalogPresenterTests.BuildViewDefinition_UnknownViewId_ReturnsNull`.
+
+**BuildViewDefinition_NoExposeMembers_ReturnsNull**: A predefined view with zero expose members (a valid,
+unscoped "expose everything" view) produces `null`, since there is no finite expose list to reconstruct. Verified
+by `ViewCatalogPresenterTests.BuildViewDefinition_NoExposeMembers_ReturnsNull`.

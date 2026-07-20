@@ -55,6 +55,23 @@ a named snippet.
   only four possible recursion kinds, at most four selections can ever exist
   for one qualified name; once all four are taken, this remains a safe no-op.
 
+**AddExposeTarget (selection overload)**: Adds a fully-specified
+`ExposeTargetSelection` - qualified name, recursion kind, and optional
+bracket-filter expression - directly, in a single call.
+
+- *Parameters*: `ExposeTargetSelection selection` — fully-specified target
+  selection.
+- *Returns*: `void` — state is updated in place.
+- *Preconditions*: `selection` is not null.
+- *Postconditions*: Deduplicates by the exact (`QualifiedName`,
+  `RecursionKind`) pair, mirroring the string overload's own dedupe contract:
+  a matching existing selection is preserved (including its own bracket
+  filter) rather than overwritten. Lets a caller (for example
+  `ViewCatalogPresenter.BuildViewDefinition`) reconstruct an arbitrary real
+  `ExposeMember` - any of the four recursion kinds plus an optional bracket
+  filter - without the multi-call add-then-retarget-then-filter sequence the
+  string overload would otherwise require.
+
 **RemoveExposeTarget**: Removes a qualified name/recursion kind pair from the
 `expose` target set.
 
@@ -131,3 +148,4 @@ the two recursive expose forms.
 - **MainWindowShell**
 - **SysmlSnippetGenerator**
 - **LayoutInvoker**
+- **ViewCatalogPresenter**

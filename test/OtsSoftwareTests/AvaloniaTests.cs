@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input.Platform;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using DemaConsulting.SysML2Workbench.AppShellSubsystem;
@@ -124,6 +126,62 @@ public sealed class AvaloniaTests : IDisposable
         var diagramImage = FindByName<Image>(window, "DiagramImage");
         Assert.NotNull(diagramImage);
         Assert.NotNull(diagramImage!.Source);
+
+        window.Close();
+    }
+
+    /// <summary>
+    ///     Validates the real end-to-end "Copy as SysML" diagram-tab context-menu integration: opening a
+    ///     workspace, rendering a predefined view into a real <see cref="DiagramDocumentView" /> hosted by
+    ///     <see cref="MainWindowView" />, invoking its "Copy as SysML" <c>MenuItem</c>, and confirming the
+    ///     headless platform's real <c>TopLevel.Clipboard</c> now holds the exact SysML snippet
+    ///     <see cref="SysmlSnippetGenerator" /> produces for that view's definition.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard()
+    {
+        // Arrange
+        await File.WriteAllTextAsync(
+            Path.Combine(_tempRoot, "Sample.sysml"),
+            "package Sample {\n"
+            + "    part def Engine;\n"
+            + "    view PredefinedView {\n"
+            + "        expose Engine;\n"
+            + "        render asGeneralDiagram;\n"
+            + "    }\n"
+            + "}\n");
+        using var shell = CreateShell();
+        var window = new MainWindowView(shell);
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var view = shell.ViewCatalog.AvailableViews[0];
+        shell.SelectPredefinedView(view.QualifiedName);
+        Dispatcher.UIThread.RunJobs();
+
+        var expectedSnippet = shell.ExportTabAsSysmlSnippet(shell.ActiveTabId!);
+        Assert.NotNull(expectedSnippet);
+
+        // Act: find the real diagram border, open its context menu, and click the "Copy as SysML" menu item
+        var diagramBorder = FindByName<Border>(window, "DiagramBorder");
+        Assert.NotNull(diagramBorder);
+        var contextMenu = diagramBorder!.ContextMenu;
+        Assert.NotNull(contextMenu);
+        contextMenu!.Open(diagramBorder);
+        Dispatcher.UIThread.RunJobs();
+
+        var copyMenuItem = FindByName<MenuItem>(window, "CopyAsSysmlMenuItem");
+        Assert.NotNull(copyMenuItem);
+        Assert.True(copyMenuItem!.IsEnabled);
+        copyMenuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert: the headless platform's real clipboard now holds the expected SysML snippet
+        var clipboard = TopLevel.GetTopLevel(window)?.Clipboard;
+        Assert.NotNull(clipboard);
+        var clipboardText = await clipboard!.TryGetTextAsync();
+        Assert.Equal(expectedSnippet, clipboardText);
 
         window.Close();
     }

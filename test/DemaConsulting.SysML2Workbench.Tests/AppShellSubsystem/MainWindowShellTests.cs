@@ -191,6 +191,131 @@ public sealed class MainWindowShellTests : IDisposable
     }
 
     /// <summary>
+    ///     Validates that a rendered predefined-view diagram tab can export its diagram as a SysML snippet, and
+    ///     that <see cref="MainWindowShell.CanExportTabAsSysml" /> reports readiness consistently.
+    /// </summary>
+    [Fact]
+    public async Task ExportTabAsSysmlSnippet_PredefinedViewTab_ReturnsSnippet()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var view = shell.ViewCatalog.AvailableViews[0];
+        shell.SelectPredefinedView(view.QualifiedName);
+        var tabId = shell.ActiveTabId!;
+
+        // Act
+        var canExport = shell.CanExportTabAsSysml(tabId);
+        var snippet = shell.ExportTabAsSysmlSnippet(tabId);
+
+        // Assert
+        Assert.True(canExport);
+        Assert.NotNull(snippet);
+        Assert.Contains("view PredefinedView {", snippet);
+        Assert.Contains("expose Sample::Engine;", snippet);
+    }
+
+    /// <summary>
+    ///     Validates that a custom-view-preview diagram tab can export its diagram as a SysML snippet.
+    /// </summary>
+    [Fact]
+    public async Task ExportTabAsSysmlSnippet_CustomPreviewTab_ReturnsSnippet()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.General);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.SetDisplayName("EngineOnly");
+        shell.PreviewCustomView(definition);
+        var tabId = shell.ActiveTabId!;
+
+        // Act
+        var canExport = shell.CanExportTabAsSysml(tabId);
+        var snippet = shell.ExportTabAsSysmlSnippet(tabId);
+
+        // Assert
+        Assert.True(canExport);
+        Assert.NotNull(snippet);
+        Assert.Contains("view EngineOnly {", snippet);
+    }
+
+    /// <summary>
+    ///     Validates that an unknown tab id reports no export readiness and returns <see langword="null" /> rather
+    ///     than throwing.
+    /// </summary>
+    [Fact]
+    public async Task ExportTabAsSysmlSnippet_UnknownTabId_ReturnsNull()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+
+        // Act / Assert
+        Assert.False(shell.CanExportTabAsSysml("does-not-exist"));
+        Assert.Null(shell.ExportTabAsSysmlSnippet("does-not-exist"));
+    }
+
+    /// <summary>
+    ///     Validates that a predefined view with zero expose members (a valid, unscoped "expose everything" view)
+    ///     cannot be exported, since there is no finite expose list to serialize - it is reported gracefully
+    ///     rather than throwing.
+    /// </summary>
+    [Fact]
+    public async Task ExportTabAsSysmlSnippet_PredefinedViewWithNoExposeMembers_ReturnsNull()
+    {
+        // Arrange: a workspace whose predefined view declares no expose members at all
+        await File.WriteAllTextAsync(
+            Path.Combine(_tempRoot, "Sample.sysml"),
+            "package Sample {\n"
+            + "    part def Engine;\n"
+            + "    view UnscopedView {\n"
+            + "        render asGeneralDiagram;\n"
+            + "    }\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var view = shell.ViewCatalog.AvailableViews[0];
+        shell.SelectPredefinedView(view.QualifiedName);
+        var tabId = shell.ActiveTabId!;
+
+        // Act / Assert
+        Assert.False(shell.CanExportTabAsSysml(tabId));
+        Assert.Null(shell.ExportTabAsSysmlSnippet(tabId));
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.CanExportTabAsSysml" /> mirrors the same true/false outcomes
+    ///     as <see cref="MainWindowShell.ExportTabAsSysmlSnippet" /> across the exportable, unknown-tab, and
+    ///     no-expose-members cases.
+    /// </summary>
+    [Fact]
+    public async Task CanExportTabAsSysml_MirrorsExportability()
+    {
+        // Arrange: an exportable predefined-view tab
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var view = shell.ViewCatalog.AvailableViews[0];
+        shell.SelectPredefinedView(view.QualifiedName);
+        var exportableTabId = shell.ActiveTabId!;
+
+        // Assert: exportable tab
+        Assert.True(shell.CanExportTabAsSysml(exportableTabId));
+        Assert.NotNull(shell.ExportTabAsSysmlSnippet(exportableTabId));
+
+        // Assert: unknown tab
+        Assert.False(shell.CanExportTabAsSysml("unknown-tab"));
+        Assert.Null(shell.ExportTabAsSysmlSnippet("unknown-tab"));
+    }
+
+    /// <summary>
     ///     Validates that selecting a predefined view is rejected while the workspace has zero sources.
     /// </summary>
     [Fact]

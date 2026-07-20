@@ -134,3 +134,48 @@ with no restore path - closing a diagram tab is always a safe operation
 (zero tabs open is a supported, first-class state), and reopening one is one
 click away via the catalog or the "+ New Diagram Tab" button, so no
 restore mechanism is needed.
+
+### Diagram Tab "Copy as SysML" Context Menu
+
+Every `DiagramDocumentView` - one per open `WorkbenchTab`, and therefore
+covering all six predefined view kinds (General, Interconnection, State
+Transition, Action Flow, Sequence, Grid) plus a custom-view-builder preview
+tab, since all of them are rendered through this one shared view/view-model
+pair - hosts a single shared `ContextMenu` on its diagram `Border`, with one
+`MenuItem` ("Copy as SysML"). This is the app's first `ContextMenu` usage.
+
+Clicking the item copies that tab's whole-diagram SysML `view { ... }` text
+(view kind, every `expose` clause, and any `filter` expression) to the OS
+clipboard, reusing the existing `SysmlSnippetGenerator` - the same unit the
+custom view builder's own "Copy as SysML" button already used - so there is
+exactly one snippet-generation code path regardless of which tab kind
+triggered it. `MainWindowShell.WorkbenchTab.SourceDefinition` (a
+`ViewDefinitionModel?`) carries the concrete definition each tab's diagram
+was rendered from: for a custom-view-preview tab it is the definition passed
+to `PreviewCustomView`; for a predefined-view tab it is derived by
+`ViewCatalogPresenter.BuildViewDefinition`, since a predefined view's
+`SysmlViewNode` in the loaded workspace carries the same kind/expose/filter
+shape but had previously only been surfaced as a `ViewDescriptor` (display
+metadata, not a definition).
+
+The menu item's `IsEnabled` is bound to `DiagramDocumentViewModel.CanCopyAsSysml`,
+which mirrors `MainWindowShell.CanExportTabAsSysml(TabId)` - `false` (and so
+the item is disabled, never crashes) when a tab has no derivable definition,
+which happens in two disclosed cases: a brand-new custom-preview tab that
+has not rendered anything yet, and an unscoped predefined view (zero
+`expose` members - a real, valid "expose everything" SysML v2 view with no
+finite expose list for `SysmlSnippetGenerator` to serialize). Both cases are
+logged at `Info` level via the existing `RollingFileLogger` rather than
+thrown, consistent with every other expected-but-unavailable shell state.
+
+Clicking the item invokes `DiagramDocumentViewModel.CopyAsSysmlAsync()`,
+which asks `MainWindowShell.ExportTabAsSysmlSnippet` for the snippet text and
+writes it via an injected `IClipboardService` - a small seam (mirroring the
+existing `IUiDispatcher` seam pattern) so the generate-and-copy
+orchestration can be unit tested with a fake clipboard rather than needing a
+live UI. `DiagramDocumentView`'s code-behind constructs the real
+`AvaloniaClipboardService` (wrapping `TopLevel.GetTopLevel(this)?.Clipboard`)
+once it has a view model, and assigns it to the view model's
+`ClipboardService` property; production code never touches
+`TopLevel.Clipboard` directly from the view model, keeping the view model
+UI-framework-agnostic aside from that one injected seam.

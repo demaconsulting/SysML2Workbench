@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Svg.Skia;
 
@@ -53,8 +54,19 @@ public partial class DiagramDocumentView : UserControl
         if (_viewModel is not null)
         {
             _viewModel.DiagramChanged += OnDiagramChanged;
+            _viewModel.ClipboardService ??= new AvaloniaClipboardService(this);
             LoadCurrentDiagram();
         }
+    }
+
+    private async void OnCopyAsSysmlMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        await _viewModel.CopyAsSysmlAsync();
     }
 
     private void OnDiagramChanged(object? sender, EventArgs e)
