@@ -21,6 +21,8 @@ words:
   - Dema
   - doctitle
   - docversion
+  - Dedupe
+  - dedupe
   - Dockable
   - Dockables
   - fileassert
@@ -46,8 +48,18 @@ words:
   - sonar
   - sonarmark
   - Stdlib
+  - Subfolders
+  - subfolders
   - sysml
   - timeslice
+  - TOCTOU
+  - unioned
+  - Unwatch
+  - unwatch
+  - Unwatches
+  - unwatches
+  - Unwatching
+  - unwatching
   - versionmark
   - Weasyprint
   - xunit
