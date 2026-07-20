@@ -60,6 +60,7 @@ their previously queued pending state survives. Verified by
 **UnwatchSource_UnknownSourceId_ReturnsFalse**: Unwatching an id that is not currently watched returns `false`
 without throwing. Verified by `FileWatcherTests.UnwatchSource_UnknownSourceId_ReturnsFalse`.
 
-**QueueChange_BeforeWatchSource_ThrowsInvalidOperationException**: Queuing a change before any source has been
-watched throws `InvalidOperationException` rather than silently accumulating unattributable pending state. Verified
-by `FileWatcherTests.QueueChange_BeforeWatchSource_ThrowsInvalidOperationException`.
+**QueueChange_WithNoWatchedSources_IsIgnored**: Queuing a change when no source is currently watched (before any
+source has been watched, or after the last one has been unwatched) is silently ignored rather than throwing or
+accumulating unattributable pending state, since zero watched sources is a first-class, valid empty-workspace
+state. Verified by `FileWatcherTests.QueueChange_WithNoWatchedSources_IsIgnored`.

@@ -39,8 +39,8 @@ sections:
                   - 'UnwatchSource_UnknownSourceId_ReturnsFalse'
 
               - id: 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-RequireWatchBeforeQueue'
-                title: 'The FileWatcher shall reject queuing a change before any source is being watched.'
+                title: 'The FileWatcher shall silently ignore queuing a change when no source is currently being watched.'
                 justification: |
-                  Queuing changes with no active watcher would silently accumulate pending state that can never be attributed to a real source.
+                  Zero watched sources is a first-class, valid empty-workspace state, and a change notification can legitimately race an unwatch; queuing must not accumulate unattributable pending state or throw.
                 tests:
-                  - 'QueueChange_BeforeWatchSource_ThrowsInvalidOperationException'
+                  - 'QueueChange_WithNoWatchedSources_IsIgnored'

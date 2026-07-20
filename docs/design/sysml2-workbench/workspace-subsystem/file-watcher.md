@@ -58,10 +58,13 @@ already-watched source with the same id if one exists.
 
 - *Parameters*: `string path` — file or folder path reported by the platform.
 - *Returns*: `void` — the change is added to the pending set.
-- *Preconditions*: At least one source is currently watched.
-- *Postconditions*: Duplicate or bursty notifications for the same path
-  collapse into a single pending change entry, regardless of which watched
-  source's watcher raised the underlying event.
+- *Preconditions*: None - zero watched sources (an empty workspace, or a stale
+  notification racing an unwatch) is a valid, first-class state.
+- *Postconditions*: When at least one source is watched, duplicate or bursty
+  notifications for the same path collapse into a single pending change
+  entry, regardless of which watched source's watcher raised the underlying
+  event. When no source is watched, the notification is silently ignored and
+  `PendingChanges` is left unchanged.
 
 **FlushPendingChanges**: Dispatches the current batch to the workspace reload
 pipeline.
@@ -69,7 +72,8 @@ pipeline.
 - *Parameters*: `None` — operates on the accumulated pending changes.
 - *Returns*: `IReadOnlyList<string>` — normalized paths requiring reload,
   merged across every watcher that reported a change since the last flush.
-- *Preconditions*: Monitoring has started for at least one source.
+- *Preconditions*: None - zero watched sources is a valid state and simply
+  yields an empty result.
 - *Postconditions*: Returned paths are removed from `PendingChanges` and are
   ready for `WorkspaceModel.ReloadFiles`.
 
