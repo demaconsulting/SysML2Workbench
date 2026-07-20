@@ -79,6 +79,13 @@ The rendered diagram appears as an interactive SVG in its tab's canvas:
 Each diagram tab has its own independent pan/zoom state, so switching
 between tabs never disturbs another tab's view of its diagram.
 
+Every open diagram tab - whether it renders a predefined view or a custom
+view preview - supports right-click > **Copy as SysML** to copy that tab's
+`view { ... }` SysML v2 text to the clipboard. The option is disabled when
+no concrete view definition can be derived for the tab, for example an
+unscoped predefined view or a custom-view preview tab that has not yet been
+rendered.
+
 ## Building a Custom View
 
 The **Custom View Builder** panel (right side, dockable) lets you construct an
@@ -113,6 +120,9 @@ ad-hoc view without writing SysML syntax:
    regardless of whether a custom view name was supplied. Paste this into a
    `.sysml` file to promote the
    ephemeral preview into a permanent, version-controlled view definition.
+   The same right-click **Copy as SysML** context menu described in
+   "Browsing Predefined Views" is also available on this preview's diagram
+   tab, not just the panel's own button.
 
 Custom views built in the GUI are **session-only** - they are not saved to
 disk by SysML2Workbench itself. The "Copy as SysML" snippet is the only way
