@@ -10,7 +10,9 @@ interactive pan/zoom viewer, and lets you build ad-hoc custom views through a
 GUI - picking a view kind, multi-selecting target elements, and optionally
 filtering - without hand-writing SysML `view` syntax. Custom views can be
 exported as copy-pasteable SysML `view ... expose ...` text to promote them
-into a permanent model file. A live-updating diagnostics panel surfaces parser
+into a permanent model file, and any workspace `.sysml` file's raw source
+text can be opened read-only, with syntax highlighting, by double-clicking
+it in the workspace tree. A live-updating diagnostics panel surfaces parser
 and reference-resolution problems across the whole workspace, and a local
 rolling log file is written for bug-report attachments.
 

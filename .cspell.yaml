@@ -75,6 +75,12 @@ words:
   - SysML2
   - SysML2Tools
   - SysML2Workbench
+  - Antlr
+  - Xshd
+  - XSHD
+  - xshd
+  - avaloniaedit
+  - avares
 ignorePaths:
   - '**/.git/**'
   - '**/node_modules/**'

@@ -33,6 +33,8 @@ public partial class WorkspacePanelToolView : UserControl
 
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
+
+        WorkspaceTreeView.DoubleTapped += OnWorkspaceTreeViewDoubleTapped;
     }
 
     private static readonly FilePickerFileType SysmlFileType = new("SysML v2 files")
@@ -149,4 +151,26 @@ public partial class WorkspacePanelToolView : UserControl
             }
         }
     }
+
+    /// <summary>
+    ///     Handles a double-tap anywhere on <c>WorkspaceTreeView</c> by opening a read-only source-text tab for
+    ///     the currently selected node, if it is a <see cref="WorkspaceFileNode" /> whose <see cref="WorkspaceFileNode.FilePath" />
+    ///     ends in <c>.sysml</c>. Avalonia's <see cref="TreeView" /> updates <see cref="TreeView.SelectedItem" />
+    ///     on the same click that raises <c>DoubleTapped</c>, so no custom hit-testing of the
+    ///     event's source is needed. A double-tap on any other node kind (a source or folder node), or a
+    ///     non-<c>.sysml</c> file, is a safe no-op.
+    /// </summary>
+    private void OnWorkspaceTreeViewDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (ViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        if (viewModel.SelectedNode is WorkspaceFileNode { FilePath: { } filePath } && filePath.EndsWith(".sysml", StringComparison.OrdinalIgnoreCase))
+        {
+            viewModel.Shell.OpenSourceTextTab(filePath);
+        }
+    }
 }
+

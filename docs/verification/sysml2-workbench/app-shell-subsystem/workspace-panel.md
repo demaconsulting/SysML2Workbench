@@ -16,7 +16,16 @@ review rather than a dedicated Avalonia UI-automation test.
 #### Test Environment
 
 Tests run under the standard .NET test runner with a real `MainWindowShell` constructed over temporary workspace
-folders and files, plus real collaborator units. No external services are required.
+folders and files, plus real collaborator units. No external services are required. Drag-and-drop is not
+independently unit-tested: both handlers only branch on `File.Exists`/`Directory.Exists` for each dropped path and
+then call the exact same `MainWindowShell.AddFileSourceAsync`/`AddFolderSourceAsync` methods already covered by
+`MainWindowShellTests`, so drag-and-drop is verified by code review rather than a dedicated Avalonia UI-automation
+test. The double-click-to-view-source gesture added to `WorkspacePanelToolView`'s code-behind is likewise not
+independently unit-tested: it is thin view-layer wiring that resolves the tapped node's `FilePath` and calls the
+exact same `MainWindowShell.OpenSourceTextTab` already covered end-to-end by `MainWindowShellTests`, so it too is
+verified by code review rather than a dedicated Avalonia UI-automation test - consistent with this codebase's
+established convention that no view-layer gesture (drag-and-drop, pointer pan/zoom, and now double-click) has a
+headless-Avalonia test in the main test project.
 
 #### Acceptance Criteria
 

@@ -40,9 +40,11 @@ already covers everything beneath it).
 **WorkspaceFileNode**: `WorkspaceTreeNode` with `required string FilePath`,
 `required string SourceId`, and a computed `Name` (`Path.GetFileName(FilePath)`,
 shown in the tree since ancestor nodes already convey the file's directory) —
-a leaf node for one file. `FilePath` is a stable identity intended for a
-future, out-of-scope, double-click read-only file viewer; it is preserved
-even though nothing else currently reads it beyond display.
+a leaf node for one file. `FilePath` is a stable identity used by
+`WorkspacePanelToolView`'s double-click handler to open a `.sysml` file's
+read-only source-text tab via `MainWindowShell.OpenSourceTextTab`; it is
+preserved even though nothing else currently reads it beyond display and
+that handler.
 
 **SelectedNode**: `WorkspaceTreeNode?` — the tree node currently selected by
 the user, used to resolve which source `RemoveSelected` acts on.
@@ -93,6 +95,15 @@ into `MainWindowShell.AddFileSourceAsync` / `AddFolderSourceAsync`.
   `MainWindowShell.RemoveSourceAsync(sourceId)`; a thrown failure is caught
   and surfaced via `StatusMessage` rather than propagated, since a failed
   remove should not crash the shell.
+
+`WorkspacePanelToolView`'s code-behind also wires a `DoubleTapped` handler on
+its `TreeView` directly to `MainWindowShell.OpenSourceTextTab`: when the
+selected item is a `WorkspaceFileNode` whose `FilePath` ends in `.sysml`
+(case-insensitive), double-clicking it opens the file's read-only
+source-text tab. No view-model method backs this - it follows the same
+"view calls `Shell` directly" pattern already used by the Add File/Add
+Folder picker flows, and is thin enough that it is not unit tested (see
+`docs/verification/sysml2-workbench/app-shell-subsystem/workspace-panel.md`).
 
 #### Error Handling
 

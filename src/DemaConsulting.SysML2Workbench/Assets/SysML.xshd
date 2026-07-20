@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!--
+  Self-authored AvaloniaEdit XSHD v2 syntax-highlighting definition for SysML v2 source text, written for
+  SysML2Workbench's read-only "View Source" tab (see SourceTextDocumentView.axaml.cs). This file is
+  self-authored, not copied from any third-party grammar or editor extension: it defines only generic
+  lexical categories (line/block comments, double-quoted strings, and numbers) using a standard,
+  well-known XSHD shape. The SysML v2 keyword list itself is intentionally NOT hard-coded here - it is
+  derived at runtime by SourceTextDocumentView.axaml.cs reflecting
+  DemaConsulting.SysML2Tools.Parser.Antlr.SysMLv2Lexer's own generated literal-token table (falling back to
+  a small hard-coded list only if that reflection ever fails), and added to this definition's MainRuleSet
+  as an extra HighlightingRule using the "Keyword" color defined below, so the authoritative keyword set is
+  never duplicated/copied by hand.
+-->
+<SyntaxDefinition name="SysML"
+                   xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+
+  <Color name="Comment" foreground="Green" />
+  <Color name="String" foreground="Brown" />
+  <Color name="Keyword" foreground="Blue" fontWeight="bold" />
+  <Color name="Number" foreground="DarkCyan" />
+
+  <RuleSet>
+    <Span color="Comment" begin="//" />
+    <Span color="Comment" multiline="true" begin="/\*" end="\*/" />
+
+    <Span color="String">
+      <Begin>"</Begin>
+      <End>"</End>
+      <RuleSet>
+        <!-- Backslash-escapes the following character (for example \" or \\) so an escaped quote does
+             not prematurely end the string span. -->
+        <Span begin="\\" end="." />
+      </RuleSet>
+    </Span>
+
+    <Rule color="Number">
+      \b0[xX][0-9a-fA-F]+
+      |
+      \b\d+(\.\d+)?([eE][+-]?\d+)?\b
+    </Rule>
+
+    <!-- The "Keyword" color above is referenced by name at runtime once SourceTextDocumentView.axaml.cs
+         adds the reflection-derived keyword HighlightingRule to this RuleSet. -->
+  </RuleSet>
+</SyntaxDefinition>

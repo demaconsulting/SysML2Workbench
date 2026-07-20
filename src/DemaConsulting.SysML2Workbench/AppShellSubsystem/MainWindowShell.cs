@@ -18,6 +18,9 @@ public enum WorkbenchTabKind
 
     /// <summary>A live preview of a GUI-authored custom view.</summary>
     CustomViewPreview,
+
+    /// <summary>A read-only view of a workspace file's raw source text.</summary>
+    SourceText,
 }
 
 /// <summary>
@@ -27,13 +30,22 @@ public enum WorkbenchTabKind
 /// <param name="Id">Stable identifier used to detect an already-open tab.</param>
 /// <param name="Title">User-facing tab label.</param>
 /// <param name="Kind">Content category shown by the tab.</param>
-/// <param name="Canvas">This tab's own diagram surface state.</param>
+/// <param name="Canvas">
+///     This tab's own diagram surface state. Allocated for every tab kind for shape simplicity, but unused
+///     (never loaded/rendered into) for a <see cref="WorkbenchTabKind.SourceText" /> tab.
+/// </param>
 /// <param name="SourceDefinition">
 ///     The <see cref="ViewDefinitionModel" /> that produced this tab's currently rendered diagram, or
 ///     <see langword="null" /> when no concrete definition could be derived for it (an unscoped predefined view
 ///     with zero expose members, or a brand-new custom-preview tab that has not rendered anything yet). Used by
 ///     <see cref="MainWindowShell.CanExportTabAsSysml" />/<see cref="MainWindowShell.ExportTabAsSysmlSnippet" /> to
-///     back the diagram tab's "Copy as SysML" context-menu action.
+///     back the diagram tab's "Copy as SysML" context-menu action. Always <see langword="null" /> for a
+///     <see cref="WorkbenchTabKind.SourceText" /> tab.
+/// </param>
+/// <param name="FilePath">
+///     The absolute path of the workspace file this tab presents the raw source text of, or
+///     <see langword="null" /> for every tab kind other than <see cref="WorkbenchTabKind.SourceText" />. Resolved
+///     by <see cref="MainWindowShell.GetTabFilePath" /> for <see cref="SourceTextDocumentViewModel" />.
 /// </param>
 /// <remarks>
 ///     Because <see cref="Canvas" /> is a mutable reference type, two <see cref="WorkbenchTab" /> instances are
@@ -41,7 +53,7 @@ public enum WorkbenchTabKind
 ///     <see cref="MainWindowShell" /> compares <see cref="WorkbenchTab" /> instances by equality; all lookups are
 ///     by <see cref="Id" />.
 /// </remarks>
-public sealed record WorkbenchTab(string Id, string Title, WorkbenchTabKind Kind, SvgCanvasHost Canvas, ViewDefinitionModel? SourceDefinition = null);
+public sealed record WorkbenchTab(string Id, string Title, WorkbenchTabKind Kind, SvgCanvasHost Canvas, ViewDefinitionModel? SourceDefinition = null, string? FilePath = null);
 
 /// <summary>
 ///     MainWindowShell is the desktop composition root that coordinates workspace lifecycle, view selection,
@@ -637,6 +649,47 @@ public sealed class MainWindowShell : IDisposable
     public SvgCanvasHost? GetTabCanvas(string tabId)
     {
         return _openTabs.FirstOrDefault(tab => tab.Id == tabId)?.Canvas;
+    }
+
+    /// <summary>
+    ///     Returns the workspace file path presented by the given open <see cref="WorkbenchTabKind.SourceText" />
+    ///     tab.
+    /// </summary>
+    /// <param name="tabId">Identifier of an open tab.</param>
+    /// <returns>
+    ///     The tab's file path, or <see langword="null" /> if no tab with that identifier is open, or the tab is
+    ///     not a <see cref="WorkbenchTabKind.SourceText" /> tab.
+    /// </returns>
+    public string? GetTabFilePath(string tabId)
+    {
+        return _openTabs.FirstOrDefault(tab => tab.Id == tabId)?.FilePath;
+    }
+
+    /// <summary>
+    ///     Opens a read-only source-text tab for the given workspace file, reusing an already-open tab for the
+    ///     same path instead of duplicating it.
+    /// </summary>
+    /// <param name="filePath">Absolute path of the file to present.</param>
+    /// <returns>The existing (refocused) or newly opened tab.</returns>
+    /// <remarks>
+    ///     The absolute <paramref name="filePath" /> itself is used as the tab's stable dedupe <see cref="WorkbenchTab.Id" />
+    ///     (mirroring how <see cref="SelectPredefinedView" /> uses a predefined view's qualified name), and the
+    ///     file's own name (<see cref="Path.GetFileName(string)" />) becomes the tab's <see cref="WorkbenchTab.Title" />.
+    ///     Unlike a diagram tab, no rendering happens here - <see cref="SourceTextDocumentViewModel" /> reads the
+    ///     file's contents directly (and handles a missing/locked file itself) when the tab is realized.
+    /// </remarks>
+    public WorkbenchTab OpenSourceTextTab(string filePath)
+    {
+        var tab = EnsureTabOpen(filePath, Path.GetFileName(filePath), WorkbenchTabKind.SourceText);
+        if (tab.FilePath != filePath)
+        {
+            tab = tab with { FilePath = filePath };
+            _openTabs[_openTabs.FindIndex(t => t.Id == tab.Id)] = tab;
+        }
+
+        ActiveTabId = tab.Id;
+        RaiseTabsChanged();
+        return tab;
     }
 
     /// <summary>

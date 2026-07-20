@@ -42,5 +42,12 @@ package SysML2WorkbenchArchitecture {
             comment verificationRef /* Verification: docs/verification/ots/communitytoolkit-mvvm.md */
             comment reqRef /* Requirements: docs/reqstream/ots/communitytoolkit-mvvm.yaml */
         }
+        part def AvaloniaEdit {
+            doc /* Avalonia.AvaloniaEdit NuGet dependency for the read-only, syntax-highlighted text editor control backing the source-text viewer document tabs. */
+
+            comment designRef /* Design: docs/design/ots/avaloniaedit.md */
+            comment verificationRef /* Verification: docs/verification/ots/avaloniaedit.md */
+            comment reqRef /* Requirements: docs/reqstream/ots/avaloniaedit.yaml */
+        }
     }
 }

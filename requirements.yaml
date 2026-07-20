@@ -28,3 +28,4 @@ includes:
   - docs/reqstream/ots/rendering.yaml
   - docs/reqstream/ots/avalonia.yaml
   - docs/reqstream/ots/xunit.yaml
+  - docs/reqstream/ots/avaloniaedit.yaml

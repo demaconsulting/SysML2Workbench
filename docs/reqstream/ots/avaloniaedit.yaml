@@ -1,0 +1,20 @@
+---
+sections:
+  - title: 'OTS Software Requirements'
+    sections:
+      - title: 'AvaloniaEdit Requirements'
+        requirements:
+          - id: 'AvaloniaEdit-RenderReadOnlySyntaxHighlightedText'
+            title: 'The SysML2Workbench shall render read-only, syntax-highlighted .sysml source text using AvaloniaEdit''s TextEditor control.'
+            justification: |
+              AvaloniaEdit provides the text-editing control, read-only enforcement, and highlighting engine required for the source-text viewer without the workbench hand-rolling its own text control.
+            tests:
+              - 'Text_OpenedFile_MatchesFileContents'
+              - 'TextEditor_IsReadOnly_PreventsEdits'
+
+          - id: 'AvaloniaEdit-LoadEmbeddedSysmlHighlighting'
+            title: 'The SysML2Workbench shall load a self-authored SysML v2 highlighting definition from an embedded resource via AvaloniaEdit''s HighlightingLoader, with keywords derived from the real SysML v2 lexer rather than a hand-copied list.'
+            justification: |
+              Highlighting fidelity depends on the keyword set staying in sync with the actual grammar; loading the definition through AvaloniaEdit's own XSHD loader and populating keywords by reflecting the lexer avoids a hand-copied list silently drifting out of date.
+            tests:
+              - 'EmbeddedXshd_Loads_AndKeywordRuleMatchesSysmlKeyword'

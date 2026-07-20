@@ -29,7 +29,7 @@ public partial class MainWindowView : Window
     private readonly DiagnosticsToolViewModel _diagnosticsViewModel;
     private readonly WorkspacePanelToolViewModel _workspacePanelViewModel;
     private readonly WorkbenchDockFactory _dockFactory;
-    private readonly Dictionary<string, DiagramDocumentViewModel> _diagramViewModelsByTabId = new();
+    private readonly Dictionary<string, Dock.Model.Mvvm.Controls.Document> _tabViewModelsByTabId = new();
 
     /// <summary>
     ///     Parameterless constructor required by the Avalonia XAML previewer/designer. Not used at runtime.
@@ -62,6 +62,7 @@ public partial class MainWindowView : Window
 
         _dockFactory.FocusedDockableChanged += OnFocusedDockableChanged;
         _dockFactory.DiagramTabClosed += OnDiagramTabClosed;
+        _dockFactory.SourceTextTabClosed += OnSourceTextTabClosed;
         _shell.TabsChanged += OnShellTabsChanged;
         OnShellTabsChanged(this, EventArgs.Empty);
 
@@ -171,7 +172,19 @@ public partial class MainWindowView : Window
     private void OnDiagramTabClosed(object? sender, DiagramDocumentViewModel diagram)
     {
         _shell.CloseDiagramTab(diagram.TabId);
-        _diagramViewModelsByTabId.Remove(diagram.TabId);
+        _tabViewModelsByTabId.Remove(diagram.TabId);
+    }
+
+    /// <summary>
+    ///     Handles a source-text document closing through Dock's own chrome by retiring the corresponding tab
+    ///     from the shell and evicting the tracked view model. Calls the same <see cref="MainWindowShell.CloseDiagramTab" />
+    ///     as <see cref="OnDiagramTabClosed" /> - that method already operates generically on any
+    ///     <c>WorkbenchTab.Id</c> regardless of kind, so no separate shell method is needed for this tab kind.
+    /// </summary>
+    private void OnSourceTextTabClosed(object? sender, SourceTextDocumentViewModel sourceText)
+    {
+        _shell.CloseDiagramTab(sourceText.TabId);
+        _tabViewModelsByTabId.Remove(sourceText.TabId);
     }
 
     /// <summary>
@@ -189,29 +202,35 @@ public partial class MainWindowView : Window
         // Add documents for newly opened tabs.
         foreach (var tab in _shell.OpenTabs)
         {
-            if (_diagramViewModelsByTabId.ContainsKey(tab.Id))
+            if (_tabViewModelsByTabId.ContainsKey(tab.Id))
             {
                 continue;
             }
 
-            var diagramViewModel = new DiagramDocumentViewModel(_shell, tab.Id) { Id = tab.Id, Title = tab.Title };
-            _diagramViewModelsByTabId[tab.Id] = diagramViewModel;
-            _dockFactory.AddDockable(_dockFactory.DiagramDock, diagramViewModel);
+            Dock.Model.Mvvm.Controls.Document tabViewModel = tab.Kind == WorkbenchTabKind.SourceText
+                ? new SourceTextDocumentViewModel(_shell, tab.Id) { Id = tab.Id, Title = tab.Title }
+                : new DiagramDocumentViewModel(_shell, tab.Id) { Id = tab.Id, Title = tab.Title };
+            _tabViewModelsByTabId[tab.Id] = tabViewModel;
+            _dockFactory.AddDockable(_dockFactory.DiagramDock, tabViewModel);
         }
 
         // Remove documents for tabs that no longer exist (for example, a workspace reload cleared every tab).
-        foreach (var staleTabId in _diagramViewModelsByTabId.Keys.Where(tabId => !openTabIds.Contains(tabId)).ToList())
+        foreach (var staleTabId in _tabViewModelsByTabId.Keys.Where(tabId => !openTabIds.Contains(tabId)).ToList())
         {
-            _dockFactory.RemoveDockable(_diagramViewModelsByTabId[staleTabId], false);
-            _diagramViewModelsByTabId.Remove(staleTabId);
+            _dockFactory.RemoveDockable(_tabViewModelsByTabId[staleTabId], false);
+            _tabViewModelsByTabId.Remove(staleTabId);
         }
 
         // Refresh the active tab's title and repaint it in place.
-        if (_shell.ActiveTabId is { } activeTabId && _diagramViewModelsByTabId.TryGetValue(activeTabId, out var activeViewModel))
+        if (_shell.ActiveTabId is { } activeTabId && _tabViewModelsByTabId.TryGetValue(activeTabId, out var activeViewModel))
         {
             var activeTab = _shell.OpenTabs.First(tab => tab.Id == activeTabId);
             activeViewModel.Title = activeTab.Title;
-            activeViewModel.RaiseDiagramChanged();
+
+            if (activeViewModel is DiagramDocumentViewModel diagram)
+            {
+                diagram.RaiseDiagramChanged();
+            }
 
             _dockFactory.SetActiveDockable(activeViewModel);
             _dockFactory.SetFocusedDockable(_dockFactory.DiagramDock, activeViewModel);

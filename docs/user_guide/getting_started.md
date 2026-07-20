@@ -84,6 +84,15 @@ no concrete view definition can be derived for the tab, for example an
 unscoped predefined view or a custom-view preview tab that has not yet been
 rendered.
 
+## Viewing a File's Raw Source
+
+Double-click any `.sysml` file in the **Workspace** panel's tree to open its
+raw source text, read-only, with SysML v2 syntax highlighting, in its own
+tab in the same tabbed area as diagram tabs. Double-clicking the same file
+again switches focus to its already-open tab instead of opening a
+duplicate. This is a view-only capability - editing and saving `.sysml`
+files is a future phase (see "Out of Scope" below).
+
 ## Building a Custom View
 
 Choose **View > Custom View Builder...** to open the View Builder dialog. The

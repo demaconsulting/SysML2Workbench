@@ -23,8 +23,9 @@ user is in predefined-view mode.
 the user is composing a preview.
 
 **OpenTabs**: `IReadOnlyList<WorkbenchTab>` — tabs representing rendered
-diagrams, builder surfaces, or related shell content. Each `WorkbenchTab`
-owns its own `SvgCanvasHost`, so multiple open diagram tabs have fully
+diagrams, builder surfaces, read-only source-text views, or related shell
+content. Each `WorkbenchTab` owns its own `SvgCanvasHost` (unused/never
+loaded for a source-text tab), so multiple open diagram tabs have fully
 independent zoom/pan/content state.
 
 **ActiveTabId**: `string?` — identifier of the diagram tab currently
@@ -41,7 +42,17 @@ Each `WorkbenchTab` also carries a `SourceDefinition: ViewDefinitionModel?` —
 the definition that produced the tab's currently rendered diagram, or `null`
 when none could be derived (an unscoped predefined view with zero expose
 members, or a brand-new custom-preview tab that has not rendered anything
-yet). This backs the tab's "Copy as SysML" context-menu action.
+yet, or a source-text tab, which has no rendered diagram at all). This backs
+the tab's "Copy as SysML" context-menu action.
+
+`WorkbenchTab` also carries a `FilePath: string?` — the absolute path of the
+file a source-text tab displays; `null` for predefined-view and
+custom-view-preview tabs. `WorkbenchTabKind` has a corresponding
+`SourceText` member alongside `PredefinedView` and `CustomViewPreview`.
+`WorkbenchTab.Id` for a source-text tab is the file's own absolute path,
+which both gives it a stable dedupe key (opening the same file twice
+re-focuses the existing tab rather than duplicating it) and lets
+`GetTabFilePath` resolve it without exposing `OpenTabs` internals further.
 
 #### Key Methods
 
@@ -151,6 +162,35 @@ UI focus.
   when Dock reports a focus change onto a diagram document - never by
   `MainWindowShell` itself, which stays Dock-agnostic.
 
+**OpenSourceTextTab**: Opens a read-only source-text tab for a given file
+path.
+
+- *Parameters*: `string filePath` — absolute path of the `.sysml` file to
+  display.
+- *Returns*: `WorkbenchTab` — the newly opened tab, or the already-open tab
+  for the same path if one exists.
+- *Postconditions*: If a source-text tab for `filePath` is already open, it
+  is reused (its `FilePath` is left unchanged) and refocused rather than
+  duplicated; otherwise a new `WorkbenchTabKind.SourceText` tab is appended,
+  titled with the file's own name (`Path.GetFileName`) and identified by the
+  file's absolute path. Either way the tab becomes `ActiveTabId` and
+  `TabsChanged` is raised. Backs `WorkspacePanelToolView`'s double-click
+  handler; the view built for a source-text tab
+  (`SourceTextDocumentView`/`SourceTextDocumentViewModel`, see "Supporting
+  Types" below) reads the file's contents directly rather than through
+  `MainWindowShell`, which never loads file text itself.
+
+**GetTabFilePath**: Resolves the file path of an open source-text tab.
+
+- *Parameters*: `string tabId` — identifier of an open tab.
+- *Returns*: `string?` — the tab's `FilePath`, or `null` when `tabId` does
+  not refer to a currently open tab, or refers to a tab of a different kind
+  (whose `FilePath` is always `null`). Mirrors the existing `GetTabCanvas`
+  lookup pattern.
+- *Postconditions*: None (read-only). Lets `SourceTextDocumentViewModel`
+  resolve which file it displays without `MainWindowShell` needing to
+  expose `OpenTabs` internals further.
+
 **CanExportTabAsSysml**: Reports whether an open diagram tab has a derivable
 source definition and can export its diagram as a SysML snippet.
 
@@ -170,6 +210,20 @@ the diagram currently rendered in an open tab.
   (an expected, valid outcome, not a failure) rather than thrown; a
   successful export is also logged at `Info` level, mirroring
   `ExportCustomViewSnippet`'s existing style.
+
+#### Supporting Types
+
+**SourceTextDocumentViewModel**/**SourceTextDocumentView**: the Dock
+`Document`/view pair backing a source-text tab, following the same
+convention already used for `DiagramDocumentViewModel`/`DiagramDocumentView`
+(neither pair is a separately documented unit). `SourceTextDocumentViewModel`
+resolves its file path via `GetTabFilePath`, sets its `Title` to
+`Path.GetFileName(FilePath)`, and eagerly loads `Text` via `File.ReadAllText`
+once at construction, substituting a friendly in-editor error message for a
+deleted or locked file instead of throwing (no caching, no file-watch, no
+write-back). `SourceTextDocumentView` hosts a read-only AvaloniaEdit
+`TextEditor` with SysML v2 syntax highlighting (see
+`docs/design/ots/avaloniaedit.md`).
 
 #### Error Handling
 
@@ -218,6 +272,9 @@ the time subscribers observe the notification.
   notifications onto the thread required by UI-facing subscribers; defaults
   to an immediate, synchronous dispatcher when none is supplied.
 - **Avalonia** — provides the window, tab, and application-lifetime framework.
+- **AvaloniaEdit** — provides the read-only, syntax-highlighted `TextEditor`
+  control hosted by `SourceTextDocumentView` (see
+  `docs/design/ots/avaloniaedit.md`).
 
 #### Callers
 

@@ -694,4 +694,83 @@ public sealed class MainWindowShellTests : IDisposable
         Assert.Empty(shell.CurrentWorkspace.Files);
         Assert.NotNull(shell.CurrentWorkspace.Workspace);
     }
+
+    /// <summary>
+    ///     Validates that opening a source-text tab for a file creates exactly one new tab, makes it active, and
+    ///     raises <see cref="MainWindowShell.TabsChanged" />.
+    /// </summary>
+    [Fact]
+    public async Task OpenSourceTextTab_NewFile_CreatesOneNewActiveTab()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var raisedCount = 0;
+        shell.TabsChanged += (_, _) => raisedCount++;
+
+        // Act
+        var tab = shell.OpenSourceTextTab(filePath);
+
+        // Assert
+        Assert.Single(shell.OpenTabs);
+        Assert.Equal(tab.Id, shell.ActiveTabId);
+        Assert.Equal(WorkbenchTabKind.SourceText, tab.Kind);
+        Assert.Equal(1, raisedCount);
+    }
+
+    /// <summary>
+    ///     Validates that opening a source-text tab for a path that is already open re-focuses the existing tab
+    ///     instead of duplicating it, while still raising <see cref="MainWindowShell.TabsChanged" /> for the
+    ///     re-focus.
+    /// </summary>
+    [Fact]
+    public async Task OpenSourceTextTab_SamePathTwice_RefocusesExistingTabWithoutDuplicating()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var firstTab = shell.OpenSourceTextTab(filePath);
+
+        // Open an unrelated tab so the source-text tab is no longer active, then re-open the same path.
+        var otherFilePath = Path.Combine(_tempRoot, "Other.sysml");
+        await File.WriteAllTextAsync(otherFilePath, "package Other {}\n", TestContext.Current.CancellationToken);
+        shell.OpenSourceTextTab(otherFilePath);
+
+        var raisedCount = 0;
+        shell.TabsChanged += (_, _) => raisedCount++;
+
+        // Act
+        var reopenedTab = shell.OpenSourceTextTab(filePath);
+
+        // Assert
+        Assert.Equal(2, shell.OpenTabs.Count);
+        Assert.Equal(firstTab.Id, reopenedTab.Id);
+        Assert.Equal(reopenedTab.Id, shell.ActiveTabId);
+        Assert.Equal(1, raisedCount);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.GetTabFilePath" /> returns the correct path for an open
+    ///     source-text tab, and <see langword="null" /> for a nonexistent tab id or a tab of a different kind.
+    /// </summary>
+    [Fact]
+    public async Task GetTabFilePath_ReturnsPathForSourceTextTab_AndNullOtherwise()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var sourceTextTab = shell.OpenSourceTextTab(filePath);
+        var view = shell.ViewCatalog.AvailableViews[0];
+        shell.SelectPredefinedView(view.QualifiedName);
+        var diagramTabId = shell.ActiveTabId!;
+
+        // Act / Assert
+        Assert.Equal(filePath, shell.GetTabFilePath(sourceTextTab.Id));
+        Assert.Null(shell.GetTabFilePath(diagramTabId));
+        Assert.Null(shell.GetTabFilePath("not-a-real-tab"));
+    }
 }
