@@ -11,7 +11,7 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 /// <summary>
 ///     Thin Avalonia code-behind for the main application window. All region-specific orchestration and
 ///     validation logic is delegated to <see cref="MainWindowShell" /> (via the panel view models this class
-///     composes into a Dock layout); this class only builds that layout, wires the File and View menus, forwards
+///     composes into a Dock layout); this class only builds that layout, wires the File, View, and Help menus, forwards
 ///     Dock's own focus/close signals to <see cref="MainWindowShell" />, and reconciles the shell's
 ///     <see cref="MainWindowShell.OpenTabs" /> against the Dock <see cref="WorkbenchDockFactory.DiagramDock" />.
 ///     The View menu lets a user restore a Tool panel that was closed through Dock's own chrome, reusing the same
@@ -121,6 +121,15 @@ public partial class MainWindowView : Window
     private void OnExitMenuItemClick(object? sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    /// <summary>
+    ///     Handles the Help menu's "About" click by showing the modal About dialog, owned by this window.
+    /// </summary>
+    private async void OnAboutMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new AboutDialogView();
+        await dialog.ShowDialog(this);
     }
 
     /// <summary>

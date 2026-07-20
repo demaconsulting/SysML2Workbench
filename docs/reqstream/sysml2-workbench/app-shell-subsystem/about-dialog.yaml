@@ -1,0 +1,28 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'AppShellSubsystem Requirements'
+        sections:
+          - title: 'AboutDialog Requirements'
+            requirements:
+              - id: 'SysML2Workbench-AppShellSubsystem-AboutDialog-ExposeApplicationInfo'
+                title: 'The AboutDialog shall present the application name, tagline, the running
+                  assembly''s build-stamped version, and copyright text.'
+                justification: |
+                  Users need a standard way to identify which build of the application they are
+                  running and who owns/licenses it, without requiring a hard-coded version string
+                  that would drift from the actual CI-stamped build.
+                tests:
+                  - 'Construction_ExposesApplicationNameAndTagline'
+                  - 'Construction_ExposesVersionFromAssembly'
+                  - 'Construction_ExposesCopyrightText'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-AboutDialog-ListKeyDependencies'
+                title: 'The AboutDialog shall present a read-only list of the application''s key
+                  OSS dependencies, each with its name and license type.'
+                justification: |
+                  Users and reviewers need visible attribution of the OSS libraries the
+                  application is built on and their license terms.
+                tests:
+                  - 'Construction_ExposesDependencyList_ContainsExpectedEntries'

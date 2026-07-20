@@ -51,6 +51,13 @@
           </MenuItem.Icon>
         </MenuItem>
       </MenuItem>
+      <MenuItem Header="_Help">
+        <MenuItem Name="AboutMenuItem" Header="_About" Click="OnAboutMenuItemClick">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="InformationOutline" />
+          </MenuItem.Icon>
+        </MenuItem>
+      </MenuItem>
     </Menu>
 
     <dock:DockControl Name="WorkbenchDockControl">
