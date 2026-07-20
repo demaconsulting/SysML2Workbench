@@ -305,7 +305,11 @@ reviews:
       - docs/design/sysml2-workbench/app-shell-subsystem/main-window-shell.md
       - docs/verification/sysml2-workbench/app-shell-subsystem/main-window-shell.md
       - src/**/AppShellSubsystem/MainWindowShell.cs
+      - src/**/AppShellSubsystem/SourceTextDocumentViewModel.cs
+      - src/**/AppShellSubsystem/SourceTextDocumentView.axaml
+      - src/**/AppShellSubsystem/SourceTextDocumentView.axaml.cs
       - test/**/AppShellSubsystem/MainWindowShellTests.cs
+      - test/**/AppShellSubsystem/SourceTextDocumentViewModelTests.cs
   - id: SysML2Workbench-AppShellSubsystem-WorkspacePanel
     title: Review that SysML2Workbench AppShellSubsystem WorkspacePanel Implementation
       is Correct
@@ -390,3 +394,10 @@ reviews:
       - docs/reqstream/ots/communitytoolkit-mvvm.yaml
       - docs/design/ots/communitytoolkit-mvvm.md
       - docs/verification/ots/communitytoolkit-mvvm.md
+  - id: OTS-AvaloniaEdit
+    title: Review that AvaloniaEdit Provides Required Functionality
+    paths:
+      - docs/reqstream/ots/avaloniaedit.yaml
+      - docs/design/ots/avaloniaedit.md
+      - docs/verification/ots/avaloniaedit.md
+      - test/OtsSoftwareTests/AvaloniaEditTests.cs

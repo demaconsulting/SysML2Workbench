@@ -13,6 +13,11 @@
     <FluentTheme />
     <DockFluentTheme />
     <materialIcons:MaterialIconStyles />
+
+    <!-- Required by AvaloniaEdit's TextEditor control: without this style include, TextEditor has no
+         control theme applied and renders as an invisible, unstyled control (see
+         https://github.com/AvaloniaUI/AvaloniaEdit#how-to-set-up-a-new-project-that-displays-an-avaloniaedit-editor). -->
+    <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
   </Application.Styles>
 
 </Application>

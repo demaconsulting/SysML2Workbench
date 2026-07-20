@@ -69,3 +69,12 @@ sections:
                 tests:
                   - 'RenderCustomViewPreview_DoesNotMutateOpenTabsOrActiveTab'
                   - 'RenderCustomViewPreview_NoWorkspaceOpened_ThrowsInvalidOperationException'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-OpenSourceTextTab'
+                title: 'The MainWindowShell shall open a read-only source-text tab for a given file path, reusing an already-open tab for the same path instead of duplicating it, and shall resolve an open source-text tab''s file path on request.'
+                justification: |
+                  Double-clicking a .sysml file in the workspace tree must open its raw text in its own tab without duplicating tabs on repeated double-clicks, and the resulting view model needs a way to resolve which file it displays without MainWindowShell exposing OpenTabs internals further.
+                tests:
+                  - 'OpenSourceTextTab_NewFile_CreatesOneNewActiveTab'
+                  - 'OpenSourceTextTab_SamePathTwice_RefocusesExistingTabWithoutDuplicating'
+                  - 'GetTabFilePath_ReturnsPathForSourceTextTab_AndNullOtherwise'

@@ -31,6 +31,7 @@ OTS items:
   semantic model, layout engine).
 - **DemaConsulting.Rendering**: integration and usage design (SVG rendering).
 - **Avalonia**: integration and usage design (UI framework).
+- **AvaloniaEdit**: integration and usage design (read-only syntax-highlighted text editor control).
 - **xUnit**: integration and usage design (test framework).
 
 Out of scope: no Shared Packages exist in this repository. Design documents

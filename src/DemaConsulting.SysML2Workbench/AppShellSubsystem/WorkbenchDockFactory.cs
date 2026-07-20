@@ -46,6 +46,14 @@ public sealed class WorkbenchDockFactory : Factory
     public event EventHandler<DiagramDocumentViewModel>? DiagramTabClosed;
 
     /// <summary>
+    ///     Raised after a <see cref="SourceTextDocumentViewModel" /> is closed through Dock's own chrome (or any
+    ///     other path that ultimately calls <c>CloseDockable</c>), so <see cref="MainWindowView" /> can retire the
+    ///     corresponding <see cref="WorkbenchTab" /> from <see cref="MainWindowShell" />. Additive alongside
+    ///     <see cref="DiagramTabClosed" />, which is left untouched.
+    /// </summary>
+    public event EventHandler<SourceTextDocumentViewModel>? SourceTextTabClosed;
+
+    /// <summary>
     ///     Creates the dock layout factory over the three already-constructed Tool panel view models. The diagram
     ///     <see cref="DocumentDock" /> is populated dynamically at runtime rather than at construction time - see
     ///     <see cref="DiagramDock" />.
@@ -144,6 +152,10 @@ public sealed class WorkbenchDockFactory : Factory
         if (dockable is DiagramDocumentViewModel diagramDocument)
         {
             DiagramTabClosed?.Invoke(this, diagramDocument);
+        }
+        else if (dockable is SourceTextDocumentViewModel sourceTextDocument)
+        {
+            SourceTextTabClosed?.Invoke(this, sourceTextDocument);
         }
     }
 }

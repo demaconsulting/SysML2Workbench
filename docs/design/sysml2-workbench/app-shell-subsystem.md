@@ -65,9 +65,13 @@ environment.
    discarded on close rather than living in the persistent Dock layout. The
    diagram area hosts zero or more independently closable diagram
    Documents - one per open `WorkbenchTab`, each bound to its own
-   `SvgCanvasHost` - and the Dock `DocumentDock` container itself remains
-   visibly present even when no diagram tab is open, so an empty diagram
-   area is a normal, supported state rather than a dead end. MainWindowShell
+   `SvgCanvasHost` - and the same `DocumentDock` container also hosts
+   independently closable read-only source-text Documents, one per
+   `WorkbenchTab` opened via double-click from the workspace tree, sharing
+   the diagram tabs' tabbed presentation area - and the Dock `DocumentDock`
+   container itself remains visibly present even when no diagram tab is
+   open, so an empty diagram area is a normal, supported state rather than
+   a dead end. MainWindowShell
    itself has no dependency on Avalonia or Dock and is unaware of how its
    panels are arranged on screen.
 7. A workspace with zero sources open is a first-class, non-error state, not

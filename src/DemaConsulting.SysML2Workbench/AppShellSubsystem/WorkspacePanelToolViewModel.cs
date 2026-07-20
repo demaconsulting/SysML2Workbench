@@ -71,8 +71,9 @@ public sealed class WorkspaceFolderNode : WorkspaceTreeNode
 
 /// <summary>
 ///     A leaf tree node representing one file contributed by a source. Its <see cref="FilePath" /> is a stable
-///     identity intended for a future (out of scope for this feature) double-click read-only file viewer; it must
-///     not be erased or aggregated away even though nothing currently reads it beyond display.
+///     identity used by <see cref="WorkspacePanelToolView" />'s double-click handler to open a read-only
+///     source-text tab via <see cref="MainWindowShell.OpenSourceTextTab" />; it must not be erased or aggregated
+///     away even though nothing else currently reads it beyond display.
 /// </summary>
 public sealed class WorkspaceFileNode : WorkspaceTreeNode
 {

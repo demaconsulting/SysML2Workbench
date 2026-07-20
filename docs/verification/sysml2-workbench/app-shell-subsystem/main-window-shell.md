@@ -115,3 +115,17 @@ serialize - it is reported gracefully rather than throwing. Verified by
 **CanExportTabAsSysml_MirrorsExportability**: `CanExportTabAsSysml` mirrors the same true/false outcomes as
 `ExportTabAsSysmlSnippet` across the exportable and unknown-tab cases. Verified by
 `MainWindowShellTests.CanExportTabAsSysml_MirrorsExportability`.
+
+**OpenSourceTextTab_NewFile_CreatesOneNewActiveTab**: Opening a source-text tab for a file path that has no
+already-open tab creates exactly one new tab, of kind `SourceText`, and makes it active. Verified by
+`MainWindowShellTests.OpenSourceTextTab_NewFile_CreatesOneNewActiveTab`.
+
+**OpenSourceTextTab_SamePathTwice_RefocusesExistingTabWithoutDuplicating**: Opening a source-text tab for the same
+file path a second time, after another tab has taken focus, reuses the existing tab and refocuses it rather than
+duplicating it - the open-tab count is unchanged, and `TabsChanged` is raised on both the first and second calls.
+Verified by `MainWindowShellTests.OpenSourceTextTab_SamePathTwice_RefocusesExistingTabWithoutDuplicating`.
+
+**GetTabFilePath_ReturnsPathForSourceTextTab_AndNullOtherwise**: `GetTabFilePath` returns the correct file path for
+an open source-text tab, and `null` for a tab id that does not refer to any currently open tab, or that refers to
+a tab of a different kind. Verified by
+`MainWindowShellTests.GetTabFilePath_ReturnsPathForSourceTextTab_AndNullOtherwise`.
