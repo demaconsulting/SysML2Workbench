@@ -1,3 +1,4 @@
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
@@ -179,6 +180,133 @@ public sealed class AvaloniaTests : IDisposable
         Assert.Equal(expectedSnippet, clipboardText);
 
         window.Close();
+    }
+
+    /// <summary>
+    ///     Regression test for the "Copy as SysML always returns the last-created custom view" bug: opening the
+    ///     View Builder's real "OK" commit sequence twice (<see cref="MainWindowShell.OpenNewCustomPreviewTab" />
+    ///     immediately followed by <see cref="MainWindowShell.PreviewCustomView" />, exactly as
+    ///     <c>ViewBuilderDialogViewModel.TryCommit</c> does) creates two distinct, real
+    ///     <see cref="DiagramDocumentView" /> tabs hosted by the real Dock-composed <see cref="MainWindowView" />.
+    ///     Selecting the first tab and copying must yield the first view's snippet, not the second (previously
+    ///     failing because <c>DiagramDocumentView.OnDataContextChanged</c> bound the clipboard service only once
+    ///     per view model via <c>??=</c>, so re-selecting a tab whose view had been detached and later
+    ///     re-attached left its clipboard write silently targeting a stale, detached anchor).
+    /// </summary>
+    [AvaloniaFact]
+    public async Task DiagramContextMenu_CopyAsSysml_TwoCustomViewTabs_EachCopiesItsOwnSnippet()
+    {
+        // Arrange
+        await File.WriteAllTextAsync(
+            Path.Combine(_tempRoot, "Sample.sysml"),
+            "package Sample {\n"
+            + "    part def Engine;\n"
+            + "    part def Gearbox;\n"
+            + "}\n");
+        using var shell = CreateShell();
+        var window = new MainWindowView(shell);
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        await shell.AddFolderSourceAsync(_tempRoot);
+        Dispatcher.UIThread.RunJobs();
+
+        // Act: commit the first custom view (General diagram over Engine), mirroring ViewBuilderDialog's real
+        // OK-button sequence.
+        var firstDefinition = new ViewDefinitionModel();
+        firstDefinition.SetViewKind(ViewKind.General);
+        firstDefinition.AddExposeTarget("Sample::Engine");
+        shell.OpenNewCustomPreviewTab();
+        shell.PreviewCustomView(firstDefinition);
+        Dispatcher.UIThread.RunJobs();
+        var firstTabId = shell.ActiveTabId!;
+        var expectedFirstSnippet = shell.ExportTabAsSysmlSnippet(firstTabId);
+        Assert.NotNull(expectedFirstSnippet);
+
+        // Act: commit a second, distinct custom view (Interconnection diagram over Gearbox), which opens a
+        // second real tab/DiagramDocumentView rather than re-rendering the first in place.
+        var secondDefinition = new ViewDefinitionModel();
+        secondDefinition.SetViewKind(ViewKind.Interconnection);
+        secondDefinition.AddExposeTarget("Sample::Gearbox");
+        shell.OpenNewCustomPreviewTab();
+        shell.PreviewCustomView(secondDefinition);
+        Dispatcher.UIThread.RunJobs();
+        var secondTabId = shell.ActiveTabId!;
+        var expectedSecondSnippet = shell.ExportTabAsSysmlSnippet(secondTabId);
+        Assert.NotNull(expectedSecondSnippet);
+        Assert.NotEqual(firstTabId, secondTabId);
+        Assert.NotEqual(expectedFirstSnippet, expectedSecondSnippet);
+
+        // Act: switch back to the first tab and copy - this is the step that previously returned the second
+        // (last-created) tab's snippet regardless of which tab was actually active. Uses the real Dock factory's
+        // SetActiveDockable/SetFocusedDockable, exactly as Dock's own tab-header click handler does, so this
+        // faithfully reproduces a user clicking back to the first tab rather than merely poking shell state.
+        SelectDiagramTab(window, firstTabId);
+        Dispatcher.UIThread.RunJobs();
+        var firstCopiedSnippet = await CopyActiveTabAsSysmlAsync(window);
+
+        // Assert: the first tab's own snippet was copied, not the second tab's.
+        Assert.Equal(expectedFirstSnippet, firstCopiedSnippet);
+
+        // Act: switch to the second tab and copy too, confirming it still copies its own snippet correctly.
+        SelectDiagramTab(window, secondTabId);
+        Dispatcher.UIThread.RunJobs();
+        var secondCopiedSnippet = await CopyActiveTabAsSysmlAsync(window);
+
+        // Assert
+        Assert.Equal(expectedSecondSnippet, secondCopiedSnippet);
+
+        window.Close();
+    }
+
+    /// <summary>
+    ///     Selects the diagram document tab with the given tab id via the real Dock factory's
+    ///     <c>SetActiveDockable</c>/<c>SetFocusedDockable</c> - exactly what Dock's own tab-header click handler
+    ///     invokes - so the resulting <see cref="MainWindowShell.NotifyActiveDiagramTab" /> notification (raised
+    ///     through <see cref="MainWindowView" />'s <c>FocusedDockableChanged</c> forwarding) faithfully reflects a
+    ///     real user tab click rather than only updating shell-side bookkeeping. Reached via reflection since
+    ///     <see cref="MainWindowView" />'s Dock factory and per-tab view-model tracking are private implementation
+    ///     details not otherwise exposed to tests.
+    /// </summary>
+    private static void SelectDiagramTab(MainWindowView window, string tabId)
+    {
+        var windowType = typeof(MainWindowView);
+        var dockFactoryField = windowType.GetField("_dockFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+        var tabViewModelsField = windowType.GetField("_tabViewModelsByTabId", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(dockFactoryField);
+        Assert.NotNull(tabViewModelsField);
+
+        var dockFactory = (WorkbenchDockFactory)dockFactoryField!.GetValue(window)!;
+        var tabViewModels = (Dictionary<string, Dock.Model.Mvvm.Controls.Document>)tabViewModelsField!.GetValue(window)!;
+        var tabViewModel = tabViewModels[tabId];
+
+        dockFactory.SetActiveDockable(tabViewModel);
+        dockFactory.SetFocusedDockable(dockFactory.DiagramDock, tabViewModel);
+    }
+
+    /// <summary>
+    ///     Drives the real "Copy as SysML" context-menu <c>MenuItem</c> for whichever <see cref="DiagramDocumentView" />
+    ///     is currently hosted by <paramref name="window" />, and returns whatever text ends up on the headless
+    ///     platform's real clipboard afterward.
+    /// </summary>
+    private static async Task<string?> CopyActiveTabAsSysmlAsync(MainWindowView window)
+    {
+        var diagramBorder = FindByName<Border>(window, "DiagramBorder");
+        Assert.NotNull(diagramBorder);
+        var contextMenu = diagramBorder!.ContextMenu;
+        Assert.NotNull(contextMenu);
+        contextMenu!.Open(diagramBorder);
+        Dispatcher.UIThread.RunJobs();
+
+        var copyMenuItem = FindByName<MenuItem>(window, "CopyAsSysmlMenuItem");
+        Assert.NotNull(copyMenuItem);
+        Assert.True(copyMenuItem!.IsEnabled);
+        copyMenuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        var clipboard = TopLevel.GetTopLevel(window)?.Clipboard;
+        Assert.NotNull(clipboard);
+        return await clipboard!.TryGetTextAsync();
     }
 
     /// <summary>
