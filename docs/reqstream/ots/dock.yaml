@@ -5,11 +5,11 @@ sections:
       - title: 'Dock Requirements'
         requirements:
           - id: 'Dock-ComposeResizableDockLayout'
-            title: 'The SysML2Workbench shall use AvaloniaUI/Dock to compose its four Phase-0 panels into a resizable, floatable, closable layout.'
+            title: 'The SysML2Workbench shall use AvaloniaUI/Dock to compose its three Phase-0 panels into a resizable, floatable, closable layout.'
             justification: |
               Dock provides the panel-docking layout engine required to replace the fixed four-region layout with one users can resize, float, and close.
             tests:
-              - 'CreateLayout_ComposesFourPanelDockables'
+              - 'CreateLayout_ComposesThreePanelDockables'
 
           - id: 'Dock-HostLayoutInDockControl'
             title: 'The SysML2Workbench shall use Dock.Avalonia''s DockControl to host the composed panel layout inside the main window.'

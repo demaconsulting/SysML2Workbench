@@ -40,14 +40,15 @@
             <mi:MaterialIcon Kind="ViewList" />
           </MenuItem.Icon>
         </MenuItem>
-        <MenuItem Name="CustomViewBuilderMenuItem" Header="_Custom View Builder" Click="OnCustomViewBuilderMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}">
-          <MenuItem.Icon>
-            <mi:MaterialIcon Kind="PencilRuler" />
-          </MenuItem.Icon>
-        </MenuItem>
         <MenuItem Name="DiagnosticsMenuItem" Header="_Diagnostics" Click="OnDiagnosticsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}">
           <MenuItem.Icon>
             <mi:MaterialIcon Kind="AlertCircleOutline" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <Separator />
+        <MenuItem Name="ViewBuilderDialogMenuItem" Header="_Custom View Builder..." Click="OnOpenViewBuilderDialogClick">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="PencilRuler" />
           </MenuItem.Icon>
         </MenuItem>
       </MenuItem>

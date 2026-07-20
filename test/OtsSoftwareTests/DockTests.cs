@@ -21,7 +21,7 @@ namespace OtsSoftwareTests;
 
 /// <summary>
 ///     Verifies the OTS Dock requirements in docs/reqstream/ots/dock.yaml: that
-///     <see cref="WorkbenchDockFactory" /> genuinely composes a Dock layout from the four Phase-0 panel view
+///     <see cref="WorkbenchDockFactory" /> genuinely composes a Dock layout from the three Phase-0 panel view
 ///     models, and that Avalonia's real <see cref="DockControl" /> can host that layout, using Avalonia's
 ///     headless test platform (<see cref="AvaloniaFactAttribute" />) rather than a mocked or hand-rolled harness.
 /// </summary>
@@ -59,15 +59,14 @@ public sealed class DockTests : IDisposable
     ///     partial one.
     /// </summary>
     [Fact]
-    public void CreateLayout_ComposesFourPanelDockables()
+    public void CreateLayout_ComposesThreePanelDockables()
     {
         // Arrange
         using var shell = CreateShell();
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
-        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
         var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, diagnosticsViewModel, workspacePanelViewModel);
 
         // Act
         var layout = factory.CreateLayout();
@@ -79,7 +78,6 @@ public sealed class DockTests : IDisposable
         Assert.NotNull(layout);
         var dockables = CollectDockables(layout).ToList();
         Assert.Contains(predefinedViewsViewModel, dockables);
-        Assert.Contains(customViewBuilderViewModel, dockables);
         Assert.Contains(diagnosticsViewModel, dockables);
         Assert.Contains(diagramViewModel, dockables);
     }
@@ -94,10 +92,9 @@ public sealed class DockTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
-        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
         var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
         factory.AddDockable(factory.DiagramDock, new DiagramDocumentViewModel(shell, "tab-1"));
@@ -128,10 +125,9 @@ public sealed class DockTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
-        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
         var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
 
@@ -180,10 +176,9 @@ public sealed class DockTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
-        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
         var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
 
@@ -216,10 +211,9 @@ public sealed class DockTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
-        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
         var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
 
@@ -265,10 +259,9 @@ public sealed class DockTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var predefinedViewsViewModel = new PredefinedViewsToolViewModel(shell);
-        var customViewBuilderViewModel = new CustomViewBuilderToolViewModel(shell);
         var diagnosticsViewModel = new DiagnosticsToolViewModel(shell);
         var workspacePanelViewModel = new WorkspacePanelToolViewModel(shell);
-        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, customViewBuilderViewModel, diagnosticsViewModel, workspacePanelViewModel);
+        var factory = new WorkbenchDockFactory(predefinedViewsViewModel, diagnosticsViewModel, workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
 

@@ -9,9 +9,8 @@ the workspace's file and folder sources as a tree, and accepts drag-and-drop
 of files/folders as an alternative to picker dialogs. It is documented as one
 unit covering both `WorkspacePanelToolViewModel` (the presentation/command
 logic) and `WorkspacePanelToolView` (the Avalonia `TreeView`-based Dock tool
-view), matching the pairing convention used by the other three tool panels
-(`PredefinedViewsToolViewModel`/`View`, `CustomViewBuilderToolViewModel`/
-`View`, `DiagnosticsToolViewModel`/`View`).
+view), matching the pairing convention used by the other two tool panels
+(`PredefinedViewsToolViewModel`/`View`, `DiagnosticsToolViewModel`/`View`).
 
 #### Data Model
 
@@ -117,7 +116,7 @@ exception path as picker-driven adds.
   view; the view (not the view model) owns `StorageProvider` pickers and
   `DragDrop` handling.
 - **Dock** — `WorkspacePanelToolViewModel` is a `Dock.Model.Mvvm.Controls.Tool`,
-  hosted in `WorkbenchDockFactory`'s layout alongside the other three panels.
+  hosted in `WorkbenchDockFactory`'s layout alongside the other two panels.
 
 #### Callers
 

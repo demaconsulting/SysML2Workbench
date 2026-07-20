@@ -338,6 +338,22 @@ reviews:
       - src/**/AppShellSubsystem/AboutDialogView.axaml
       - src/**/AppShellSubsystem/AboutDialogView.axaml.cs
       - test/**/AppShellSubsystem/AboutDialogViewModelTests.cs
+  - id: SysML2Workbench-AppShellSubsystem-ViewBuilderDialog
+    title: Review that SysML2Workbench AppShellSubsystem ViewBuilderDialog Implementation
+      is Correct
+    context:
+      - docs/design/sysml2-workbench.md
+      - docs/reqstream/sysml2-workbench.yaml
+      - docs/design/sysml2-workbench/app-shell-subsystem.md
+      - docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml
+    paths:
+      - docs/reqstream/sysml2-workbench/app-shell-subsystem/view-builder-dialog.yaml
+      - docs/design/sysml2-workbench/app-shell-subsystem/view-builder-dialog.md
+      - docs/verification/sysml2-workbench/app-shell-subsystem/view-builder-dialog.md
+      - src/**/AppShellSubsystem/ViewBuilderDialogViewModel.cs
+      - src/**/AppShellSubsystem/ViewBuilderDialogView.axaml
+      - src/**/AppShellSubsystem/ViewBuilderDialogView.axaml.cs
+      - test/**/AppShellSubsystem/ViewBuilderDialogViewModelTests.cs
   - id: OTS-DemaConsultingSysML2Tools
     title: Review that DemaConsulting.SysML2Tools Provides Required Functionality
     paths:

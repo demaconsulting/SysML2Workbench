@@ -38,16 +38,14 @@ for setup prerequisites.
    (bottom) lists any parser or reference-resolution problems found across
    the whole workspace. Panels are docked in this default arrangement but can
    be resized, floated, or closed like any other dockable panel. If you
-   close the **Workspace**, **Predefined Views**, **Custom View Builder**, or
-   **Diagnostics** panel, reopen it from the **View** menu - selecting it
-   there restores the panel to its original dock without losing any
-   in-progress state (for example, a partially-built custom view).
+   close the **Workspace**, **Predefined Views**, or **Diagnostics** panel,
+   reopen it from the **View** menu - selecting it there restores the panel
+   to its original dock without losing any in-progress state.
 5. Removing every source returns the workspace to its empty starting state:
-   the **Predefined Views**, **Custom View Builder**, and **Diagnostics**
-   panels each show a friendly "workspace is empty" message instead of
-   rendering against nothing, and any open diagram tabs are closed. This is
-   the same state the application starts in before any source is added, not
-   an error condition.
+   the **Predefined Views** and **Diagnostics** panels each show a friendly
+   "workspace is empty" message instead of rendering against nothing, and
+   any open diagram tabs are closed. This is the same state the application
+   starts in before any source is added, not an error condition.
 
 While a workspace is open, SysML2Workbench watches every added file and
 folder independently for external changes. If you edit a `.sysml` file in
@@ -88,41 +86,41 @@ rendered.
 
 ## Building a Custom View
 
-The **Custom View Builder** panel (right side, dockable) lets you construct an
-ad-hoc view without writing SysML syntax:
+Choose **View > Custom View Builder...** to open the View Builder dialog. The
+dialog shows a live SVG preview on the left and a set of tabs on the right for
+composing the view; every edit on the right immediately re-renders the
+preview on the left, so you always see the current result before committing
+to it.
 
-1. Pick a **View Kind** from the dropdown (General, Interconnection, State
+1. On the **View Kind** tab, pick a kind (General, Interconnection, State
    Transition, Action Flow, Sequence, or Grid).
-2. In the **Available** list, select an element or package from the loaded
-   workspace and click **Add →** to move it into **Selected**. Repeat for
-   every element or package you want exposed - custom views support multiple
-   exposed elements, just like a hand-written SysML view.
-3. For each row in **Selected**, choose its **recursion kind** from the
-   dropdown - *This element only*, *This element + everything below
-   (::\*\*)* (the default), *Direct children only (::\*)*, or *All
-   descendants, not itself (::\*::\*\*)* - and optionally enter a
+2. On the **Expose Targets** tab, pick an element or package from the loaded
+   workspace and click **Add** to add it to the exposed-targets list. Repeat
+   for every element or package you want exposed - custom views support
+   multiple exposed elements, just like a hand-written SysML view. For each
+   row, choose its **recursion kind** - *This element only*, *This element +
+   everything below (::\*\*)* (the default), *Direct children only (::\*)*,
+   or *All descendants, not itself (::\*::\*\*)* - and optionally enter a
    **bracket-filter expression** (enabled only for the two recursive kinds)
    to narrow that target's exposed membership. Click **Remove** to drop a
    row entirely.
-4. Optionally enter a **Filter Expression** to narrow what is included.
-5. Optionally enter a **View Name** - otherwise a default name is used.
-6. Click **Preview** to render the custom view live. If the currently
-   focused tab is already a custom-view preview, it is updated in place;
-   otherwise a new tab opens for it. Click **+ New Diagram Tab** to
-   explicitly open a fresh, empty preview tab first (for example, to compare
-   two custom-view iterations side by side in separate tabs) - the next
-   **Preview** click then renders into that tab. Every preview tab supports
-   the same pan/zoom controls as a predefined-view tab.
-7. Click **Copy as SysML** to copy valid `view ... expose ...` SysML v2 text
-   to the clipboard. Each `expose` target is emitted using its exact
-   qualified name and selected recursion kind/bracket filter; Phase 0 does
-   not support renaming an exposed target (there is no `as` alias support),
-   regardless of whether a custom view name was supplied. Paste this into a
-   `.sysml` file to promote the
-   ephemeral preview into a permanent, version-controlled view definition.
-   The same right-click **Copy as SysML** context menu described in
-   "Browsing Predefined Views" is also available on this preview's diagram
-   tab, not just the panel's own button.
+3. On the **Filter & Name** tab, optionally enter a **Filter Expression** to
+   narrow what is included, and optionally enter a **View Name** - otherwise
+   a default name is used.
+4. Click **OK** to commit the current definition as a brand-new diagram tab
+   in the main window, and the dialog closes. Click **Cancel** at any point
+   to discard the whole editing session instead - the dialog simply closes
+   and nothing changes in the main window, no matter how much you had
+   composed.
+
+Every diagram tab produced this way - like a predefined-view tab - supports
+right-click > **Copy as SysML** to copy that tab's `view { ... }` SysML v2
+text to the clipboard. Each `expose` target is emitted using its exact
+qualified name and selected recursion kind/bracket filter; Phase 0 does not
+support renaming an exposed target (there is no `as` alias support),
+regardless of whether a custom view name was supplied. Paste this into a
+`.sysml` file to promote the ephemeral preview into a permanent,
+version-controlled view definition.
 
 Custom views built in the GUI are **session-only** - they are not saved to
 disk by SysML2Workbench itself. The "Copy as SysML" snippet is the only way

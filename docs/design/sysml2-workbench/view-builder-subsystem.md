@@ -48,7 +48,8 @@ targets.
 1. ViewDefinitionModel stores the currently selected view kind, target set, and
    filter expression for the active custom view.
 2. AppShellSubsystem binds user edits into that model and requests validation
-   against the loaded workspace.
+   against the loaded workspace, now through the modal `ViewBuilderDialog`
+   rather than a docked panel.
 3. LayoutRenderingSubsystem consumes the normalized definition when the user
    previews a custom view.
 4. SysmlSnippetGenerator converts the same definition into copy-pasteable SysML

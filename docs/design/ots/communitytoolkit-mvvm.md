@@ -16,7 +16,7 @@ fields and change notification, keeping each panel view model thin.
 
 - **`[ObservableProperty]` source generator** — generates bindable
   properties with change notification on `PredefinedViewsToolViewModel`,
-  `CustomViewBuilderToolViewModel`, and `DiagnosticsToolViewModel`.
+  `ViewBuilderDialogViewModel`, and `DiagnosticsToolViewModel`.
 - **Generated `On<Property>Changed` partial methods** — used to react to a
   predefined-view selection change and forward it to the shell.
 

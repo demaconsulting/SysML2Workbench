@@ -1,0 +1,79 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'AppShellSubsystem Requirements'
+        sections:
+          - title: 'ViewBuilderDialog Requirements'
+            requirements:
+              - id: 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-RefreshExposeTargetsFromWorkspace'
+                title: 'The ViewBuilderDialog shall populate its expose-target picker from the shell''s current
+                  workspace declarations, excluding stdlib names and node kinds that would fail validation, and
+                  shall report an empty-workspace state when zero sources are open.'
+                justification: |
+                  The user needs an accurate, workspace-derived list of candidate expose targets every time the
+                  dialog is opened, and a clear signal when there is nothing to expose yet.
+                tests:
+                  - 'Construction_RefreshesAvailableExposeTargetsFromWorkspace'
+                  - 'Construction_EmptyWorkspace_IsWorkspaceEmptyAndNoTargets'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-ManageExposeTargets'
+                title: 'The ViewBuilderDialog shall let the user add, remove, retarget the recursion kind of, and
+                  set an optional bracket-filter expression on expose targets.'
+                justification: |
+                  Composing a custom view requires full add/edit/remove control over which model elements are
+                  exposed and how, mirroring the semantics of the docked panel this dialog supersedes.
+                tests:
+                  - 'AddExposeTarget_AddsToDefinitionAndRaisesPreviewChanged'
+                  - 'RemoveExposeTarget_RemovesFromDefinitionAndRaisesPreviewChanged'
+                  - 'SetExposeRecursionKind_ChangesRecursionKindAndRaisesPreviewChanged'
+                  - 'SetExposeBracketFilter_SetsFilterAndRaisesPreviewChanged'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-LiveUpdatePreviewOnEveryEdit'
+                title: 'The ViewBuilderDialog shall re-render its own live SVG preview after every view-kind,
+                  expose-target, filter-expression, or display-name edit, without mutating any shell-tracked
+                  diagram tab, and shall surface an incomplete or invalid definition through StatusMessage
+                  rather than throwing.'
+                justification: |
+                  The user-facing goal is that "every change should update the rendered SVG view", and a
+                  mid-edit definition is routinely incomplete, so the preview must degrade to a friendly message
+                  instead of crashing the dialog.
+                tests:
+                  - 'SetViewKind_UpdatesDefinitionAndRaisesPreviewChanged'
+                  - 'SetFilterExpression_UpdatesDefinitionAndRaisesPreviewChanged'
+                  - 'RenderPreview_IncompleteDefinition_SetsStatusMessageInsteadOfThrowing'
+                  - 'RenderPreview_ValidDefinition_LoadsPreviewCanvasAndClearsStatusMessage'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-CommitCreatesNewDiagramTab'
+                title: 'The ViewBuilderDialog shall, on OK, open exactly one new diagram tab rendered with the
+                  composed definition and make it active; and if rendering fails, shall roll back the just-opened
+                  tab so no partial/empty tab is ever left open, reporting the failure through StatusMessage.'
+                justification: |
+                  The user-facing goal is that OK "create[s] a new tab with the diagram in it"; Risk #5 of the
+                  approved plan mandates the open-then-render-then-close-tab-on-failure sequence so a failed
+                  commit can never leak a stray empty tab into the shell.
+                tests:
+                  - 'TryCommit_ValidDefinition_OpensExactlyOneNewTabAndReturnsTrue'
+                  - 'TryCommit_InvalidDefinition_ReturnsFalseSetsStatusMessageAndDoesNotAddTab'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-CancelDiscardsWithoutSideEffects'
+                title: 'The ViewBuilderDialog shall perform zero calls into MainWindowShell''s tab-mutating
+                  surface unless and until TryCommit is called, so Cancel discards the whole editing session
+                  without any observable side effect on the shell.'
+                justification: |
+                  The user-facing goal is that "Cancel just dismisses the dialog box"; an editing session that is
+                  never committed must be indistinguishable, from the shell's perspective, from a dialog that was
+                  never opened at all.
+                tests:
+                  - 'EditingWithoutCommitting_LeavesShellTabStateUntouched'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-FreshInstancePerOpen'
+                title: 'The ViewBuilderDialog shall be constructed fresh every time it is opened, so a new
+                  instance never carries over a prior instance''s view kind, expose targets, filter expression,
+                  or display name.'
+                justification: |
+                  Unlike the long-lived docked panel view model it supersedes, the dialog is short-lived
+                  (opened, edited, closed/committed), and the user expects each open to start from a clean
+                  composition rather than resuming a previous, possibly-cancelled session.
+                tests:
+                  - 'Construction_FreshInstance_DoesNotCarryOverPriorInstanceSelections'

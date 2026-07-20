@@ -21,6 +21,6 @@ sections:
           - id: 'Avalonia-CopyDiagramAsSysmlViaContextMenu'
             title: 'The SysML2Workbench shall use Avalonia''s ContextMenu and TopLevel.Clipboard APIs to let a user right-click any open diagram tab and copy that diagram''s SysML view definition to the OS clipboard.'
             justification: |
-              Every rendered diagram tab needs a discoverable, in-place way to copy its underlying SysML view text without navigating away to the custom view builder panel, and Avalonia's real ContextMenu/Clipboard integration is the genuine end-to-end behavior being qualified rather than a mocked UI harness.
+              Every rendered diagram tab needs a discoverable, in-place way to copy its underlying SysML view text without navigating away to a separate panel or dialog, and Avalonia's real ContextMenu/Clipboard integration is the genuine end-to-end behavior being qualified rather than a mocked UI harness.
             tests:
               - 'DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard'

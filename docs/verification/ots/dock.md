@@ -6,7 +6,7 @@ OTS integration tests in `test/OtsSoftwareTests/DockTests.cs` verify Dock's layo
 
 ### Test Scenarios
 
-**CreateLayout_ComposesFourPanelDockables**: `WorkbenchDockFactory.CreateLayout()` is called with real Tool panel view model instances, a `DiagramDocumentViewModel` is added dynamically via `AddDockable`, and the resulting `IRootDock` is walked recursively, confirming all four panel view models (predefined views, custom view builder, diagnostics, diagram) are present as dockables in the composed tree.
+**CreateLayout_ComposesThreePanelDockables**: `WorkbenchDockFactory.CreateLayout()` is called with real Tool panel view model instances, a `DiagramDocumentViewModel` is added dynamically via `AddDockable`, and the resulting `IRootDock` is walked recursively, confirming all three panel view models (predefined views, diagnostics, workspace) and the diagram document are present as dockables in the composed tree.
 
 **DockControl_HostsWorkbenchLayout**: A real `DockControl` is assigned the factory-produced layout (with one diagram document dynamically added) and shown inside a headless `Window`, proving Dock's Avalonia control genuinely accepts and hosts the composed layout.
 

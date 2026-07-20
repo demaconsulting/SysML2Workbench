@@ -61,3 +61,11 @@ sections:
                   - 'ExportTabAsSysmlSnippet_UnknownTabId_ReturnsNull'
                   - 'ExportTabAsSysmlSnippet_PredefinedViewWithNoExposeMembers_ReturnsNull'
                   - 'CanExportTabAsSysml_MirrorsExportability'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-RenderCustomViewPreviewWithoutMutatingTabs'
+                title: 'The MainWindowShell shall render a live custom-view preview without mutating OpenTabs, ActiveTabId, or ActiveCustomView, so a dialog can preview in-progress edits without leaking a real tab into the shell before the user commits.'
+                justification: |
+                  ViewBuilderDialog's left-hand live preview pane must re-render on every in-progress edit while the dialog is open; using the existing PreviewCustomView for this would mutate the shell's real open-tab list on every keystroke, violating Cancel's "zero side effects" contract.
+                tests:
+                  - 'RenderCustomViewPreview_DoesNotMutateOpenTabsOrActiveTab'
+                  - 'RenderCustomViewPreview_NoWorkspaceOpened_ThrowsInvalidOperationException'

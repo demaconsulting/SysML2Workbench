@@ -535,10 +535,47 @@ public sealed class MainWindowShell : IDisposable
     }
 
     /// <summary>
+    ///     Renders the current GUI-authored custom view definition as a live preview <b>without</b> mutating any
+    ///     open-tab state: unlike <see cref="PreviewCustomView" />, this method never touches
+    ///     <see cref="OpenTabs" />, <see cref="ActiveTabId" />, or <see cref="ActiveCustomView" />, and never
+    ///     raises <see cref="TabsChanged" />. Backs <c>ViewBuilderDialog</c>'s left-hand live preview pane, which
+    ///     must be able to re-render on every in-progress edit while the dialog is open without leaking a real
+    ///     tab into the main window before the user commits via the dialog's OK button.
+    /// </summary>
+    /// <param name="definition">Normalized custom-view state.</param>
+    /// <returns>Rendered SVG markup for the given definition.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="definition" /> is null.</exception>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when no workspace is loaded, or when <paramref name="definition" /> does not validate against
+    ///     the current workspace.
+    /// </exception>
+    public string RenderCustomViewPreview(ViewDefinitionModel definition)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        if (CurrentWorkspace.Sources.Count == 0)
+        {
+            throw new InvalidOperationException("A workspace source must be added before a custom view can be previewed.");
+        }
+
+        var validation = definition.ValidateAgainstWorkspace(CurrentWorkspace.Workspace);
+        if (validation.Any(d => d.Severity == DiagnosticSeverity.Error))
+        {
+            throw new InvalidOperationException(
+                "The custom view definition does not validate against the current workspace: "
+                + string.Join("; ", validation.Where(d => d.Severity == DiagnosticSeverity.Error).Select(d => d.Message)));
+        }
+
+        var svg = _layoutInvoker.RenderCustomView(CurrentWorkspace.Workspace, definition);
+        _logger.Log(LogLevel.Info, "Custom view live preview rendered.");
+        return svg;
+    }
+
+    /// <summary>
     ///     Opens a brand-new, empty custom-view-preview tab and makes it the active tab, without rendering
-    ///     anything into it yet. Backs the "+ New Diagram Tab" affordance in the custom view builder panel; a
-    ///     subsequent <see cref="PreviewCustomView" /> call re-renders into this same tab per that method's
-    ///     in-place-update rule, since it becomes the active custom-view-preview tab.
+    ///     anything into it yet. Backs <c>ViewBuilderDialog</c>'s OK commit path: the dialog calls this method
+    ///     immediately followed by <see cref="PreviewCustomView" />, so a subsequent <see cref="PreviewCustomView" />
+    ///     call re-renders into this same tab per that method's in-place-update rule, since it becomes the active
+    ///     custom-view-preview tab.
     /// </summary>
     /// <returns>The newly opened, empty tab.</returns>
     public WorkbenchTab OpenNewCustomPreviewTab()
