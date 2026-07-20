@@ -22,6 +22,7 @@ includes:
   - docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem/main-window-shell.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem/workspace-panel.yaml
+  - docs/reqstream/sysml2-workbench/app-shell-subsystem/about-dialog.yaml
   - docs/reqstream/ots/sysml2-tools.yaml
   - docs/reqstream/ots/rendering.yaml
   - docs/reqstream/ots/avalonia.yaml

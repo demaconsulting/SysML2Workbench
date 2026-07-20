@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:DemaConsulting.SysML2Workbench.AppShellSubsystem"
+        x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.AboutDialogView"
+        x:DataType="local:AboutDialogViewModel"
+        Title="About SysML2Workbench"
+        Icon="avares://DemaConsulting.SysML2Workbench/Assets/Icon.png"
+        Width="420" Height="480"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+  <DockPanel Margin="16">
+
+    <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right" Margin="0,12,0,0">
+      <Button Name="OkButton" Content="OK" IsDefault="True" Click="OnOkButtonClick" MinWidth="80" />
+    </StackPanel>
+
+    <StackPanel DockPanel.Dock="Top" Spacing="4">
+      <TextBlock Text="{Binding ApplicationName}" FontSize="20" FontWeight="Bold" />
+      <TextBlock Text="{Binding Tagline}" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding VersionText, StringFormat='Version {0}'}" />
+      <TextBlock Text="{Binding Copyright}" Margin="0,0,0,8" />
+      <TextBlock Text="Dependencies" FontWeight="Bold" Margin="0,8,0,4" />
+    </StackPanel>
+
+    <ScrollViewer>
+      <ItemsControl Name="DependenciesItemsControl" ItemsSource="{Binding Dependencies}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="local:DependencyInfo">
+            <TextBlock>
+              <TextBlock.Inlines>
+                <Run Text="{Binding Name}" />
+                <Run Text=" - " />
+                <Run Text="{Binding License}" />
+              </TextBlock.Inlines>
+            </TextBlock>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+  </DockPanel>
+
+</Window>

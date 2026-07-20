@@ -322,6 +322,22 @@ reviews:
       - src/**/AppShellSubsystem/WorkspacePanelToolView.axaml
       - src/**/AppShellSubsystem/WorkspacePanelToolView.axaml.cs
       - test/**/AppShellSubsystem/WorkspacePanelToolViewModelTests.cs
+  - id: SysML2Workbench-AppShellSubsystem-AboutDialog
+    title: Review that SysML2Workbench AppShellSubsystem AboutDialog Implementation
+      is Correct
+    context:
+      - docs/design/sysml2-workbench.md
+      - docs/reqstream/sysml2-workbench.yaml
+      - docs/design/sysml2-workbench/app-shell-subsystem.md
+      - docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml
+    paths:
+      - docs/reqstream/sysml2-workbench/app-shell-subsystem/about-dialog.yaml
+      - docs/design/sysml2-workbench/app-shell-subsystem/about-dialog.md
+      - docs/verification/sysml2-workbench/app-shell-subsystem/about-dialog.md
+      - src/**/AppShellSubsystem/AboutDialogViewModel.cs
+      - src/**/AppShellSubsystem/AboutDialogView.axaml
+      - src/**/AppShellSubsystem/AboutDialogView.axaml.cs
+      - test/**/AppShellSubsystem/AboutDialogViewModelTests.cs
   - id: OTS-DemaConsultingSysML2Tools
     title: Review that DemaConsulting.SysML2Tools Provides Required Functionality
     paths:
