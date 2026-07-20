@@ -85,6 +85,17 @@ boundary - each `FileSystemWatcher` only reports events from its own root
 (and, for file sources, its own `Filter`). Logging of watcher faults is
 best-effort and does not replace propagation to the shell.
 
+Every `FileSystemWatcher` raises its `Changed`/`Created`/`Deleted`/`Renamed`
+events on an operating-system callback thread, independent of whatever thread
+calls `WatchSource`/`UnwatchSource`/`FlushPendingChanges`/`PendingChanges`.
+Production usage marshals those callbacks onto the UI thread first, making
+this uncontended in practice, but a caller that supplies (or defaults to) an
+immediate, non-marshaling dispatcher runs them synchronously on the OS
+callback thread itself. `FileWatcher` therefore guards all reads and writes of
+its internal pending-changes and watcher-registry state with a single
+internal lock, so a change notification racing a concurrent call from another
+thread can never corrupt that state.
+
 #### Dependencies
 
 - **WorkspaceModel** — applies the incremental reload once a stable change batch

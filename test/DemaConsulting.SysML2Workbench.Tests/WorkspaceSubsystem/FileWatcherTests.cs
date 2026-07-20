@@ -297,22 +297,14 @@ public sealed class FileWatcherTests : IDisposable
             var changedPathUnderB = Path.Combine(rootB, "Model.sysml");
             await File.WriteAllTextAsync(changedPathUnderB, "part def Vehicle;", TestContext.Current.CancellationToken);
 
-            // Poll with a bounded timeout: real FileSystemWatcher notifications are asynchronous, and the
-            // underlying pending dictionary is not thread-safe against the watcher's own OS-callback thread, so
-            // reads are tolerant of transient enumeration exceptions.
+            // Poll with a bounded timeout: real FileSystemWatcher notifications are delivered on an OS callback
+            // thread, asynchronously and non-deterministically with respect to this polling loop.
             var deadline = DateTime.UtcNow.AddSeconds(5);
             var detected = false;
             while (DateTime.UtcNow < deadline && !detected)
             {
-                try
-                {
-                    detected = watcher.PendingChanges.Any(path =>
-                        string.Equals(path, changedPathUnderB, StringComparison.OrdinalIgnoreCase));
-                }
-                catch
-                {
-                    // Transient enumeration failure racing the watcher's own background callback - retry.
-                }
+                detected = watcher.PendingChanges.Any(path =>
+                    string.Equals(path, changedPathUnderB, StringComparison.OrdinalIgnoreCase));
 
                 if (!detected)
                 {
@@ -329,5 +321,57 @@ public sealed class FileWatcherTests : IDisposable
         {
             Directory.Delete(rootB, recursive: true);
         }
+    }
+
+    /// <summary>
+    ///     Regression test: reproduces many real, concurrently-arriving <see cref="System.IO.FileSystemWatcher" />
+    ///     callbacks (via <see cref="ImmediateUiDispatcher" />, which runs them synchronously on their own OS
+    ///     callback thread rather than marshaling onto a UI thread) racing repeated reads via
+    ///     <see cref="FileWatcher.PendingChanges" /> and <see cref="FileWatcher.FlushPendingChanges" /> from the
+    ///     test thread. Previously, concurrent unsynchronized access to the internal pending-changes dictionary
+    ///     could corrupt its state and crash the whole process rather than merely throwing a recoverable
+    ///     exception; this must now complete cleanly under sustained concurrent load.
+    /// </summary>
+    [Fact]
+    public async Task ConcurrentRealFileSystemChangesAndReads_DoesNotCorruptState()
+    {
+        // Arrange: a real, immediately-dispatched watcher so OS callbacks run on background threads
+        var watcher = new FileWatcher(TimeSpan.FromMilliseconds(10));
+        watcher.WatchSource(FolderSource(_tempRoot));
+
+        // Act: concurrently generate a burst of real file-system events while continuously reading and
+        // flushing from the test thread, for a short but sustained window.
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        var writerTask = Task.Run(async () =>
+        {
+            var counter = 0;
+            while (!cts.IsCancellationRequested)
+            {
+                var path = Path.Combine(_tempRoot, $"File{counter++ % 20}.sysml");
+                try
+                {
+                    await File.WriteAllTextAsync(path, "part def Widget;", CancellationToken.None);
+                }
+                catch (IOException)
+                {
+                    // Transient sharing violation writing the same rotating file names under load - benign.
+                }
+            }
+        }, CancellationToken.None);
+
+        var exception = await Record.ExceptionAsync(async () =>
+        {
+            while (!cts.IsCancellationRequested)
+            {
+                _ = watcher.PendingChanges.Count;
+                _ = watcher.FlushPendingChanges();
+                await Task.Delay(5, CancellationToken.None);
+            }
+        });
+
+        await writerTask;
+
+        // Assert: no exception surfaced from either the reader or writer side under concurrent load
+        Assert.Null(exception);
     }
 }

@@ -43,6 +43,20 @@ public sealed class ImmediateUiDispatcher : IUiDispatcher
 public sealed class FileWatcher : IDisposable
 {
     /// <summary>
+    ///     Guards <see cref="_pending" /> and <see cref="_watchersBySourceId" />, both of which are read and
+    ///     written from the calling thread (via <see cref="WatchSource" />/<see cref="UnwatchSource" />/
+    ///     <see cref="FlushPendingChanges" />/<see cref="PendingChanges" />) as well as from whatever background
+    ///     thread the operating system delivers a <see cref="FileSystemWatcher" /> callback on. Production usage
+    ///     marshals those callbacks onto the UI thread via <see cref="_dispatcher" />, making this uncontended in
+    ///     practice, but <see cref="ImmediateUiDispatcher" /> (used by default outside a live UI, including in
+    ///     tests exercising a real <see cref="FileSystemWatcher" />) runs them synchronously on the OS callback
+    ///     thread itself - without this lock, that thread and the calling thread can mutate/enumerate the same
+    ///     <see cref="Dictionary{TKey,TValue}" /> concurrently, which can corrupt its internal state and crash the
+    ///     process rather than merely throwing a recoverable exception.
+    /// </summary>
+    private readonly Lock _gate = new();
+
+    /// <summary>
     ///     Normalized paths queued for the next incremental refresh cycle, mapped to the timestamp of their most
     ///     recent change notification.
     /// </summary>
@@ -80,7 +94,16 @@ public sealed class FileWatcher : IDisposable
     /// <summary>
     ///     Identifiers of every source currently being monitored for external changes.
     /// </summary>
-    public IReadOnlySet<string> WatchedSourceIds => _watchersBySourceId.Keys.ToHashSet(StringComparer.Ordinal);
+    public IReadOnlySet<string> WatchedSourceIds
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _watchersBySourceId.Keys.ToHashSet(StringComparer.Ordinal);
+            }
+        }
+    }
 
     /// <summary>
     ///     Minimum delay used to merge rapid change bursts into a single reload batch.
@@ -90,7 +113,16 @@ public sealed class FileWatcher : IDisposable
     /// <summary>
     ///     Normalized paths queued for the next incremental refresh cycle.
     /// </summary>
-    public IReadOnlySet<string> PendingChanges => new HashSet<string>(_pending.Keys, StringComparer.OrdinalIgnoreCase);
+    public IReadOnlySet<string> PendingChanges
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return new HashSet<string>(_pending.Keys, StringComparer.OrdinalIgnoreCase);
+            }
+        }
+    }
 
     /// <summary>
     ///     Begins monitoring the given source. Calling this again for a source whose id is already watched
@@ -109,11 +141,6 @@ public sealed class FileWatcher : IDisposable
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        if (_watchersBySourceId.Remove(source.Id, out var previous))
-        {
-            previous.Dispose();
-        }
-
         var watcher = source.Kind == WorkspaceSourceKind.Folder
             ? CreateFolderWatcher(source.Path)
             : CreateFileWatcher(source.Path);
@@ -122,9 +149,23 @@ public sealed class FileWatcher : IDisposable
         watcher.Created += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
         watcher.Deleted += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
         watcher.Renamed += (_, e) => _dispatcher.Post(() => QueueChange(e.FullPath));
-        watcher.EnableRaisingEvents = true;
 
-        _watchersBySourceId[source.Id] = watcher;
+        FileSystemWatcher? previous = null;
+        lock (_gate)
+        {
+            if (_watchersBySourceId.Remove(source.Id, out var existing))
+            {
+                previous = existing;
+            }
+
+            _watchersBySourceId[source.Id] = watcher;
+        }
+
+        // Enabled outside the lock, and any previously registered watcher for this source id is disposed only
+        // after the new one has fully taken its place, so a callback racing this method never observes a gap
+        // where the source id is momentarily unwatched.
+        watcher.EnableRaisingEvents = true;
+        previous?.Dispose();
     }
 
     /// <summary>
@@ -139,9 +180,13 @@ public sealed class FileWatcher : IDisposable
     /// <returns><see langword="true" /> when a watcher was found and removed; otherwise <see langword="false" />.</returns>
     public bool UnwatchSource(string sourceId)
     {
-        if (!_watchersBySourceId.Remove(sourceId, out var watcher))
+        FileSystemWatcher? watcher;
+        lock (_gate)
         {
-            return false;
+            if (!_watchersBySourceId.Remove(sourceId, out watcher))
+            {
+                return false;
+            }
         }
 
         watcher.Dispose();
@@ -208,14 +253,17 @@ public sealed class FileWatcher : IDisposable
     public void QueueChange(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        if (_watchersBySourceId.Count == 0)
+        lock (_gate)
         {
-            return;
-        }
+            if (_watchersBySourceId.Count == 0)
+            {
+                return;
+            }
 
-        // Overwriting the timestamp for an already-pending path is what collapses bursty duplicate
-        // notifications into a single pending entry while still resetting its debounce window
-        _pending[path] = _clock();
+            // Overwriting the timestamp for an already-pending path is what collapses bursty duplicate
+            // notifications into a single pending entry while still resetting its debounce window
+            _pending[path] = _clock();
+        }
     }
 
     /// <summary>
@@ -230,33 +278,41 @@ public sealed class FileWatcher : IDisposable
     /// <returns>Normalized paths requiring reload.</returns>
     public IReadOnlyList<string> FlushPendingChanges()
     {
-        if (_watchersBySourceId.Count == 0)
+        lock (_gate)
         {
-            return [];
+            if (_watchersBySourceId.Count == 0)
+            {
+                return [];
+            }
+
+            var now = _clock();
+            var ready = _pending
+                .Where(kvp => now - kvp.Value >= DebounceWindow)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var path in ready)
+            {
+                _pending.Remove(path);
+            }
+
+            return ready;
         }
-
-        var now = _clock();
-        var ready = _pending
-            .Where(kvp => now - kvp.Value >= DebounceWindow)
-            .Select(kvp => kvp.Key)
-            .ToList();
-
-        foreach (var path in ready)
-        {
-            _pending.Remove(path);
-        }
-
-        return ready;
     }
 
     /// <inheritdoc />
     public void Dispose()
     {
-        foreach (var watcher in _watchersBySourceId.Values)
+        List<FileSystemWatcher> watchers;
+        lock (_gate)
+        {
+            watchers = [.. _watchersBySourceId.Values];
+            _watchersBySourceId.Clear();
+        }
+
+        foreach (var watcher in watchers)
         {
             watcher.Dispose();
         }
-
-        _watchersBySourceId.Clear();
     }
 }
