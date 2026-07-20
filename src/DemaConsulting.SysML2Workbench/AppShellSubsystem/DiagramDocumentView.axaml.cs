@@ -55,7 +55,13 @@ public partial class DiagramDocumentView : UserControl
         if (_viewModel is not null)
         {
             _viewModel.DiagramChanged += OnDiagramChanged;
-            _viewModel.ClipboardService ??= new AvaloniaClipboardService(this);
+
+            // Always rebind to this view instance rather than only the first ever attached (`??=`): Dock can
+            // recreate/reattach a tab's DiagramDocumentView while its DiagramDocumentViewModel persists (for
+            // example when two custom-preview tabs are created in quick succession), which would otherwise leave
+            // the clipboard service anchored to a now-detached, stale view - causing TopLevel.GetTopLevel to
+            // resolve null and the clipboard write to silently no-op.
+            _viewModel.ClipboardService = new AvaloniaClipboardService(this);
             LoadCurrentDiagram();
         }
     }

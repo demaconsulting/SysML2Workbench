@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input.Platform;
+using Avalonia.Threading;
 using DemaConsulting.SysML2Workbench.LoggingSubsystem;
 
 namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
@@ -37,17 +38,30 @@ public sealed class AvaloniaClipboardService : IClipboardService
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     The actual clipboard write is always marshaled onto <see cref="Dispatcher.UIThread" /> via
+    ///     <see cref="Dispatcher.InvokeAsync(System.Func{System.Threading.Tasks.Task})" />, even when this method
+    ///     is itself already called from the UI thread: the native OS clipboard (Win32 <c>OpenClipboard</c> in
+    ///     particular) can only be accessed from the single UI/STA thread, and a caller further up the awaited
+    ///     chain may have resumed on a thread-pool thread (for example after a <c>ConfigureAwait(false)</c>
+    ///     elsewhere in the call chain) without this method's own caller being aware of it. Marshaling
+    ///     unconditionally here is the only way this unit can guarantee correctness regardless of the calling
+    ///     thread.
+    /// </remarks>
     public async Task SetTextAsync(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
 
-        var clipboard = TopLevel.GetTopLevel(_anchor)?.Clipboard;
-        if (clipboard is null)
+        await Dispatcher.UIThread.InvokeAsync(async () =>
         {
-            _logger?.Log(LogLevel.Error, "Unable to copy to the clipboard: no Avalonia TopLevel/clipboard is available.");
-            return;
-        }
+            var clipboard = TopLevel.GetTopLevel(_anchor)?.Clipboard;
+            if (clipboard is null)
+            {
+                _logger?.Log(LogLevel.Error, "Unable to copy to the clipboard: no Avalonia TopLevel/clipboard is available.");
+                return;
+            }
 
-        await clipboard.SetTextAsync(text);
+            await clipboard.SetTextAsync(text);
+        });
     }
 }
