@@ -318,4 +318,117 @@ public sealed class AvaloniaTests : IDisposable
     {
         return root.GetVisualDescendants().OfType<T>().FirstOrDefault(c => c.Name == name);
     }
+
+    /// <summary>
+    ///     Walks the logical tree rooted at <paramref name="root" /> and enumerates every
+    ///     <see cref="MenuItem" /> it contains, including submenu items whose visual is only realized
+    ///     when the parent menu opens.
+    /// </summary>
+    private static IEnumerable<MenuItem> LogicalTreeMenuItems(Avalonia.LogicalTree.ILogical root)
+    {
+        foreach (var child in root.LogicalChildren)
+        {
+            if (child is MenuItem menuItem)
+            {
+                yield return menuItem;
+            }
+
+            foreach (var descendant in LogicalTreeMenuItems(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     End-to-end regression for the new Query dialog: constructs a real
+    ///     <see cref="MainWindowView" />, confirms its Query menu hosts the "Run Query..." entry (the
+    ///     view-side counterpart of the plan's new <c>_Query</c> top-level menu), then opens the
+    ///     modal <see cref="QueryDialogView" /> directly (rather than through the modal
+    ///     <c>ShowDialog</c> path, which blocks its calling turn until closed), runs an element-scoped
+    ///     Describe verb through the real <see cref="DemaConsulting.SysML2Tools.Query.QueryEngine" />
+    ///     via the "Run Query" button, clicks "Copy as Markdown", and asserts the headless platform's
+    ///     real clipboard now holds the exact text
+    ///     <see cref="DemaConsulting.SysML2Tools.Query.QueryResultRenderer.RenderMarkdown" /> produces.
+    ///     Mirrors <see cref="DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard" />'s pattern.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task QueryDialog_RunDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard()
+    {
+        // Arrange: a real workspace with one part def, so Describe has something meaningful to say
+        await File.WriteAllTextAsync(
+            Path.Combine(_tempRoot, "Sample.sysml"),
+            "package Sample {\n"
+            + "    part def Engine;\n"
+            + "}\n");
+        using var shell = CreateShell();
+        var window = new MainWindowView(shell);
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        await shell.AddFolderSourceAsync(_tempRoot);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert the Query menu item is really wired in the main window's logical tree. It lives
+        // under the top-level "_Query" menu which Avalonia lazily materializes in the visual tree
+        // only after the menu opens, so we walk the logical tree (which mirrors the AXAML structure
+        // regardless of visualization state) instead of using FindByName's visual-tree walk.
+        var queryMenuItem = LogicalTreeMenuItems(window)
+            .FirstOrDefault(mi => mi.Name == "QueryDialogMenuItem");
+        Assert.NotNull(queryMenuItem);
+
+        // Act: open the dialog directly with the same shell reference OnOpenQueryDialogClick would use.
+        var dialog = new QueryDialogView(shell);
+        dialog.Show(window);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert: both pickers are populated from the real workspace
+        var elementQueryPickerListBox = FindByName<ListBox>(dialog, "PickerItemsListBox");
+        Assert.NotNull(elementQueryPickerListBox);
+
+        // Switch to the Element Query tab (index 1) so its content - including RunQueryButton and the
+        // ElementQueryPickerView - is realized in the visual tree. TabControl only materializes the
+        // active tab's content, so the "Run Query" button doesn't otherwise exist yet.
+        var tabControl = FindByName<TabControl>(dialog, "QueryTabControl");
+        Assert.NotNull(tabControl);
+        tabControl!.SelectedIndex = 1;
+        Dispatcher.UIThread.RunJobs();
+
+        // Drive the Element Query tab: pick Engine, keep the default Describe verb, click Run Query
+        var vm = (QueryDialogViewModel)dialog.DataContext!;
+        vm.ElementQueryPicker.SelectedQualifiedName = "Sample::Engine";
+        Dispatcher.UIThread.RunJobs();
+
+        var runButton = FindByName<Button>(dialog, "RunQueryButton");
+        Assert.NotNull(runButton);
+        runButton!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.NotNull(vm.CurrentResult);
+        Assert.Equal("describe", vm.CurrentResult!.Verb);
+        Assert.Equal("Sample::Engine", vm.CurrentResult.Element);
+
+        // Act: click the "Copy as Markdown" button
+        var copyMarkdownButton = FindByName<Button>(dialog, "CopyAsMarkdownButton");
+        Assert.NotNull(copyMarkdownButton);
+        Assert.True(copyMarkdownButton!.IsEnabled);
+        copyMarkdownButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        // Wait a beat for the async clipboard write to complete on the UI thread
+        await Task.Yield();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert: the headless platform's real clipboard now holds the expected rendered Markdown
+        var clipboard = TopLevel.GetTopLevel(dialog)?.Clipboard;
+        Assert.NotNull(clipboard);
+        var clipboardText = await clipboard!.TryGetTextAsync();
+        var expected = string.Join(
+            "\n",
+            DemaConsulting.SysML2Tools.Query.QueryResultRenderer.RenderMarkdown(vm.CurrentResult));
+        Assert.Equal(expected, clipboardText);
+
+        dialog.Close();
+        window.Close();
+    }
 }

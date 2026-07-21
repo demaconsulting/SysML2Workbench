@@ -1,0 +1,130 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:DemaConsulting.SysML2Workbench.AppShellSubsystem"
+        xmlns:picker="using:DemaConsulting.SysML2Workbench.ElementPickerSubsystem"
+        x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.QueryDialogView"
+        x:DataType="local:QueryDialogViewModel"
+        Title="Query"
+        Icon="avares://DemaConsulting.SysML2Workbench/Assets/Icon.png"
+        Width="900" Height="640"
+        WindowStartupLocation="CenterOwner">
+
+  <DockPanel Margin="12">
+
+    <!-- Bottom row: Close button + status message text -->
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+      <Button Name="CloseButton" Content="Close" IsCancel="True" Click="OnCloseButtonClick" MinWidth="80" HorizontalContentAlignment="Center" />
+    </StackPanel>
+
+    <TextBlock DockPanel.Dock="Bottom" Name="StatusTextBlock" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="Red" Margin="0,8,0,0" />
+
+    <!-- Top row: global "Include standard library" checkbox -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="0,0,0,8">
+      <CheckBox Name="IncludeStdlibCheckBox" Content="Include standard library" IsChecked="{Binding IncludeStdlib, Mode=TwoWay}" />
+      <TextBlock Text="No workspace open - add a file or folder from the Workspace panel." IsVisible="{Binding IsWorkspaceEmpty}" Foreground="Gray" VerticalAlignment="Center" />
+    </StackPanel>
+
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="340" MinWidth="240" />
+        <ColumnDefinition Width="5" />
+        <ColumnDefinition Width="*" MinWidth="300" />
+      </Grid.ColumnDefinitions>
+
+      <!-- Left: Browse / Element Query tabs -->
+      <TabControl Grid.Column="0" Name="QueryTabControl">
+
+        <TabItem Header="Browse">
+          <StackPanel Margin="8" Spacing="6">
+            <TextBlock Text="Every element in the workspace. Type or add a chip to narrow." TextWrapping="Wrap" Foreground="Gray" FontSize="11" />
+            <picker:ElementPickerView Name="BrowsePickerView" DataContext="{Binding BrowsePicker}" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Element Query">
+          <StackPanel Margin="8" Spacing="6">
+            <TextBlock Text="Pick a target element, choose a verb, then click Run." TextWrapping="Wrap" Foreground="Gray" FontSize="11" />
+            <picker:ElementPickerView Name="ElementQueryPickerView" DataContext="{Binding ElementQueryPicker}" />
+
+            <TextBlock Text="Verb" Margin="0,6,0,0" />
+            <ComboBox Name="VerbComboBox" HorizontalAlignment="Stretch" />
+
+            <!-- Hierarchy-only direction selector -->
+            <StackPanel Name="HierarchyDirectionPanel" Spacing="4" IsVisible="False">
+              <TextBlock Text="Direction (Hierarchy)" />
+              <ComboBox Name="HierarchyDirectionComboBox" HorizontalAlignment="Stretch" />
+            </StackPanel>
+
+            <!-- Impact-only walk depth input -->
+            <StackPanel Name="WalkDepthPanel" Spacing="4" IsVisible="False">
+              <TextBlock Text="Walk depth (Impact, blank = unlimited)" />
+              <TextBox Name="WalkDepthTextBox" Text="{Binding WalkDepthText, Mode=TwoWay}" />
+            </StackPanel>
+
+            <Button Name="RunQueryButton" Content="Run Query" HorizontalAlignment="Stretch" Margin="0,8,0,0" Click="OnRunQueryClick" />
+          </StackPanel>
+        </TabItem>
+
+      </TabControl>
+
+      <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" ResizeDirection="Columns" Background="Transparent" />
+
+      <!-- Right: shared results panel -->
+      <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1">
+        <DockPanel>
+
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="6">
+            <Button Name="CopyAsMarkdownButton" Content="Copy as Markdown" Click="OnCopyAsMarkdownClick" IsEnabled="False" />
+            <Button Name="CopyAsJsonButton" Content="Copy as JSON" Click="OnCopyAsJsonClick" IsEnabled="False" />
+          </StackPanel>
+
+          <ScrollViewer>
+            <StackPanel Margin="8" Spacing="8">
+
+              <!-- Summary bullets -->
+              <ItemsControl Name="SummaryItemsControl">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <!-- Entries table (Grid-based, not DataGrid) -->
+              <Border BorderBrush="LightGray" BorderThickness="1" Padding="0" IsVisible="False" Name="EntriesTableBorder">
+                <StackPanel>
+
+                  <!-- Header row -->
+                  <Grid ColumnDefinitions="2*,1*,2*,1*" Background="#F0F0F0">
+                    <TextBlock Grid.Column="0" Text="Qualified Name" FontWeight="Bold" Padding="6,4" />
+                    <TextBlock Grid.Column="1" Text="Kind" FontWeight="Bold" Padding="6,4" />
+                    <TextBlock Grid.Column="2" Text="Detail" FontWeight="Bold" Padding="6,4" />
+                    <TextBlock Name="DirectionHeaderTextBlock" Grid.Column="3" Text="Direction" FontWeight="Bold" Padding="6,4" IsVisible="False" />
+                  </Grid>
+
+                  <ItemsControl Name="EntriesItemsControl" ItemsSource="{Binding CurrentResultRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="local:QueryResultRow">
+                        <Grid ColumnDefinitions="2*,1*,2*,1*" ToolTip.Tip="{Binding Notes}">
+                          <TextBlock Grid.Column="0" Text="{Binding QualifiedName}" Padding="6,2" TextWrapping="Wrap" />
+                          <TextBlock Grid.Column="1" Text="{Binding Kind}" Padding="6,2" />
+                          <TextBlock Grid.Column="2" Text="{Binding Detail}" Padding="6,2" TextWrapping="Wrap" />
+                          <TextBlock Grid.Column="3" Text="{Binding Direction}" Padding="6,2" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+            </StackPanel>
+          </ScrollViewer>
+
+        </DockPanel>
+      </Border>
+
+    </Grid>
+
+  </DockPanel>
+
+</Window>

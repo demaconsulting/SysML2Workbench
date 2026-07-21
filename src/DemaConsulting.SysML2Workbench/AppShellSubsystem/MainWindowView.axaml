@@ -52,6 +52,13 @@
           </MenuItem.Icon>
         </MenuItem>
       </MenuItem>
+      <MenuItem Header="_Query">
+        <MenuItem Name="QueryDialogMenuItem" Header="_Run Query..." Click="OnOpenQueryDialogClick">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="Magnify" />
+          </MenuItem.Icon>
+        </MenuItem>
+      </MenuItem>
       <MenuItem Header="_Help">
         <MenuItem Name="AboutMenuItem" Header="_About" Click="OnAboutMenuItemClick">
           <MenuItem.Icon>

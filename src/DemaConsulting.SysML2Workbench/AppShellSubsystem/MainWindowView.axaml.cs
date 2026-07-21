@@ -135,6 +135,19 @@ public partial class MainWindowView : Window
     }
 
     /// <summary>
+    ///     Handles the Query menu's "Run Query..." click by opening the modal
+    ///     <see cref="QueryDialogView" />, owned by this window. Like the View menu's Custom View Builder
+    ///     entry, this opens a transient dialog (a fresh <see cref="QueryDialogViewModel" /> per open) rather
+    ///     than showing/focusing a persistent Dock <c>Tool</c>: query results are one-shot, not a
+    ///     long-lived workbench panel.
+    /// </summary>
+    private async void OnOpenQueryDialogClick(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new QueryDialogView(_shell);
+        await dialog.ShowDialog(this);
+    }
+
+    /// <summary>
     ///     Restores <paramref name="tool" /> to its original dock if it was hidden by a prior close (via
     ///     <see cref="WorkbenchDockFactory" />'s <c>HideToolsOnClose</c> setting, a safe no-op if it is not
     ///     currently hidden), then makes it the active and focused dockable in its owning dock. This never hides
