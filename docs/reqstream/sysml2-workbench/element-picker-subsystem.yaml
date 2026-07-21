@@ -17,7 +17,7 @@ sections:
               - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-AcceptCallerBuiltCandidates'
               - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-FilterByTypeAndText'
             tests:
-              - 'SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
+              - 'ElementPickerViewModel_SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
 
           - id: 'SysML2Workbench-ElementPickerSubsystem-DecoupleFromWorkspace'
             title: 'The ElementPickerSubsystem shall not itself depend on MainWindowShell, WorkspaceModel, or
@@ -30,4 +30,4 @@ sections:
             children:
               - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-AcceptCallerBuiltCandidates'
             tests:
-              - 'Construction_HasEmptyInitialState'
+              - 'ElementPickerViewModel_Construction_HasEmptyInitialState'

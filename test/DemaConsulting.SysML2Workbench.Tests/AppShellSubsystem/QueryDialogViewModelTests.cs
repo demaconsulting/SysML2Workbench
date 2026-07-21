@@ -91,7 +91,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     result rather than <see langword="null" />.
     /// </summary>
     [Fact]
-    public void Construction_EmptyShell_ReportsWorkspaceEmpty()
+    public void QueryDialogViewModel_Construction_EmptyShell_ReportsWorkspaceEmpty()
     {
         // Arrange
         using var shell = CreateShell();
@@ -116,7 +116,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     <see cref="QueryDialogViewModel.RefreshFromWorkspace" />.
     /// </summary>
     [Fact]
-    public async Task Construction_LoadedWorkspace_PopulatesSinglePicker()
+    public async Task QueryDialogViewModel_Construction_LoadedWorkspace_PopulatesSinglePicker()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -144,7 +144,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     displayed picker item (kind label sourced from the same candidate map).
     /// </summary>
     [Fact]
-    public async Task ListQueryType_BuildsClientSideListResult()
+    public async Task QueryDialogViewModel_ListQueryType_BuildsClientSideListResult()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -171,7 +171,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     the result regenerates automatically - the redesign's "live, no Run gesture" contract.
     /// </summary>
     [Fact]
-    public async Task ListQueryType_SearchTextEdit_RegeneratesResultLive()
+    public async Task QueryDialogViewModel_ListQueryType_SearchTextEdit_RegeneratesResultLive()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -194,7 +194,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     than leaving it on screen.
     /// </summary>
     [Fact]
-    public async Task RecomputeResult_ElementScopedVerbNoSelection_ReportsPromptAndClearsRows()
+    public async Task QueryDialogViewModel_RecomputeResult_ElementScopedVerbNoSelection_ReportsPromptAndClearsRows()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -218,7 +218,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     a user-visible status, without touching <see cref="QueryEngine" />.
     /// </summary>
     [Fact]
-    public void RecomputeResult_EmptyWorkspace_ReportsStatusMessage()
+    public void QueryDialogViewModel_RecomputeResult_EmptyWorkspace_ReportsStatusMessage()
     {
         // Arrange
         using var shell = CreateShell();
@@ -239,7 +239,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     call - proving the auto-recompute contract at the heart of this redesign.
     /// </summary>
     [Fact]
-    public async Task RecomputeResult_DescribeWithSelection_DispatchesThroughEngineImmediately()
+    public async Task QueryDialogViewModel_RecomputeResult_DescribeWithSelection_DispatchesThroughEngineImmediately()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -264,7 +264,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     previous verb.
     /// </summary>
     [Fact]
-    public async Task SwitchingQueryType_FromDescribeToList_ShowsListResultImmediately()
+    public async Task QueryDialogViewModel_SwitchingQueryType_FromDescribeToList_ShowsListResultImmediately()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -290,7 +290,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     result or a thrown exception.
     /// </summary>
     [Fact]
-    public async Task SwitchingQueryType_FromListToDescribeNoSelection_ShowsSelectPrompt()
+    public async Task QueryDialogViewModel_SwitchingQueryType_FromListToDescribeNoSelection_ShowsSelectPrompt()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -314,7 +314,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     without requiring any manual call.
     /// </summary>
     [Fact]
-    public async Task HierarchyDirectionChange_WithSelection_RecomputesImmediately()
+    public async Task QueryDialogViewModel_HierarchyDirectionChange_WithSelection_RecomputesImmediately()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -339,7 +339,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     <see cref="QueryVerb.Impact" /> is selected with an active selection recomputes immediately.
     /// </summary>
     [Fact]
-    public async Task WalkDepthTextChange_WithSelection_RecomputesImmediately()
+    public async Task QueryDialogViewModel_WalkDepthTextChange_WithSelection_RecomputesImmediately()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -365,7 +365,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     <see cref="QueryVerb.Hierarchy" />, matching the plan's per-verb visibility rules.
     /// </summary>
     [Fact]
-    public void BuildOptions_HierarchyVerb_AttachesDirection()
+    public void QueryDialogViewModel_BuildOptions_HierarchyVerb_AttachesDirection()
     {
         // Arrange
         using var shell = CreateShell();
@@ -388,7 +388,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     <see cref="QueryDialogViewModel.HierarchyDirection" /> is set (the field simply doesn't apply).
     /// </summary>
     [Fact]
-    public void BuildOptions_NonHierarchyVerb_OmitsDirection()
+    public void QueryDialogViewModel_BuildOptions_NonHierarchyVerb_OmitsDirection()
     {
         // Arrange
         using var shell = CreateShell();
@@ -409,7 +409,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     <see cref="QueryVerb.Impact" />, and only when it parses cleanly.
     /// </summary>
     [Fact]
-    public void BuildOptions_ImpactVerbWithWalkDepth_ParsesWalkDepth()
+    public void QueryDialogViewModel_BuildOptions_ImpactVerbWithWalkDepth_ParsesWalkDepth()
     {
         // Arrange
         using var shell = CreateShell();
@@ -436,7 +436,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     [InlineData("  ")]
     [InlineData("not-a-number")]
     [InlineData("-1")]
-    public void BuildOptions_ImpactVerbWithInvalidWalkDepth_LeavesNull(string? walkDepthText)
+    public void QueryDialogViewModel_BuildOptions_ImpactVerbWithInvalidWalkDepth_LeavesNull(string? walkDepthText)
     {
         // Arrange
         using var shell = CreateShell();
@@ -456,7 +456,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     <see cref="QueryOptions.IncludeStdlib" /> for every verb.
     /// </summary>
     [Fact]
-    public void BuildOptions_PropagatesIncludeStdlib()
+    public void QueryDialogViewModel_BuildOptions_PropagatesIncludeStdlib()
     {
         // Arrange
         using var shell = CreateShell();
@@ -484,7 +484,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     refresh-candidates-then-recompute pipeline still functions end to end.
     /// </summary>
     [Fact]
-    public async Task IncludeStdlibToggle_RefreshesPickerAndRecomputesResult()
+    public async Task QueryDialogViewModel_IncludeStdlibToggle_RefreshesPickerAndRecomputesResult()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -528,7 +528,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     the injected clipboard service.
     /// </summary>
     [Fact]
-    public async Task CopyResultAsMarkdownAsync_WritesRenderedMarkdownToClipboard()
+    public async Task QueryDialogViewModel_CopyResultAsMarkdownAsync_WritesRenderedMarkdownToClipboard()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -555,7 +555,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     service.
     /// </summary>
     [Fact]
-    public async Task CopyResultAsJsonAsync_WritesRenderedJsonToClipboard()
+    public async Task QueryDialogViewModel_CopyResultAsJsonAsync_WritesRenderedJsonToClipboard()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -582,7 +582,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     hack, which doubles as coverage for that path.
     /// </summary>
     [Fact]
-    public async Task CopyMethods_NoResult_AreNoOps()
+    public async Task QueryDialogViewModel_CopyMethods_NoResult_AreNoOps()
     {
         // Arrange
         using var shell = CreateShell();
@@ -606,7 +606,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     <see cref="QueryVerb.Find" /> (which "List" always merges into, so the user never sees it).
     /// </summary>
     [Fact]
-    public void QueryTypes_HasExpectedElevenEntries()
+    public void QueryDialogViewModel_QueryTypes_HasExpectedElevenEntries()
     {
         // Assert
         Assert.Equal(11, QueryDialogViewModel.QueryTypes.Count);
@@ -621,7 +621,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     ///     hierarchy directions accepted by the underlying <see cref="QueryOptions.Direction" /> field.
     /// </summary>
     [Fact]
-    public void HierarchyDirectionOptions_HasExpectedThree()
+    public void QueryDialogViewModel_HierarchyDirectionOptions_HasExpectedThree()
     {
         // Assert
         Assert.Equal(new[] { "up", "down", "both" }, QueryDialogViewModel.HierarchyDirectionOptions);

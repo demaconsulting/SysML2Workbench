@@ -14,7 +14,7 @@ public sealed class ElementTypeLabelerTests
     ///     <see cref="ArgumentNullException" />.
     /// </summary>
     [Fact]
-    public void GetTypeLabel_NullNode_Throws()
+    public void ElementTypeLabeler_GetTypeLabel_NullNode_Throws()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => ElementTypeLabeler.GetTypeLabel(null!));
@@ -25,7 +25,7 @@ public sealed class ElementTypeLabelerTests
     ///     <see cref="SysmlDefinitionNode.DefinitionKeyword" /> verbatim.
     /// </summary>
     [Fact]
-    public void GetTypeLabel_DefinitionNode_ReturnsDefinitionKeyword()
+    public void ElementTypeLabeler_GetTypeLabel_DefinitionNode_ReturnsDefinitionKeyword()
     {
         // Arrange
         var node = new SysmlDefinitionNode { DefinitionKeyword = "part def" };
@@ -42,7 +42,7 @@ public sealed class ElementTypeLabelerTests
     ///     <see cref="SysmlFeatureNode.FeatureKeyword" /> verbatim.
     /// </summary>
     [Fact]
-    public void GetTypeLabel_FeatureNode_ReturnsFeatureKeyword()
+    public void ElementTypeLabeler_GetTypeLabel_FeatureNode_ReturnsFeatureKeyword()
     {
         // Arrange
         var node = new SysmlFeatureNode { FeatureKeyword = "port" };
@@ -59,7 +59,7 @@ public sealed class ElementTypeLabelerTests
     ///     <c>ConnectionKeyword</c> verbatim.
     /// </summary>
     [Fact]
-    public void GetTypeLabel_ConnectionNode_ReturnsConnectionKeyword()
+    public void ElementTypeLabeler_GetTypeLabel_ConnectionNode_ReturnsConnectionKeyword()
     {
         // Arrange
         var node = new SysmlConnectionNode { ConnectionKeyword = "connection" };
@@ -82,7 +82,7 @@ public sealed class ElementTypeLabelerTests
     [InlineData(typeof(SysmlTransitionNode), "transition")]
     [InlineData(typeof(SysmlSatisfyNode), "satisfy")]
     [InlineData(typeof(SysmlDependencyNode), "dependency")]
-    public void GetTypeLabel_FixedLiteralNode_ReturnsExpectedLiteral(Type nodeType, string expected)
+    public void ElementTypeLabeler_GetTypeLabel_FixedLiteralNode_ReturnsExpectedLiteral(Type nodeType, string expected)
     {
         // Arrange
         var node = (SysmlNode)Activator.CreateInstance(nodeType)!;
@@ -100,7 +100,7 @@ public sealed class ElementTypeLabelerTests
     ///     <c>Node</c> stripped, then lowercased).
     /// </summary>
     [Fact]
-    public void GetTypeLabel_UnknownSubtype_UsesFallbackFromTypeName()
+    public void ElementTypeLabeler_GetTypeLabel_UnknownSubtype_UsesFallbackFromTypeName()
     {
         // Arrange
         var node = new SysmlMetadataNode();

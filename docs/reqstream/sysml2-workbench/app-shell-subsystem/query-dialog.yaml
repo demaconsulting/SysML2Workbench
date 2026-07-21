@@ -16,9 +16,9 @@ sections:
                   opened, the stdlib toggle must be honored consistently, and a clear signal is needed when
                   there is nothing to query yet.
                 tests:
-                  - 'Construction_EmptyShell_ReportsWorkspaceEmpty'
-                  - 'Construction_LoadedWorkspace_PopulatesSinglePicker'
-                  - 'IncludeStdlibToggle_RefreshesPickerAndRecomputesResult'
+                  - 'QueryDialogViewModel_Construction_EmptyShell_ReportsWorkspaceEmpty'
+                  - 'QueryDialogViewModel_Construction_LoadedWorkspace_PopulatesSinglePicker'
+                  - 'QueryDialogViewModel_IncludeStdlibToggle_RefreshesPickerAndRecomputesResult'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-BrowseTabIsClientSideList'
                 title: 'The QueryDialog''s merged "List" Query Type shall produce a client-built QueryResult
@@ -30,8 +30,8 @@ sections:
                   "List" is deliberately a pure client-side filter to give an instant response as the user
                   types, and to avoid pulling the whole workspace through the engine for a trivial name filter.
                 tests:
-                  - 'ListQueryType_BuildsClientSideListResult'
-                  - 'ListQueryType_SearchTextEdit_RegeneratesResultLive'
+                  - 'QueryDialogViewModel_ListQueryType_BuildsClientSideListResult'
+                  - 'QueryDialogViewModel_ListQueryType_SearchTextEdit_RegeneratesResultLive'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-ElementQueryDispatchesThroughEngine'
                 title: 'The QueryDialog''s single Query Type combo box shall offer all ten element-scoped
@@ -49,18 +49,18 @@ sections:
                   defining usability improvement is that every relevant edit updates the results live rather
                   than requiring a separate "Run" click.
                 tests:
-                  - 'RecomputeResult_DescribeWithSelection_DispatchesThroughEngineImmediately'
-                  - 'SwitchingQueryType_FromDescribeToList_ShowsListResultImmediately'
-                  - 'SwitchingQueryType_FromListToDescribeNoSelection_ShowsSelectPrompt'
-                  - 'HierarchyDirectionChange_WithSelection_RecomputesImmediately'
-                  - 'WalkDepthTextChange_WithSelection_RecomputesImmediately'
-                  - 'BuildOptions_HierarchyVerb_AttachesDirection'
-                  - 'BuildOptions_NonHierarchyVerb_OmitsDirection'
-                  - 'BuildOptions_ImpactVerbWithWalkDepth_ParsesWalkDepth'
-                  - 'BuildOptions_ImpactVerbWithInvalidWalkDepth_LeavesNull'
-                  - 'BuildOptions_PropagatesIncludeStdlib'
-                  - 'QueryTypes_HasExpectedElevenEntries'
-                  - 'HierarchyDirectionOptions_HasExpectedThree'
+                  - 'QueryDialogViewModel_RecomputeResult_DescribeWithSelection_DispatchesThroughEngineImmediately'
+                  - 'QueryDialogViewModel_SwitchingQueryType_FromDescribeToList_ShowsListResultImmediately'
+                  - 'QueryDialogViewModel_SwitchingQueryType_FromListToDescribeNoSelection_ShowsSelectPrompt'
+                  - 'QueryDialogViewModel_HierarchyDirectionChange_WithSelection_RecomputesImmediately'
+                  - 'QueryDialogViewModel_WalkDepthTextChange_WithSelection_RecomputesImmediately'
+                  - 'QueryDialogViewModel_BuildOptions_HierarchyVerb_AttachesDirection'
+                  - 'QueryDialogViewModel_BuildOptions_NonHierarchyVerb_OmitsDirection'
+                  - 'QueryDialogViewModel_BuildOptions_ImpactVerbWithWalkDepth_ParsesWalkDepth'
+                  - 'QueryDialogViewModel_BuildOptions_ImpactVerbWithInvalidWalkDepth_LeavesNull'
+                  - 'QueryDialogViewModel_BuildOptions_PropagatesIncludeStdlib'
+                  - 'QueryDialogViewModel_QueryTypes_HasExpectedElevenEntries'
+                  - 'QueryDialogViewModel_HierarchyDirectionOptions_HasExpectedThree'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-HandleFailuresGracefully'
                 title: 'The QueryDialog shall report every recoverable failure or informational prompt (no
@@ -74,8 +74,8 @@ sections:
                   every change now recomputes automatically, a stale leftover result from a prior Query Type or
                   selection would be actively misleading rather than merely unhelpful.
                 tests:
-                  - 'RecomputeResult_ElementScopedVerbNoSelection_ReportsPromptAndClearsRows'
-                  - 'RecomputeResult_EmptyWorkspace_ReportsStatusMessage'
+                  - 'QueryDialogViewModel_RecomputeResult_ElementScopedVerbNoSelection_ReportsPromptAndClearsRows'
+                  - 'QueryDialogViewModel_RecomputeResult_EmptyWorkspace_ReportsStatusMessage'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-CopyResultToClipboard'
                 title: 'The QueryDialog shall render the current QueryResult through
@@ -90,9 +90,9 @@ sections:
                   safe when invoked with no result loaded, and moving the actions to a context menu keeps the
                   results panel free of toolbar clutter.
                 tests:
-                  - 'CopyResultAsMarkdownAsync_WritesRenderedMarkdownToClipboard'
-                  - 'CopyResultAsJsonAsync_WritesRenderedJsonToClipboard'
-                  - 'CopyMethods_NoResult_AreNoOps'
+                  - 'QueryDialogViewModel_CopyResultAsMarkdownAsync_WritesRenderedMarkdownToClipboard'
+                  - 'QueryDialogViewModel_CopyResultAsJsonAsync_WritesRenderedJsonToClipboard'
+                  - 'QueryDialogViewModel_CopyMethods_NoResult_AreNoOps'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-EndToEndFromMenu'
                 title: 'The Query menu''s "Run Query..." item shall open the QueryDialog against the main

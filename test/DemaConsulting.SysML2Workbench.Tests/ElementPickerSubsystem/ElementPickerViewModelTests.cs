@@ -29,7 +29,7 @@ public sealed class ElementPickerViewModelTests
     ///     an empty (non-null) search text, and an empty displayed list.
     /// </summary>
     [Fact]
-    public void Construction_HasEmptyInitialState()
+    public void ElementPickerViewModel_Construction_HasEmptyInitialState()
     {
         // Act
         var picker = new ElementPickerViewModel();
@@ -48,7 +48,7 @@ public sealed class ElementPickerViewModelTests
     ///     candidate list, matching the runtime null-guard behavior.
     /// </summary>
     [Fact]
-    public void SetCandidates_NullCandidates_Throws()
+    public void ElementPickerViewModel_SetCandidates_NullCandidates_Throws()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -62,7 +62,7 @@ public sealed class ElementPickerViewModelTests
     ///     deduplicated and sorted ordinally after <see cref="ElementPickerViewModel.SetCandidates" />.
     /// </summary>
     [Fact]
-    public void SetCandidates_AvailableTypeLabels_IsDistinctAndSorted()
+    public void ElementPickerViewModel_SetCandidates_AvailableTypeLabels_IsDistinctAndSorted()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -80,7 +80,7 @@ public sealed class ElementPickerViewModelTests
     ///     <c>defaultTypeFilterLabel</c> when it exists in the candidates.
     /// </summary>
     [Fact]
-    public void SetCandidates_DefaultLabelPresent_PrepopulatesChip()
+    public void ElementPickerViewModel_SetCandidates_DefaultLabelPresent_PrepopulatesChip()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -98,7 +98,7 @@ public sealed class ElementPickerViewModelTests
     ///     (rather than adding a chip for a label that filters out every candidate).
     /// </summary>
     [Fact]
-    public void SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty()
+    public void ElementPickerViewModel_SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -115,7 +115,7 @@ public sealed class ElementPickerViewModelTests
     ///     surfaced by <see cref="ElementPickerViewModel.DisplayedItems" />.
     /// </summary>
     [Fact]
-    public void DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages()
+    public void ElementPickerViewModel_DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -134,7 +134,7 @@ public sealed class ElementPickerViewModelTests
     ///     type label.
     /// </summary>
     [Fact]
-    public void DisplayedItems_NoChips_ShowsAllCandidates()
+    public void ElementPickerViewModel_DisplayedItems_NoChips_ShowsAllCandidates()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -151,7 +151,7 @@ public sealed class ElementPickerViewModelTests
     ///     matches any of the active chips.
     /// </summary>
     [Fact]
-    public void DisplayedItems_MultipleChips_AppliesOrSemantics()
+    public void ElementPickerViewModel_DisplayedItems_MultipleChips_AppliesOrSemantics()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -175,7 +175,7 @@ public sealed class ElementPickerViewModelTests
     ///     displayed.
     /// </summary>
     [Fact]
-    public void DisplayedItems_SearchText_AppliesAndSemanticsWithChips()
+    public void ElementPickerViewModel_DisplayedItems_SearchText_AppliesAndSemanticsWithChips()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -195,7 +195,7 @@ public sealed class ElementPickerViewModelTests
     ///     Validates that the search text is matched case-insensitively.
     /// </summary>
     [Fact]
-    public void DisplayedItems_SearchText_IsCaseInsensitive()
+    public void ElementPickerViewModel_DisplayedItems_SearchText_IsCaseInsensitive()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -213,7 +213,7 @@ public sealed class ElementPickerViewModelTests
     ///     adding a label twice leaves only one chip.
     /// </summary>
     [Fact]
-    public void AddTypeFilter_DuplicateLabel_KeepsSingleChip()
+    public void ElementPickerViewModel_AddTypeFilter_DuplicateLabel_KeepsSingleChip()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -232,7 +232,7 @@ public sealed class ElementPickerViewModelTests
     ///     present chip and is a no-op (aside from the recompute) for absent labels.
     /// </summary>
     [Fact]
-    public void RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully()
+    public void ElementPickerViewModel_RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -256,7 +256,7 @@ public sealed class ElementPickerViewModelTests
     ///     labels not currently active, preserving the master ordinal ordering.
     /// </summary>
     [Fact]
-    public void GetAddableTypeLabels_ExcludesActiveChips()
+    public void ElementPickerViewModel_GetAddableTypeLabels_ExcludesActiveChips()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -275,7 +275,7 @@ public sealed class ElementPickerViewModelTests
     ///     reset, prior selection cleared, displayed list recomputed).
     /// </summary>
     [Fact]
-    public void SetCandidates_SecondCall_ReplacesState()
+    public void ElementPickerViewModel_SetCandidates_SecondCall_ReplacesState()
     {
         // Arrange
         var picker = new ElementPickerViewModel();
@@ -299,7 +299,7 @@ public sealed class ElementPickerViewModelTests
     ///     freely assigned and read back, tracking the caller's selection.
     /// </summary>
     [Fact]
-    public void SelectedQualifiedName_RoundTrips()
+    public void ElementPickerViewModel_SelectedQualifiedName_RoundTrips()
     {
         // Arrange
         var picker = new ElementPickerViewModel();

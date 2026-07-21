@@ -31,7 +31,7 @@ public sealed class ElementFilterViewModelTests
     ///     an empty (non-null) search text, and an empty displayed list.
     /// </summary>
     [Fact]
-    public void Construction_HasEmptyInitialState()
+    public void ElementFilterViewModel_Construction_HasEmptyInitialState()
     {
         // Act
         var filter = new ElementFilterViewModel();
@@ -49,7 +49,7 @@ public sealed class ElementFilterViewModelTests
     ///     candidate list, matching the runtime null-guard behavior.
     /// </summary>
     [Fact]
-    public void SetCandidates_NullCandidates_Throws()
+    public void ElementFilterViewModel_SetCandidates_NullCandidates_Throws()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -63,7 +63,7 @@ public sealed class ElementFilterViewModelTests
     ///     deduplicated and sorted ordinally after <see cref="ElementFilterViewModel.SetCandidates" />.
     /// </summary>
     [Fact]
-    public void SetCandidates_AvailableTypeLabels_IsDistinctAndSorted()
+    public void ElementFilterViewModel_SetCandidates_AvailableTypeLabels_IsDistinctAndSorted()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -81,7 +81,7 @@ public sealed class ElementFilterViewModelTests
     ///     <c>defaultTypeFilterLabel</c> when it exists in the candidates.
     /// </summary>
     [Fact]
-    public void SetCandidates_DefaultLabelPresent_PrepopulatesChip()
+    public void ElementFilterViewModel_SetCandidates_DefaultLabelPresent_PrepopulatesChip()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -99,7 +99,7 @@ public sealed class ElementFilterViewModelTests
     ///     (rather than adding a chip for a label that filters out every candidate).
     /// </summary>
     [Fact]
-    public void SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty()
+    public void ElementFilterViewModel_SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -116,7 +116,7 @@ public sealed class ElementFilterViewModelTests
     ///     surfaced by <see cref="ElementFilterViewModel.DisplayedItems" />.
     /// </summary>
     [Fact]
-    public void DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages()
+    public void ElementFilterViewModel_DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -135,7 +135,7 @@ public sealed class ElementFilterViewModelTests
     ///     type label.
     /// </summary>
     [Fact]
-    public void DisplayedItems_NoChips_ShowsAllCandidates()
+    public void ElementFilterViewModel_DisplayedItems_NoChips_ShowsAllCandidates()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -152,7 +152,7 @@ public sealed class ElementFilterViewModelTests
     ///     matches any of the active chips.
     /// </summary>
     [Fact]
-    public void DisplayedItems_MultipleChips_AppliesOrSemantics()
+    public void ElementFilterViewModel_DisplayedItems_MultipleChips_AppliesOrSemantics()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -176,7 +176,7 @@ public sealed class ElementFilterViewModelTests
     ///     displayed.
     /// </summary>
     [Fact]
-    public void DisplayedItems_SearchText_AppliesAndSemanticsWithChips()
+    public void ElementFilterViewModel_DisplayedItems_SearchText_AppliesAndSemanticsWithChips()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -196,7 +196,7 @@ public sealed class ElementFilterViewModelTests
     ///     Validates that the search text is matched case-insensitively.
     /// </summary>
     [Fact]
-    public void DisplayedItems_SearchText_IsCaseInsensitive()
+    public void ElementFilterViewModel_DisplayedItems_SearchText_IsCaseInsensitive()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -214,7 +214,7 @@ public sealed class ElementFilterViewModelTests
     ///     adding a label twice leaves only one chip.
     /// </summary>
     [Fact]
-    public void AddTypeFilter_DuplicateLabel_KeepsSingleChip()
+    public void ElementFilterViewModel_AddTypeFilter_DuplicateLabel_KeepsSingleChip()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -233,7 +233,7 @@ public sealed class ElementFilterViewModelTests
     ///     present chip and is a no-op (aside from the recompute) for absent labels.
     /// </summary>
     [Fact]
-    public void RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully()
+    public void ElementFilterViewModel_RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -257,7 +257,7 @@ public sealed class ElementFilterViewModelTests
     ///     labels not currently active, preserving the master ordinal ordering.
     /// </summary>
     [Fact]
-    public void GetAddableTypeLabels_ExcludesActiveChips()
+    public void ElementFilterViewModel_GetAddableTypeLabels_ExcludesActiveChips()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
@@ -276,7 +276,7 @@ public sealed class ElementFilterViewModelTests
     ///     reset, displayed list recomputed).
     /// </summary>
     [Fact]
-    public void SetCandidates_SecondCall_ReplacesState()
+    public void ElementFilterViewModel_SetCandidates_SecondCall_ReplacesState()
     {
         // Arrange
         var filter = new ElementFilterViewModel();
