@@ -7,7 +7,8 @@
 AppShellSubsystem is the composition root for the desktop application. It owns
 the main window, navigation flow, and tabbed viewing experience that tie the
 other subsystems into one coherent user workflow. Its documented units are
-MainWindowShell, WorkspacePanel, AboutDialog, and ViewBuilderDialog. The thin
+MainWindowShell, WorkspacePanel, AboutDialog, ViewBuilderDialog, and
+QueryDialog. The thin
 desktop platform head remains outside the documented unit set because it is
 only a bootstrap and lifetime host.
 

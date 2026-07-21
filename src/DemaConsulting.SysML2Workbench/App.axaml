@@ -18,6 +18,10 @@
          control theme applied and renders as an invisible, unstyled control (see
          https://github.com/AvaloniaUI/AvaloniaEdit#how-to-set-up-a-new-project-that-displays-an-avaloniaedit-editor). -->
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
+
+    <!-- Required by the Query dialog's results DataGrid: Avalonia.Controls.DataGrid ships its own
+         Fluent-theme resources separately from the core FluentTheme above. -->
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
   </Application.Styles>
 
 </Application>

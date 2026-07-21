@@ -14,6 +14,7 @@ package SysML2WorkbenchArchitecture {
             part layoutRenderingSubsystem: LayoutRenderingSubsystem;
             part diagnosticsPanelSubsystem: DiagnosticsPanelSubsystem;
             part loggingSubsystem: LoggingSubsystem;
+            part elementPickerSubsystem: ElementPickerSubsystem;
             part appShellSubsystem: AppShellSubsystem;
         }
     }

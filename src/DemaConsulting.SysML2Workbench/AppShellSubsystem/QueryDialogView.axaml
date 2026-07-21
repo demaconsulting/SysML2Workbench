@@ -1,0 +1,112 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:DemaConsulting.SysML2Workbench.AppShellSubsystem"
+        xmlns:picker="using:DemaConsulting.SysML2Workbench.ElementPickerSubsystem"
+        x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.QueryDialogView"
+        x:DataType="local:QueryDialogViewModel"
+        Title="Query"
+        Icon="avares://DemaConsulting.SysML2Workbench/Assets/Icon.png"
+        Width="900" Height="640"
+        WindowStartupLocation="CenterOwner">
+
+  <DockPanel Margin="12">
+
+    <!-- Bottom row: Close button + status message text -->
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+      <Button Name="CloseButton" Content="Close" IsCancel="True" Click="OnCloseButtonClick" MinWidth="80" HorizontalContentAlignment="Center" />
+    </StackPanel>
+
+    <TextBlock DockPanel.Dock="Bottom" Name="StatusTextBlock" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="Red" Margin="0,8,0,0" />
+
+    <!-- Top row: global "Include standard library" checkbox -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="0,0,0,8">
+      <CheckBox Name="IncludeStdlibCheckBox" Content="Include standard library" IsChecked="{Binding IncludeStdlib, Mode=TwoWay}" />
+      <TextBlock Text="No workspace open - add a file or folder from the Workspace panel." IsVisible="{Binding IsWorkspaceEmpty}" Foreground="Gray" VerticalAlignment="Center" />
+    </StackPanel>
+
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="340" MinWidth="240" />
+        <ColumnDefinition Width="5" />
+        <ColumnDefinition Width="*" MinWidth="300" />
+      </Grid.ColumnDefinitions>
+
+      <!-- Left: single adaptive form (Query Type + filter-only/picker pair + verb-specific extras) -->
+      <StackPanel Grid.Column="0" Margin="8" Spacing="6">
+        <TextBlock Text="Query Type" />
+        <ComboBox Name="QueryTypeComboBox" HorizontalAlignment="Stretch" />
+
+        <TextBlock Name="PickerHintTextBlock" TextWrapping="Wrap" Foreground="Gray" FontSize="11" />
+        <picker:ElementFilterView Name="ListFilterView" DataContext="{Binding FilterOnly}" />
+        <picker:ElementPickerView Name="ElementQueryPickerView" DataContext="{Binding Picker}" />
+
+        <!-- Hierarchy-only direction selector -->
+        <StackPanel Name="HierarchyDirectionPanel" Spacing="4" IsVisible="False">
+          <TextBlock Text="Direction (Hierarchy)" />
+          <ComboBox Name="HierarchyDirectionComboBox" HorizontalAlignment="Stretch" />
+        </StackPanel>
+
+        <!-- Impact-only walk depth input -->
+        <StackPanel Name="WalkDepthPanel" Spacing="4" IsVisible="False">
+          <TextBlock Text="Walk depth (blank = unlimited)" />
+          <TextBox Name="WalkDepthTextBox" Text="{Binding WalkDepthText, Mode=TwoWay}" />
+        </StackPanel>
+      </StackPanel>
+
+      <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" ResizeDirection="Columns" Background="Transparent" />
+
+      <!-- Right: shared results panel, no toolbar - copy actions live on the right-click context menu -->
+      <Border Grid.Column="2" Name="ResultsBorder" BorderBrush="Gray" BorderThickness="1">
+        <Border.ContextMenu>
+          <ContextMenu>
+            <MenuItem Name="CopyAsMarkdownMenuItem" Header="Copy as Markdown" Click="OnCopyAsMarkdownMenuItemClick" IsEnabled="{Binding HasCurrentResult}" />
+            <MenuItem Name="CopyAsJsonMenuItem" Header="Copy as JSON" Click="OnCopyAsJsonMenuItemClick" IsEnabled="{Binding HasCurrentResult}" />
+          </ContextMenu>
+        </Border.ContextMenu>
+        <DockPanel>
+
+          <!-- Summary bullets: short narrative caption, pinned above the table, never scrolled. -->
+          <ItemsControl Name="SummaryItemsControl" DockPanel.Dock="Top" Margin="8,8,8,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- Entries table: Avalonia's own DataGrid control (Avalonia.Controls.DataGrid package),
+               which pins its column headers above a scrollable row area out of the box - replacing an
+               earlier hand-rolled Grid+ItemsControl "table" whose header scrolled away with the rows. -->
+          <Border BorderBrush="LightGray" BorderThickness="1" Padding="0" IsVisible="False" Name="EntriesTableBorder" Margin="8">
+            <DataGrid Name="EntriesDataGrid"
+                      ItemsSource="{Binding CurrentResultRows}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="False"
+                      GridLinesVisibility="Horizontal"
+                      HeadersVisibility="Column">
+              <DataGrid.Styles>
+                <!-- Restores the row-level "Notes" tooltip the earlier hand-rolled table showed via
+                     ToolTip.Tip on its per-row Grid; DataGridRow's DataContext is the bound QueryResultRow. -->
+                <Style Selector="DataGridRow" x:DataType="local:QueryResultRow">
+                  <Setter Property="ToolTip.Tip" Value="{Binding Notes}" />
+                </Style>
+              </DataGrid.Styles>
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Qualified Name" Binding="{Binding QualifiedName}" Width="2*" />
+                <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="1*" />
+                <DataGridTextColumn Header="Detail" Binding="{Binding Detail}" Width="2*" />
+                <DataGridTextColumn Header="Direction" Binding="{Binding Direction}" Width="1*" IsVisible="False" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </Border>
+
+        </DockPanel>
+      </Border>
+
+    </Grid>
+
+  </DockPanel>
+
+</Window>

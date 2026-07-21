@@ -1,0 +1,109 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'AppShellSubsystem Requirements'
+        sections:
+          - title: 'QueryDialog Requirements'
+            requirements:
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-RefreshPickersFromWorkspace'
+                title: 'The QueryDialog shall populate its single picker from the shell''s current workspace
+                  declarations on construction, apply the IncludeStdlib checkbox as the candidate-filter rule
+                  (excluding stdlib qualified names when unchecked), report an empty-workspace state when zero
+                  sources are open, and recompute the displayed result immediately after every refresh.'
+                justification: |
+                  The single form needs an accurate, workspace-derived candidate list every time the dialog is
+                  opened, the stdlib toggle must be honored consistently, and a clear signal is needed when
+                  there is nothing to query yet.
+                tests:
+                  - 'QueryDialogViewModel_Construction_EmptyShell_ReportsWorkspaceEmpty'
+                  - 'QueryDialogViewModel_Construction_LoadedWorkspace_PopulatesSinglePicker'
+                  - 'QueryDialogViewModel_IncludeStdlibToggle_RefreshesPickerAndRecomputesResult'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-BrowseTabIsClientSideList'
+                title: 'The QueryDialog''s merged "List" Query Type shall produce a client-built QueryResult
+                  with Verb "list", no target Element, and one Entry per DisplayedItem (carrying the item''s
+                  qualified name and its type label as Kind), regenerating it live as the picker''s filter
+                  changes; "List" shall never call QueryEngine.List or QueryEngine.Find, and the user shall
+                  never be presented with a separate "Find" option.'
+                justification: |
+                  "List" is deliberately a pure client-side filter to give an instant response as the user
+                  types, and to avoid pulling the whole workspace through the engine for a trivial name filter.
+                tests:
+                  - 'QueryDialogViewModel_ListQueryType_BuildsClientSideListResult'
+                  - 'QueryDialogViewModel_ListQueryType_SearchTextEdit_RegeneratesResultLive'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-ElementQueryDispatchesThroughEngine'
+                title: 'The QueryDialog''s single Query Type combo box shall offer all ten element-scoped
+                  QueryVerb values in addition to "List"; selecting one of them resolves the single picker''s
+                  selected qualified name against the current workspace, builds a QueryOptions instance
+                  carrying the selected Query Type, the qualified name, IncludeStdlib, and verb-specific inputs
+                  (Direction for Hierarchy, WalkDepth for Impact), and dispatches through QueryEngine.Execute
+                  immediately - with no explicit "Run" gesture anywhere in the dialog. Every subsequent change
+                  to the Query Type, the picker''s selection, the Hierarchy direction, or the Impact walk depth
+                  recomputes the displayed result immediately, without stale data from a previous selection or
+                  Query Type persisting on screen.'
+                justification: |
+                  The form''s purpose is to give a UI over exactly the same query engine the CLI tooling
+                  exercises, without duplicating its verb dispatch or its option-shape rules, and the redesign''s
+                  defining usability improvement is that every relevant edit updates the results live rather
+                  than requiring a separate "Run" click.
+                tests:
+                  - 'QueryDialogViewModel_RecomputeResult_DescribeWithSelection_DispatchesThroughEngineImmediately'
+                  - 'QueryDialogViewModel_SwitchingQueryType_FromDescribeToList_ShowsListResultImmediately'
+                  - 'QueryDialogViewModel_SwitchingQueryType_FromListToDescribeNoSelection_ShowsSelectPrompt'
+                  - 'QueryDialogViewModel_HierarchyDirectionChange_WithSelection_RecomputesImmediately'
+                  - 'QueryDialogViewModel_WalkDepthTextChange_WithSelection_RecomputesImmediately'
+                  - 'QueryDialogViewModel_BuildOptions_HierarchyVerb_AttachesDirection'
+                  - 'QueryDialogViewModel_BuildOptions_NonHierarchyVerb_OmitsDirection'
+                  - 'QueryDialogViewModel_BuildOptions_ImpactVerbWithWalkDepth_ParsesWalkDepth'
+                  - 'QueryDialogViewModel_BuildOptions_ImpactVerbWithInvalidWalkDepth_LeavesNull'
+                  - 'QueryDialogViewModel_BuildOptions_PropagatesIncludeStdlib'
+                  - 'QueryDialogViewModel_QueryTypes_HasExpectedElevenEntries'
+                  - 'QueryDialogViewModel_HierarchyDirectionOptions_HasExpectedThree'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-HandleFailuresGracefully'
+                title: 'The QueryDialog shall report every recoverable failure or informational prompt (no
+                  workspace, no element selected yet for an element-scoped Query Type, a qualified name that no
+                  longer resolves, or an engine ArgumentException) through a user-visible StatusMessage without
+                  throwing an unhandled exception, and shall clear CurrentResult/CurrentResultRows in every
+                  such case rather than leaving a stale prior result on screen.'
+                justification: |
+                  A dialog running against a live-editable workspace routinely encounters selection races and
+                  verb/option mismatches; those must degrade to inline hints rather than crashes, and because
+                  every change now recomputes automatically, a stale leftover result from a prior Query Type or
+                  selection would be actively misleading rather than merely unhelpful.
+                tests:
+                  - 'QueryDialogViewModel_RecomputeResult_ElementScopedVerbNoSelection_ReportsPromptAndClearsRows'
+                  - 'QueryDialogViewModel_RecomputeResult_EmptyWorkspace_ReportsStatusMessage'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-CopyResultToClipboard'
+                title: 'The QueryDialog shall render the current QueryResult through
+                  QueryResultRenderer.RenderMarkdown / RenderJson and write it to the clipboard via
+                  IClipboardService when the user selects "Copy as Markdown" or "Copy as JSON" from the results
+                  panel''s right-click context menu (there is no toolbar); the copy methods shall be no-ops
+                  (rather than throws) when no result is currently displayed, and the context-menu items''
+                  enablement shall reflect whether a result currently exists.'
+                justification: |
+                  The value of running a query is being able to feed the answer back into a doc, review, or
+                  script; a shared clipboard seam keeps the dialog testable, a graceful no-op keeps the actions
+                  safe when invoked with no result loaded, and moving the actions to a context menu keeps the
+                  results panel free of toolbar clutter.
+                tests:
+                  - 'QueryDialogViewModel_CopyResultAsMarkdownAsync_WritesRenderedMarkdownToClipboard'
+                  - 'QueryDialogViewModel_CopyResultAsJsonAsync_WritesRenderedJsonToClipboard'
+                  - 'QueryDialogViewModel_CopyMethods_NoResult_AreNoOps'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-EndToEndFromMenu'
+                title: 'The Query menu''s "Run Query..." item shall open the QueryDialog against the main
+                  window''s shell so a user can select a Query Type, select an element on the single picker,
+                  see the result immediately with no "Run" gesture, and copy the rendered Markdown to the real
+                  Avalonia clipboard via the results panel''s right-click context menu, without any intervening
+                  manual wiring.'
+                justification: |
+                  The externally-observable behavior "click the menu, pick a query type and an element, see the
+                  result, right-click to copy it somewhere else" is the whole feature; verifying it once
+                  end-to-end against a headless Avalonia stack catches menu/dialog/clipboard wiring regressions
+                  the pure view-model tests cannot see.
+                tests:
+                  - 'QueryDialog_SelectDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard'

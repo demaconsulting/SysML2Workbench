@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DemaConsulting.SysML2Workbench.ElementPickerSubsystem"
+             x:Class="DemaConsulting.SysML2Workbench.ElementPickerSubsystem.ElementPickerView"
+             x:DataType="local:ElementPickerViewModel">
+
+  <StackPanel Spacing="6">
+
+    <!-- Chip-row + search filtering, delegated to the composed ElementFilterViewModel -->
+    <local:ElementFilterView DataContext="{Binding Filter}" />
+
+    <!-- Displayed candidates: the OR-then-AND filtered subset -->
+    <ListBox Name="PickerItemsListBox" ItemsSource="{Binding DisplayedItems}"
+             SelectedItem="{Binding SelectedQualifiedName, Mode=TwoWay}" Height="120" />
+
+  </StackPanel>
+
+</UserControl>

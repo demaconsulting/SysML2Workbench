@@ -19,11 +19,15 @@ includes:
   - docs/reqstream/sysml2-workbench/diagnostics-panel-subsystem/diagnostics-list-view.yaml
   - docs/reqstream/sysml2-workbench/logging-subsystem.yaml
   - docs/reqstream/sysml2-workbench/logging-subsystem/rolling-file-logger.yaml
+  - docs/reqstream/sysml2-workbench/element-picker-subsystem.yaml
+  - docs/reqstream/sysml2-workbench/element-picker-subsystem/element-picker.yaml
+  - docs/reqstream/sysml2-workbench/element-picker-subsystem/element-filter.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem/main-window-shell.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem/workspace-panel.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem/about-dialog.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem/view-builder-dialog.yaml
+  - docs/reqstream/sysml2-workbench/app-shell-subsystem/query-dialog.yaml
   - docs/reqstream/ots/sysml2-tools.yaml
   - docs/reqstream/ots/rendering.yaml
   - docs/reqstream/ots/avalonia.yaml

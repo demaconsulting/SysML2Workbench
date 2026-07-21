@@ -144,6 +144,48 @@ Custom views built in the GUI are **session-only** - they are not saved to
 disk by SysML2Workbench itself. The "Copy as SysML" snippet is the only way
 to persist a custom view, by pasting it into your own model file.
 
+## Running a Query
+
+Choose **Query > Run Query...** to open the Query dialog. The dialog is a
+single form (no tabs, no "Run" button) with a shared results panel on the
+right; use the **Include standard library** checkbox at the top to control
+whether stdlib qualified names appear as candidates, and the **Query Type**
+combo box below it to choose what to see:
+
+- **List** (the default) is a live client-side filter over the whole
+  workspace, shown by a dedicated filter-only control - the chip row (with
+  **+** to add and **✕** to remove type filters) and the **Filter by
+  name...** search box, the same way as in the Custom View Builder - with
+  no selectable list, since **List** has no target-element concept at all.
+  The results panel updates as you type, showing one entry per candidate
+  that matches.
+- The other ten entries (Describe, Uses, Used By, Dependencies, Impact,
+  Hierarchy, Requirements, Interface, Connections, States) each need a
+  target element: the dialog instead shows the element picker (the same
+  chip row and search box, plus a selectable candidate list) below the
+  Query Type combo - pick an element there to use it as the query's target.
+  Two of them expose extra controls: **Hierarchy** shows a Direction
+  dropdown (*up*, *down*, *both*), and **Impact** shows an optional Walk
+  Depth text box (leave blank for no bound).
+
+Every change updates the results panel immediately - there is no Run
+button. Changing the Query Type, adding or removing a chip, editing the
+search text, picking an element, changing Direction or Walk Depth, or
+toggling **Include standard library** all recompute the results panel
+synchronously. If you choose one of the ten element-scoped query types
+before picking an element, the panel shows a prompt asking you to select
+one instead of leaving a stale result on screen.
+
+The results panel shows a bullet-list summary and a table of matching
+entries with Qualified Name, Kind, and Detail columns; the **Dependencies**
+verb adds a Direction column. Any per-entry notes appear as a tooltip on
+that entry's row.
+
+Right-click the results panel and choose **Copy as Markdown** or **Copy as
+JSON** to place the rendered result on the clipboard for pasting into a
+review, a bug report, or another tool. Query results are session-only -
+closing the dialog discards them.
+
 ## Diagnostics Panel
 
 The **Diagnostics** panel lists every parser and reference-resolution problem

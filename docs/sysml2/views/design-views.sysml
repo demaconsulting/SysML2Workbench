@@ -34,4 +34,8 @@ package SysML2WorkbenchArchitecture {
         view AppShellSubsystemView {
             expose SysML2Workbench::AppShellSubsystem;
         }
+
+        view ElementPickerSubsystemView {
+            expose SysML2Workbench::ElementPickerSubsystem;
+        }
 }

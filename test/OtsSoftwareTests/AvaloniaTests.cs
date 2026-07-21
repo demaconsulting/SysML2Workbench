@@ -318,4 +318,165 @@ public sealed class AvaloniaTests : IDisposable
     {
         return root.GetVisualDescendants().OfType<T>().FirstOrDefault(c => c.Name == name);
     }
+
+    /// <summary>
+    ///     Walks the logical tree rooted at <paramref name="root" /> and enumerates every
+    ///     <see cref="MenuItem" /> it contains, including submenu items whose visual is only realized
+    ///     when the parent menu opens.
+    /// </summary>
+    private static IEnumerable<MenuItem> LogicalTreeMenuItems(Avalonia.LogicalTree.ILogical root)
+    {
+        foreach (var child in root.LogicalChildren)
+        {
+            if (child is MenuItem menuItem)
+            {
+                yield return menuItem;
+            }
+
+            foreach (var descendant in LogicalTreeMenuItems(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     End-to-end regression for the redesigned Query dialog: constructs a real
+    ///     <see cref="MainWindowView" />, confirms its Query menu hosts the "Run Query..." entry (the
+    ///     view-side counterpart of the plan's new <c>_Query</c> top-level menu), then opens the
+    ///     modal <see cref="QueryDialogView" /> directly (rather than through the modal
+    ///     <c>ShowDialog</c> path, which blocks its calling turn until closed), confirms the dialog
+    ///     opens on the "List" Query Type with the selection-free <c>ListFilterView</c> visible and the
+    ///     selectable <c>ElementQueryPickerView</c> hidden, selects the "Describe" entry on the Query
+    ///     Type combo (confirming the two controls' visibility flips), selects an element on the
+    ///     now-visible picker, and confirms the real
+    ///     <see cref="DemaConsulting.SysML2Tools.Query.QueryEngine" /> result appears immediately with
+    ///     no "Run" gesture of any kind. Then right-clicks the results panel's context menu's "Copy as
+    ///     Markdown" entry and asserts the headless platform's real clipboard now holds the exact text
+    ///     <see cref="DemaConsulting.SysML2Tools.Query.QueryResultRenderer.RenderMarkdown" /> produces.
+    ///     Mirrors <see cref="DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard" />'s right-click
+    ///     recipe.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task QueryDialog_SelectDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard()
+    {
+        // Arrange: a real workspace with one part def, so Describe has something meaningful to say
+        await File.WriteAllTextAsync(
+            Path.Combine(_tempRoot, "Sample.sysml"),
+            "package Sample {\n"
+            + "    part def Engine;\n"
+            + "}\n");
+        using var shell = CreateShell();
+        var window = new MainWindowView(shell);
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        await shell.AddFolderSourceAsync(_tempRoot);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert the Query menu item is really wired in the main window's logical tree. It lives
+        // under the top-level "_Query" menu which Avalonia lazily materializes in the visual tree
+        // only after the menu opens, so we walk the logical tree (which mirrors the AXAML structure
+        // regardless of visualization state) instead of using FindByName's visual-tree walk.
+        var queryMenuItem = LogicalTreeMenuItems(window)
+            .FirstOrDefault(mi => mi.Name == "QueryDialogMenuItem");
+        Assert.NotNull(queryMenuItem);
+
+        // Act: open the dialog directly with the same shell reference OnOpenQueryDialogClick would use.
+        var dialog = new QueryDialogView(shell);
+        dialog.Show(window);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert: the dialog opens defaulting to "List" Query Type, so ListFilterView (the
+        // selection-free filter control) is visible and ElementQueryPickerView (whose selection would
+        // otherwise be silently ignored for "List") is hidden.
+        var listFilterView = FindByName<UserControl>(dialog, "ListFilterView");
+        var elementQueryPickerView = FindByName<UserControl>(dialog, "ElementQueryPickerView");
+        Assert.NotNull(listFilterView);
+        Assert.NotNull(elementQueryPickerView);
+        Assert.True(listFilterView!.IsVisible);
+        Assert.False(elementQueryPickerView!.IsVisible);
+
+        // Act: select "Describe" on the Query Type combo. Describe is no longer the VM's
+        // construction-time default now that the default Query Type is "List", so this step itself
+        // exercises the Query Type combo's wiring.
+        var queryTypeComboBox = FindByName<ComboBox>(dialog, "QueryTypeComboBox");
+        Assert.NotNull(queryTypeComboBox);
+        queryTypeComboBox!.SelectedItem = DemaConsulting.SysML2Tools.Query.QueryVerb.Describe;
+        Dispatcher.UIThread.RunJobs();
+
+        var vm = (QueryDialogViewModel)dialog.DataContext!;
+        Assert.Equal(DemaConsulting.SysML2Tools.Query.QueryVerb.Describe, vm.SelectedQueryType);
+
+        // Assert: switching to an element-scoped Query Type flips the two controls' visibility, and now
+        // that ElementQueryPickerView is visible its inner candidate ListBox is realized - no
+        // TabControl/tab-switch exists in this design.
+        Assert.False(listFilterView.IsVisible);
+        Assert.True(elementQueryPickerView.IsVisible);
+        var pickerListBox = FindByName<ListBox>(dialog, "PickerItemsListBox");
+        Assert.NotNull(pickerListBox);
+
+        // Act: select the target element on the single picker - this alone must produce the result,
+        // with no "Run" button or method of any kind in this design.
+        vm.Picker.SelectedQualifiedName = "Sample::Engine";
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.NotNull(vm.CurrentResult);
+        Assert.Equal("describe", vm.CurrentResult!.Verb);
+        Assert.Equal("Sample::Engine", vm.CurrentResult.Element);
+
+        // Act: right-click the results panel (open its context menu) and click "Copy as Markdown", then
+        // do the exact same gesture a *second* time and click "Copy as JSON" - this is the regression
+        // check for the "one-shot" bug where the context menu stopped opening after the first use.
+        var resultsBorder = FindByName<Border>(dialog, "ResultsBorder");
+        Assert.NotNull(resultsBorder);
+        var contextMenu = resultsBorder!.ContextMenu;
+        Assert.NotNull(contextMenu);
+        contextMenu!.Open(resultsBorder);
+        Dispatcher.UIThread.RunJobs();
+
+        var copyMarkdownMenuItem = FindByName<MenuItem>(dialog, "CopyAsMarkdownMenuItem");
+        Assert.NotNull(copyMarkdownMenuItem);
+        Assert.True(copyMarkdownMenuItem!.IsEnabled);
+        copyMarkdownMenuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        // Wait a beat for the async clipboard write to complete on the UI thread
+        await Task.Yield();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert: the headless platform's real clipboard now holds the expected rendered Markdown
+        var clipboard = TopLevel.GetTopLevel(dialog)?.Clipboard;
+        Assert.NotNull(clipboard);
+        var clipboardText = await clipboard!.TryGetTextAsync();
+        var expected = string.Join(
+            "\n",
+            DemaConsulting.SysML2Tools.Query.QueryResultRenderer.RenderMarkdown(vm.CurrentResult));
+        Assert.Equal(expected, clipboardText);
+
+        // Act: open the context menu a *second* time and click "Copy as JSON" - previously this second
+        // open silently did nothing once the results panel switched to a real DataGrid.
+        contextMenu.Open(resultsBorder);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(contextMenu.IsOpen, "ContextMenu failed to open on a second use.");
+
+        var copyJsonMenuItem = FindByName<MenuItem>(dialog, "CopyAsJsonMenuItem");
+        Assert.NotNull(copyJsonMenuItem);
+        Assert.True(copyJsonMenuItem!.IsEnabled);
+        copyJsonMenuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        await Task.Yield();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert: the second right-click still opened the menu and the clipboard now holds the JSON
+        // rendering, proving the context menu did not "brick itself" after the first use.
+        var secondClipboardText = await clipboard!.TryGetTextAsync();
+        var expectedJson = DemaConsulting.SysML2Tools.Query.QueryResultRenderer.RenderJson(vm.CurrentResult);
+        Assert.Equal(expectedJson, secondClipboardText);
+        Assert.NotEqual(clipboardText, secondClipboardText);
+
+        dialog.Close();
+        window.Close();
+    }
 }
