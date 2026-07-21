@@ -1,0 +1,79 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'ElementPickerSubsystem Requirements'
+        sections:
+          - title: 'ElementPicker Requirements'
+            requirements:
+              - id: 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-AcceptCallerBuiltCandidates'
+                title: 'The ElementPicker shall accept a caller-built list of (qualified name, type label)
+                  candidates through SetCandidates, replace its master state on each call, recompute the
+                  available type-label set, pre-populate the active chip row with the caller-requested default
+                  label when present in the new candidates (empty otherwise), and clear any prior selection so
+                  a stale qualified name cannot linger after a refresh.'
+                justification: |
+                  Callers own the candidate list (which reflects domain-specific exclusions like stdlib names
+                  or disallowed node kinds); the picker must faithfully replace its whole state on every refresh
+                  so a workspace change never leaves a stale selection or chip row in place.
+                tests:
+                  - 'ElementPickerViewModelTests.SetCandidates_NullCandidates_Throws'
+                  - 'ElementPickerViewModelTests.SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
+                  - 'ElementPickerViewModelTests.SetCandidates_DefaultLabelPresent_PrepopulatesChip'
+                  - 'ElementPickerViewModelTests.SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty'
+                  - 'ElementPickerViewModelTests.SetCandidates_SecondCall_ReplacesState'
+
+              - id: 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-FilterByTypeAndText'
+                title: 'The ElementPicker shall combine one or more type-label chips (OR semantics; empty
+                  means no type restriction) with an AND-combined case-insensitive substring search over
+                  qualified names, preserving the caller-supplied candidate order in DisplayedItems.'
+                justification: |
+                  Realistic workspaces contain far more candidate elements than fit comfortably in one ListBox;
+                  narrowing by kind (part def / part / package / ...) and/or by name substring is what makes the
+                  picker practical without scrolling through the entire workspace.
+                tests:
+                  - 'ElementPickerViewModelTests.DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages'
+                  - 'ElementPickerViewModelTests.DisplayedItems_NoChips_ShowsAllCandidates'
+                  - 'ElementPickerViewModelTests.DisplayedItems_MultipleChips_AppliesOrSemantics'
+                  - 'ElementPickerViewModelTests.DisplayedItems_SearchText_AppliesAndSemanticsWithChips'
+                  - 'ElementPickerViewModelTests.DisplayedItems_SearchText_IsCaseInsensitive'
+
+              - id: 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-ManageChipsWithoutDuplicates'
+                title: 'The ElementPicker shall add and remove type-filter chips through AddTypeFilter and
+                  RemoveTypeFilter, reject duplicate additions (so a label appears at most once), and no-op
+                  gracefully when asked to remove a chip that is not currently active.'
+                justification: |
+                  A dedupe-safe chip API keeps the OR-filter semantics predictable regardless of how the "+"
+                  add-flyout is driven; graceful removal keeps the view model tolerant of view-side event
+                  ordering.
+                tests:
+                  - 'ElementPickerViewModelTests.AddTypeFilter_DuplicateLabel_KeepsSingleChip'
+                  - 'ElementPickerViewModelTests.RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully'
+                  - 'ElementPickerViewModelTests.GetAddableTypeLabels_ExcludesActiveChips'
+
+              - id: 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-TrackSelection'
+                title: 'The ElementPicker shall expose the currently-highlighted qualified name through the
+                  observable SelectedQualifiedName property so callers can bind to it and act on the user''s
+                  selection.'
+                justification: |
+                  Every caller (Custom View Builder's "Add ->" button, Query dialog's "Run Query" button, Query
+                  dialog's Browse tab's live result) needs the currently-selected qualified name to act on the
+                  picker; a two-way observable property is the minimum contract that makes it useful.
+                tests:
+                  - 'ElementPickerViewModelTests.SelectedQualifiedName_RoundTrips'
+
+              - id: 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-LabelKnownNodeKinds'
+                title: 'The ElementTypeLabeler shall compute a stable human-readable type label for every
+                  SysmlNode subtype the picker can encounter, using DefinitionKeyword / FeatureKeyword /
+                  ConnectionKeyword for keyword-bearing subtypes, fixed literals for the remaining known
+                  subtypes, and a defensive type-name-based fallback for any unrecognized subtype.'
+                justification: |
+                  The picker''s chip row is only useful if every candidate has a meaningful, consistent label;
+                  a shared static helper (rather than per-caller mapping logic) is what makes the labels
+                  identical across every dialog that hosts the picker.
+                tests:
+                  - 'ElementTypeLabelerTests.GetTypeLabel_DefinitionNode_ReturnsDefinitionKeyword'
+                  - 'ElementTypeLabelerTests.GetTypeLabel_FeatureNode_ReturnsFeatureKeyword'
+                  - 'ElementTypeLabelerTests.GetTypeLabel_ConnectionNode_ReturnsConnectionKeyword'
+                  - 'ElementTypeLabelerTests.GetTypeLabel_FixedLiteralNode_ReturnsExpectedLiteral'
+                  - 'ElementTypeLabelerTests.GetTypeLabel_UnknownSubtype_UsesFallbackFromTypeName'

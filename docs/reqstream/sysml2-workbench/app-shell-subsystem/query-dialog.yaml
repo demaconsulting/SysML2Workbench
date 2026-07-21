@@ -1,0 +1,89 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'AppShellSubsystem Requirements'
+        sections:
+          - title: 'QueryDialog Requirements'
+            requirements:
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-RefreshPickersFromWorkspace'
+                title: 'The QueryDialog shall populate its Browse and Element Query pickers from the shell''s
+                  current workspace declarations on construction, apply the IncludeStdlib checkbox as the
+                  candidate-filter rule (excluding stdlib qualified names when unchecked), and report an
+                  empty-workspace state when zero sources are open.'
+                justification: |
+                  Both tabs need an accurate, workspace-derived candidate list every time the dialog is opened,
+                  the stdlib toggle must be honored consistently across tabs, and a clear signal is needed when
+                  there is nothing to query yet.
+                tests:
+                  - 'QueryDialogViewModelTests.Construction_EmptyShell_ReportsWorkspaceEmpty'
+                  - 'QueryDialogViewModelTests.Construction_LoadedWorkspace_PopulatesBothPickers'
+                  - 'QueryDialogViewModelTests.IncludeStdlibToggle_RefreshesBothPickers'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-BrowseTabIsClientSideList'
+                title: 'The QueryDialog''s Browse tab shall produce a client-built QueryResult with Verb "list",
+                  no target Element, and one Entry per DisplayedItem (carrying the item''s qualified name and
+                  its type label as Kind), regenerating it live as the picker''s filter changes; the Browse tab
+                  shall never call QueryEngine.List or QueryEngine.Find.'
+                justification: |
+                  Browse is deliberately a pure client-side filter to give an instant response as the user
+                  types, and to avoid pulling the whole workspace through the engine for a trivial name filter.
+                tests:
+                  - 'QueryDialogViewModelTests.BrowseTab_BuildsClientSideListResult'
+                  - 'QueryDialogViewModelTests.BrowseTab_SearchTextEdit_RegeneratesResultLive'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-ElementQueryDispatchesThroughEngine'
+                title: 'The QueryDialog''s Element Query tab shall resolve the picker''s selected qualified name
+                  against the current workspace, build a QueryOptions instance carrying the selected verb, the
+                  qualified name, IncludeStdlib, and verb-specific inputs (Direction for Hierarchy, WalkDepth
+                  for Impact), and dispatch through QueryEngine.Execute; each of the ten element-scoped
+                  QueryVerb values shall be selectable in the verb dropdown.'
+                justification: |
+                  The tab''s purpose is to give a UI over exactly the same query engine the CLI tooling
+                  exercises, without duplicating its verb dispatch or its option-shape rules.
+                tests:
+                  - 'QueryDialogViewModelTests.RunElementQuery_Describe_DispatchesThroughEngine'
+                  - 'QueryDialogViewModelTests.BuildOptions_HierarchyVerb_AttachesDirection'
+                  - 'QueryDialogViewModelTests.BuildOptions_NonHierarchyVerb_OmitsDirection'
+                  - 'QueryDialogViewModelTests.BuildOptions_ImpactVerbWithWalkDepth_ParsesWalkDepth'
+                  - 'QueryDialogViewModelTests.BuildOptions_ImpactVerbWithInvalidWalkDepth_LeavesNull'
+                  - 'QueryDialogViewModelTests.BuildOptions_PropagatesIncludeStdlib'
+                  - 'QueryDialogViewModelTests.ElementScopedVerbs_HasExpectedTenVerbs'
+                  - 'QueryDialogViewModelTests.HierarchyDirectionOptions_HasExpectedThree'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-HandleFailuresGracefully'
+                title: 'The QueryDialog shall report every recoverable failure surface (no workspace, no
+                  selection, a qualified name that no longer resolves, or an engine ArgumentException) through
+                  a user-visible StatusMessage without throwing an unhandled exception and without mutating a
+                  previously-successful CurrentResult.'
+                justification: |
+                  A dialog running against a live-editable workspace routinely encounters selection races and
+                  verb/option mismatches; those must degrade to inline hints rather than crashes.
+                tests:
+                  - 'QueryDialogViewModelTests.RunElementQuery_NoSelection_ReportsStatusMessage'
+                  - 'QueryDialogViewModelTests.RunElementQuery_EmptyWorkspace_ReportsStatusMessage'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-CopyResultToClipboard'
+                title: 'The QueryDialog shall render the current QueryResult through
+                  QueryResultRenderer.RenderMarkdown / RenderJson and write it to the clipboard via
+                  IClipboardService when the user clicks "Copy as Markdown" or "Copy as JSON"; the copy methods
+                  shall be no-ops (rather than throws) when no result is currently displayed.'
+                justification: |
+                  The value of running a query is being able to feed the answer back into a doc, review, or
+                  script; a shared clipboard seam keeps the dialog testable, and a graceful no-op keeps the
+                  buttons safe when the user clicks them with no result loaded.
+                tests:
+                  - 'QueryDialogViewModelTests.CopyResultAsMarkdownAsync_WritesRenderedMarkdownToClipboard'
+                  - 'QueryDialogViewModelTests.CopyResultAsJsonAsync_WritesRenderedJsonToClipboard'
+                  - 'QueryDialogViewModelTests.CopyMethods_NoResult_AreNoOps'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-EndToEndFromMenu'
+                title: 'The Query menu''s "Run Query..." item shall open the QueryDialog against the main
+                  window''s shell so a user can select an element, run an element-scoped verb, and copy the
+                  rendered Markdown to the real Avalonia clipboard, without any intervening manual wiring.'
+                justification: |
+                  The externally-observable behavior "click the menu, run a query, paste the result somewhere
+                  else" is the whole feature; verifying it once end-to-end against a headless Avalonia stack
+                  catches menu/dialog/clipboard wiring regressions the pure view-model tests cannot see.
+                tests:
+                  - 'AvaloniaTests.QueryDialog_RunDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard'

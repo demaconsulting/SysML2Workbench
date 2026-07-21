@@ -1,0 +1,33 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'ElementPickerSubsystem Requirements'
+        requirements:
+          - id: 'SysML2Workbench-ElementPickerSubsystem-ProvideReusablePicker'
+            title: 'The ElementPickerSubsystem shall provide a reusable, dialog-agnostic element-picker control
+              that any modal dialog in the application can host to present a caller-built list of candidate
+              qualified names with a type-label chip row, a substring search box, and a single-select list.'
+            justification: |
+              Both the Custom View Builder's expose-target picker and the Query dialog's Browse/Element Query
+              pickers need the exact same OR-then-AND filtering behavior. Extracting it into a shared subsystem
+              is the alternative to either duplicating the filter logic across dialogs or coupling one dialog's
+              domain model onto the other.
+            children:
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-AcceptCallerBuiltCandidates'
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-FilterByTypeAndText'
+            tests:
+              - 'ElementPickerViewModelTests.SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
+
+          - id: 'SysML2Workbench-ElementPickerSubsystem-DecoupleFromWorkspace'
+            title: 'The ElementPickerSubsystem shall not itself depend on MainWindowShell, WorkspaceModel, or
+              ViewDefinitionModel; callers are responsible for building the candidate list and for observing
+              the picker''s selection.'
+            justification: |
+              The picker must be reusable from dialogs whose surrounding domain models are unrelated (Custom
+              View Builder over ViewDefinitionModel vs. Query dialog over QueryEngine). Any coupling to those
+              types in the subsystem itself would defeat the extraction.
+            children:
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-AcceptCallerBuiltCandidates'
+            tests:
+              - 'ElementPickerViewModelTests.Construction_HasEmptyInitialState'

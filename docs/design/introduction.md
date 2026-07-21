@@ -5,7 +5,7 @@ for SysML v2 textual models. It is built as a thin shell over the
 `DemaConsulting.SysML2Tools` OTS libraries (parser, semantic model, layout
 engine) and the `DemaConsulting.Rendering` OTS library, all consumed as
 published NuGet packages. Local design coverage is organized as one system,
-seven subsystems (no nesting), and eleven units. There are no Shared Packages
+eight subsystems (no nesting), and fifteen units. There are no Shared Packages
 in this repository; OTS items are documented under the parallel `ots/`
 folders.
 
@@ -70,8 +70,14 @@ thin bootstrap/entry-point project with no independent design of its own.
     - **DiagnosticsListView** (Unit) — structured for future click-to-navigate
   - **LoggingSubsystem**
     - **RollingFileLogger** (Unit) — local rolling log file for user-attachable bug reports
+  - **ElementPickerSubsystem** — reusable dialog-agnostic element-picker control
+    - **ElementPicker** (Unit) — chip/search/list view model + view for a caller-built candidate list
   - **AppShellSubsystem** — window, navigation, tabbed views
     - **MainWindowShell** (Unit)
+    - **WorkspacePanel** (Unit) — workspace tree panel view model
+    - **AboutDialog** (Unit) — modal about dialog
+    - **ViewBuilderDialog** (Unit) — modal custom-view builder dialog
+    - **QueryDialog** (Unit) — modal query dialog (Browse + Element Query tabs)
     - Desktop (platform head / entry point project; not a separately documented unit)
 
 ## Folder Layout

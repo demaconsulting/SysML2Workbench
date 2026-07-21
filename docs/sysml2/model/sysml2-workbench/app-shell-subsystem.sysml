@@ -12,6 +12,7 @@ package SysML2WorkbenchArchitecture {
             part workspacePanel: WorkspacePanel;
             part aboutDialog: AboutDialog;
             part viewBuilderDialog: ViewBuilderDialog;
+            part queryDialog: QueryDialog;
         }
     }
 }

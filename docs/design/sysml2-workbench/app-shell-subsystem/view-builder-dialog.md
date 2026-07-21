@@ -33,50 +33,23 @@ own `BuilderDefinition`.
 whatever SVG `RenderPreview` most recently produced. Never shared with, nor
 derived from, any tab tracked by `Shell`.
 
-**AvailableExposeTargets**: `IReadOnlyList<string>` — qualified names offered
-by the "Expose Targets" tab's add-target picker, drawn from
-`Shell.CurrentWorkspace.Workspace.Declarations`, excluding stdlib names and
-node kinds that would fail `ViewDefinitionModel` validation (views,
-viewpoints, imports, metadata, transitions, connections). Remains the
-master, unfiltered, sorted list; `DisplayedExposeTargets` (below) is what the
-picker `ListBox` actually binds to.
+**ExposeTargetPicker**: `ElementPickerSubsystem.ElementPickerViewModel` — the
+"Expose Targets" tab's add-target picker, composed from the shared
+`ElementPickerSubsystem`. `RefreshFromWorkspace` builds the candidate list
+from `Shell.CurrentWorkspace.Workspace.Declarations`, excluding stdlib names
+and node kinds that would fail `ViewDefinitionModel` validation (views,
+viewpoints, imports, metadata, transitions, connections), maps each
+candidate to a human-readable type label via
+`ElementPickerSubsystem.ElementTypeLabeler`, and hands them to the picker
+through `SetCandidates(..., defaultTypeFilterLabel: "part")` so the picker
+starts filtered to `"part"` when that label is present in the workspace
+and otherwise starts unfiltered.
 
-**AvailableExposeTargetTypeLabels**: `IReadOnlyList<string>` — every distinct
-human-readable "type label" present among the current `AvailableExposeTargets`
-candidates, sorted ordinally. Each candidate's label is computed from its
-underlying `SysmlNode` subtype: a `SysmlDefinitionNode` yields its
-`DefinitionKeyword` (e.g. `"part def"`), a `SysmlFeatureNode` yields its
-`FeatureKeyword` (e.g. `"part"`), and `SysmlPackageNode`/`SysmlDependencyNode`/
-`SysmlSatisfyNode` yield the fixed literals `"package"`/`"dependency"`/
-`"satisfy"` respectively (none of these three expose a keyword-like property
-of their own). Any other node kind not already excluded from the picker falls
-back to a defensively derived label (its runtime type name with a leading
-`Sysml` and/or trailing `Node` stripped, lowercased), so an unrecognized
-future node kind is labeled reasonably rather than crashing or silently
-vanishing from the picker.
-
-**ActiveExposeTypeFilters**: `ObservableCollection<string>` — the type-label
-chips currently applied over the picker, combined with OR semantics (an item
-is shown when its type label is any one of these); empty means no type
-restriction (every candidate's type is shown). `RefreshFromWorkspace`
-pre-populates this with just `"part"` when that label is present in the
-current workspace, since narrowing to part usages is the most common
-starting point; otherwise it starts empty. Mutated only through
-`AddExposeTypeFilter`/`RemoveExposeTypeFilter` (or, defensively, any other
-direct mutation, which is also observed) rather than replaced wholesale, so
-the view's chip-row `ItemsControl` can bind to this instance directly.
-
-**ExposeTargetSearchText**: `string?` — the picker's free-text search box
-value, two-way bound from the view. A non-empty value narrows
-`DisplayedExposeTargets` to qualified names containing it as a
-case-insensitive substring, applied with AND semantics against whatever the
-active type filter already narrowed to.
-
-**DisplayedExposeTargets**: `IReadOnlyList<string>` — the picker `ListBox`'s
-actual data source: `AvailableExposeTargets`, narrowed first by
-`ActiveExposeTypeFilters` (OR semantics) and then by `ExposeTargetSearchText`
-(AND semantics), preserving the master list's ordinal sort order. Recomputed
-whenever any of the three inputs changes.
+All of the picker's own filtering, chip-row, and selection state
+(`AvailableTypeLabels`, `ActiveTypeFilters`, `SearchText`, `DisplayedItems`,
+`SelectedQualifiedName`) is documented under the shared
+`ElementPickerSubsystem.ElementPicker` unit; the "Add ->" button reads
+`ExposeTargetPicker.SelectedQualifiedName` when the user clicks it.
 
 **StatusMessage**: `string?` — set when `RenderPreview` or `TryCommit` fails,
 so the view can surface the failure inline without a modal message box.
@@ -87,27 +60,17 @@ unusable, target-less picker.
 
 #### Key Methods
 
-**RefreshFromWorkspace**: Refreshes `AvailableExposeTargets`,
-`AvailableExposeTargetTypeLabels`, `ActiveExposeTypeFilters`,
-`DisplayedExposeTargets`, and `IsWorkspaceEmpty` from the shell's current
-workspace state.
+**RefreshFromWorkspace**: Refreshes `ExposeTargetPicker`'s candidate list and
+`IsWorkspaceEmpty` from the shell's current workspace state.
 
 - *Parameters*: none.
-- *Returns*: `void` — all listed properties update in place.
+- *Returns*: `void` — `ExposeTargetPicker.SetCandidates` is called with the
+  filtered candidate list, and `IsWorkspaceEmpty` updates in place.
 - *Postconditions*: Called once at construction; the dialog is short-lived
   (opened, edited, closed) so it does not itself subscribe to
   `MainWindowShell.SourcesChanged` the way the old long-lived panel view
-  model did. Re-applies the `"part"`-default chip rule fresh each call.
-
-**AddExposeTypeFilter** / **RemoveExposeTypeFilter**: Add or remove a type
-label from `ActiveExposeTypeFilters` and recompute `DisplayedExposeTargets`.
-
-- *Parameters*: the type label to add or remove.
-- *Returns*: `void` — `ActiveExposeTypeFilters` and `DisplayedExposeTargets`
-  update in place.
-- *Postconditions*: `AddExposeTypeFilter` is dedupe-safe (adding an
-  already-active label is a no-op beyond the recompute); `RemoveExposeTypeFilter`
-  no-ops when the label is not currently active, rather than throwing.
+  model did. Re-applies the `"part"`-default chip rule fresh each call
+  through the `defaultTypeFilterLabel` argument.
 
 **AddExposeTarget** / **RemoveExposeTarget** / **SetExposeRecursionKind** /
 **SetExposeBracketFilter**: Port the deleted `CustomViewBuilderToolViewModel`'s

@@ -144,6 +144,35 @@ Custom views built in the GUI are **session-only** - they are not saved to
 disk by SysML2Workbench itself. The "Copy as SysML" snippet is the only way
 to persist a custom view, by pasting it into your own model file.
 
+## Running a Query
+
+Choose **Query > Run Query...** to open the Query dialog. The dialog shows
+two tabs and a shared results panel; use the **Include standard library**
+checkbox above the tabs to control whether stdlib qualified names appear as
+candidates in both tabs.
+
+- The **Browse** tab is a live client-side filter over the whole workspace.
+  Use the chip row (with **+** to add and **✕** to remove type filters) and
+  the **Filter by name...** search box the same way as in the Custom View
+  Builder - the results panel below the tabs updates as you type, showing
+  one entry per candidate that matches.
+- The **Element Query** tab lets you pick a single element with the same
+  picker, choose one of the ten element-scoped verbs (Uses, Used By,
+  Dependencies, Impact, Describe, Hierarchy, Requirements, Interface,
+  Connections, States), and click **Run Query**. Two verbs expose extra
+  controls: **Hierarchy** shows a Direction dropdown (*up*, *down*, *both*),
+  and **Impact** shows an optional Walk Depth text box (leave blank for no
+  bound).
+
+The results panel shows a bullet-list summary and a table of matching
+entries with Qualified Name, Kind, and Detail columns; the **Dependencies**
+verb adds a Direction column. Any per-entry notes appear as a tooltip on
+that entry's row.
+
+Click **Copy as Markdown** or **Copy as JSON** to place the rendered result
+on the clipboard for pasting into a review, a bug report, or another tool.
+Query results are session-only - closing the dialog discards them.
+
 ## Diagnostics Panel
 
 The **Diagnostics** panel lists every parser and reference-resolution problem
