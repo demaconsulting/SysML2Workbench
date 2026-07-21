@@ -153,17 +153,20 @@ whether stdlib qualified names appear as candidates, and the **Query Type**
 combo box below it to choose what to see:
 
 - **List** (the default) is a live client-side filter over the whole
-  workspace. Use the chip row (with **+** to add and **✕** to remove type
-  filters) and the **Filter by name...** search box the same way as in the
-  Custom View Builder - the results panel updates as you type, showing one
-  entry per candidate that matches. The element picker's own selection is
-  ignored for **List**; it is purely a filter here.
+  workspace, shown by a dedicated filter-only control - the chip row (with
+  **+** to add and **✕** to remove type filters) and the **Filter by
+  name...** search box, the same way as in the Custom View Builder - with
+  no selectable list, since **List** has no target-element concept at all.
+  The results panel updates as you type, showing one entry per candidate
+  that matches.
 - The other ten entries (Describe, Uses, Used By, Dependencies, Impact,
   Hierarchy, Requirements, Interface, Connections, States) each need a
-  target element: pick one with the same always-visible picker below the
-  Query Type combo. Two of them expose extra controls: **Hierarchy** shows a
-  Direction dropdown (*up*, *down*, *both*), and **Impact** shows an
-  optional Walk Depth text box (leave blank for no bound).
+  target element: the dialog instead shows the element picker (the same
+  chip row and search box, plus a selectable candidate list) below the
+  Query Type combo - pick an element there to use it as the query's target.
+  Two of them expose extra controls: **Hierarchy** shows a Direction
+  dropdown (*up*, *down*, *both*), and **Impact** shows an optional Walk
+  Depth text box (leave blank for no bound).
 
 Every change updates the results panel immediately - there is no Run
 button. Changing the Query Type, adding or removing a chip, editing the

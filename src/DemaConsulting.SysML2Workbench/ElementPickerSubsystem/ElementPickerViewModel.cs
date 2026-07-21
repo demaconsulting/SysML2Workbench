@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace DemaConsulting.SysML2Workbench.ElementPickerSubsystem;
@@ -12,8 +11,16 @@ namespace DemaConsulting.SysML2Workbench.ElementPickerSubsystem;
 /// <remarks>
 ///     Extracted from the pre-refactor <c>ViewBuilderDialogViewModel</c>'s expose-target
 ///     picker so more than one dialog (Custom View Builder, Query dialog) can host the same
-///     picker without duplicating the OR-then-AND filtering logic and chip management. The
-///     view model is deliberately independent of <c>ViewDefinitionModel</c>, <c>MainWindowShell</c>,
+///     picker without duplicating the OR-then-AND filtering logic and chip management. This
+///     view model composes an <see cref="ElementFilterViewModel" /> instance (<see cref="Filter" />)
+///     to own the filtering/chip-management logic itself, and adds only its own
+///     <see cref="SelectedQualifiedName" /> selection concept on top; every filtering-related
+///     public member (<see cref="AvailableTypeLabels" />, <see cref="SearchText" />,
+///     <see cref="DisplayedItems" />, <see cref="ActiveTypeFilters" />,
+///     <see cref="GetAddableTypeLabels" />, <see cref="AddTypeFilter" />,
+///     <see cref="RemoveTypeFilter" />) is a thin pass-through to <see cref="Filter" />, so
+///     existing callers and bindings see no change to this class's public API. The view
+///     model is deliberately independent of <c>ViewDefinitionModel</c>, <c>MainWindowShell</c>,
 ///     and any workspace type: the caller is responsible for building the candidate list
 ///     (typically by mapping <c>SysmlWorkspace.Declarations</c> through
 ///     <see cref="ElementTypeLabeler.GetTypeLabel" /> and applying any caller-owned
@@ -23,57 +30,64 @@ namespace DemaConsulting.SysML2Workbench.ElementPickerSubsystem;
 /// </remarks>
 public sealed partial class ElementPickerViewModel : ObservableObject
 {
-    /// <summary>
-    ///     Master, unfiltered list mapping each candidate element's qualified name to its
-    ///     computed type label, in the same sorted order as <see cref="DisplayedItems" />'s
-    ///     pre-filter source. Rebuilt by <see cref="SetCandidates" /> and consulted by
-    ///     <see cref="RecomputeDisplayedItems" /> so the OR/AND filter pass can re-narrow
-    ///     without re-querying the caller for the master set on every keystroke or chip
-    ///     change.
-    /// </summary>
-    private IReadOnlyList<(string QualifiedName, string TypeLabel)> _candidates = [];
-
-    [ObservableProperty]
-    private IReadOnlyList<string> _availableTypeLabels = [];
-
-    [ObservableProperty]
-    private string? _searchText = "";
-
-    [ObservableProperty]
-    private IReadOnlyList<string> _displayedItems = [];
-
     [ObservableProperty]
     private string? _selectedQualifiedName;
 
     /// <summary>
     ///     Creates the picker view model in its empty initial state: no candidates, no active
-    ///     type filters, empty search text, and an empty displayed list. Callers populate it
-    ///     later by calling <see cref="SetCandidates" />.
+    ///     type filters, empty search text, an empty displayed list, and no selection.
+    ///     Callers populate it later by calling <see cref="SetCandidates" />.
     /// </summary>
     public ElementPickerViewModel()
     {
-        ActiveTypeFilters.CollectionChanged += OnActiveTypeFiltersCollectionChanged;
+        Filter = new ElementFilterViewModel();
+        Filter.PropertyChanged += OnFilterPropertyChanged;
     }
 
     /// <summary>
-    ///     Type labels currently applied as chips over the picker, combined with OR semantics:
-    ///     an item is shown when its type label is any one of these. An empty collection means
-    ///     no type restriction is applied (every candidate's type is shown). Populated by
-    ///     <see cref="SetCandidates" />'s <c>defaultTypeFilterLabel</c> argument, and
-    ///     subsequently mutated only via <see cref="AddTypeFilter" />/<see cref="RemoveTypeFilter" />
-    ///     (or, defensively, any other direct mutation, which is also observed by the internal
-    ///     collection-changed handler that re-runs <see cref="RecomputeDisplayedItems" />), so
-    ///     the view's chip-row <c>ItemsControl</c> can bind to this instance directly.
+    ///     The composed, selection-free filter view model that actually owns the candidate
+    ///     list, chip management, and search-text filtering. Exposed so a hosting
+    ///     <see cref="ElementPickerView" /> can embed an <see cref="ElementFilterView" /> bound
+    ///     directly to this instance for its chip-row/search markup, and so callers that need
+    ///     only the filter (no selection) - such as the Query dialog's "List" Query Type - can
+    ///     use a standalone <see cref="ElementFilterViewModel" /> instead of this class.
     /// </summary>
-    public ObservableCollection<string> ActiveTypeFilters { get; } = [];
+    public ElementFilterViewModel Filter { get; }
 
     /// <summary>
-    ///     Replaces the picker's master candidate list with <paramref name="candidates" />,
-    ///     recomputes <see cref="AvailableTypeLabels" /> from that list, resets
-    ///     <see cref="ActiveTypeFilters" /> to a single-chip default (or empty) per
-    ///     <paramref name="defaultTypeFilterLabel" />, and recomputes
-    ///     <see cref="DisplayedItems" />. Also clears <see cref="SelectedQualifiedName" /> so
-    ///     a stale prior selection cannot linger after a workspace-derived refresh.
+    ///     Pass-through to <see cref="Filter" />'s <see cref="ElementFilterViewModel.AvailableTypeLabels" />.
+    /// </summary>
+    public IReadOnlyList<string> AvailableTypeLabels => Filter.AvailableTypeLabels;
+
+    /// <summary>
+    ///     Pass-through to <see cref="Filter" />'s <see cref="ElementFilterViewModel.SearchText" />.
+    ///     A manual property (rather than <c>[ObservableProperty]</c>) because it must forward
+    ///     both reads and writes to <see cref="Filter" /> rather than backing its own field.
+    /// </summary>
+    public string? SearchText
+    {
+        get => Filter.SearchText;
+        set => Filter.SearchText = value;
+    }
+
+    /// <summary>
+    ///     Pass-through to <see cref="Filter" />'s <see cref="ElementFilterViewModel.DisplayedItems" />.
+    /// </summary>
+    public IReadOnlyList<string> DisplayedItems => Filter.DisplayedItems;
+
+    /// <summary>
+    ///     Pass-through to <see cref="Filter" />'s <see cref="ElementFilterViewModel.ActiveTypeFilters" />.
+    ///     Returns the same <see cref="ObservableCollection{T}" /> instance every time, so a
+    ///     view bound to this property observes the same collection-changed notifications as
+    ///     one bound directly to <see cref="Filter" />.
+    /// </summary>
+    public ObservableCollection<string> ActiveTypeFilters => Filter.ActiveTypeFilters;
+
+    /// <summary>
+    ///     Replaces the picker's master candidate list with <paramref name="candidates" /> by
+    ///     forwarding to <see cref="Filter" />'s <see cref="ElementFilterViewModel.SetCandidates" />,
+    ///     then clears <see cref="SelectedQualifiedName" /> so a stale prior selection cannot
+    ///     linger after a workspace-derived refresh.
     /// </summary>
     /// <param name="candidates">
     ///     The full, unfiltered set of qualified-name / type-label pairs. Assumed to be
@@ -93,38 +107,16 @@ public sealed partial class ElementPickerViewModel : ObservableObject
         IReadOnlyList<(string QualifiedName, string TypeLabel)> candidates,
         string? defaultTypeFilterLabel = null)
     {
-        ArgumentNullException.ThrowIfNull(candidates);
-
-        _candidates = candidates;
-        AvailableTypeLabels = candidates
-            .Select(entry => entry.TypeLabel)
-            .Distinct(StringComparer.Ordinal)
-            .OrderBy(label => label, StringComparer.Ordinal)
-            .ToList();
-
-        // Reset the chip row to its per-call default: the requested single-chip default when
-        // available, otherwise no restriction. Uses Clear+Add rather than replacing the
-        // collection instance so any view bound to ActiveTypeFilters keeps seeing the same
-        // ObservableCollection reference.
-        ActiveTypeFilters.Clear();
-        if (defaultTypeFilterLabel is not null && AvailableTypeLabels.Contains(defaultTypeFilterLabel))
-        {
-            ActiveTypeFilters.Add(defaultTypeFilterLabel);
-        }
+        Filter.SetCandidates(candidates, defaultTypeFilterLabel);
 
         // A candidate replacement invalidates any previously-highlighted qualified name; clear
         // the selection so a caller reading SelectedQualifiedName immediately after
         // SetCandidates never sees a name that is no longer in the picker.
         SelectedQualifiedName = null;
-
-        RecomputeDisplayedItems();
     }
 
     /// <summary>
-    ///     Computes the set of type labels available to add as a new filter chip: every label
-    ///     present in <see cref="AvailableTypeLabels" /> that is not already active in
-    ///     <see cref="ActiveTypeFilters" />. Computed on demand rather than cached, so a view
-    ///     opening its "+" add-filter flyout always sees the current addable set.
+    ///     Pass-through to <see cref="Filter" />'s <see cref="ElementFilterViewModel.GetAddableTypeLabels" />.
     /// </summary>
     /// <returns>
     ///     Type labels not currently applied as an active filter chip, in the same order as
@@ -132,92 +124,55 @@ public sealed partial class ElementPickerViewModel : ObservableObject
     /// </returns>
     public IReadOnlyList<string> GetAddableTypeLabels()
     {
-        return AvailableTypeLabels
-            .Where(label => !ActiveTypeFilters.Contains(label))
-            .ToList();
+        return Filter.GetAddableTypeLabels();
     }
 
     /// <summary>
-    ///     Adds <paramref name="typeLabel" /> to <see cref="ActiveTypeFilters" /> if it is not
-    ///     already present (no duplicate chips), then recomputes <see cref="DisplayedItems" />.
-    ///     A no-op beyond the recompute when the label is already active.
+    ///     Pass-through to <see cref="Filter" />'s <see cref="ElementFilterViewModel.AddTypeFilter" />.
     /// </summary>
     /// <param name="typeLabel">Type label chip to add. Must not be <see langword="null" />.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="typeLabel" /> is <see langword="null" />.</exception>
     public void AddTypeFilter(string typeLabel)
     {
-        ArgumentNullException.ThrowIfNull(typeLabel);
-
-        if (!ActiveTypeFilters.Contains(typeLabel))
-        {
-            ActiveTypeFilters.Add(typeLabel);
-        }
-
-        RecomputeDisplayedItems();
+        Filter.AddTypeFilter(typeLabel);
     }
 
     /// <summary>
-    ///     Removes <paramref name="typeLabel" /> from <see cref="ActiveTypeFilters" /> if
-    ///     present, then recomputes <see cref="DisplayedItems" />. A no-op beyond the
-    ///     recompute when the label is not currently active.
+    ///     Pass-through to <see cref="Filter" />'s <see cref="ElementFilterViewModel.RemoveTypeFilter" />.
     /// </summary>
     /// <param name="typeLabel">Type label chip to remove. Must not be <see langword="null" />.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="typeLabel" /> is <see langword="null" />.</exception>
     public void RemoveTypeFilter(string typeLabel)
     {
-        ArgumentNullException.ThrowIfNull(typeLabel);
-
-        ActiveTypeFilters.Remove(typeLabel);
-
-        RecomputeDisplayedItems();
+        Filter.RemoveTypeFilter(typeLabel);
     }
 
     /// <summary>
-    ///     Recomputes <see cref="DisplayedItems" /> from the master <see cref="_candidates" />
-    ///     list by applying <see cref="ActiveTypeFilters" /> (OR semantics; empty means no
-    ///     type restriction) and then <see cref="SearchText" /> (case-insensitive substring
-    ///     match, applied with AND semantics against whatever the type filter already narrowed
-    ///     to). The master list's order is preserved.
+    ///     Re-raises this view model's own <c>PropertyChanged</c> notification whenever
+    ///     <see cref="Filter" /> reports a change to one of the pass-through properties this
+    ///     class exposes, so code/bindings observing <see cref="ElementPickerViewModel" />
+    ///     directly (rather than <see cref="Filter" />) still see live updates. No re-raise is
+    ///     needed for <see cref="ActiveTypeFilters" />: the same <see cref="ObservableCollection{T}" />
+    ///     reference is returned by both this class and <see cref="Filter" />, so its own
+    ///     <c>CollectionChanged</c> event already fires for any bound view/code.
     /// </summary>
-    private void RecomputeDisplayedItems()
+    /// <param name="sender">The <see cref="Filter" /> instance raising the notification.</param>
+    /// <param name="e">The changed property's event arguments.</param>
+    private void OnFilterPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        IEnumerable<(string QualifiedName, string TypeLabel)> query = _candidates;
-
-        if (ActiveTypeFilters.Count > 0)
+        switch (e.PropertyName)
         {
-            query = query.Where(entry => ActiveTypeFilters.Contains(entry.TypeLabel));
+            case nameof(ElementFilterViewModel.DisplayedItems):
+                OnPropertyChanged(nameof(DisplayedItems));
+                break;
+
+            case nameof(ElementFilterViewModel.AvailableTypeLabels):
+                OnPropertyChanged(nameof(AvailableTypeLabels));
+                break;
+
+            case nameof(ElementFilterViewModel.SearchText):
+                OnPropertyChanged(nameof(SearchText));
+                break;
         }
-
-        var searchText = SearchText;
-        if (!string.IsNullOrEmpty(searchText))
-        {
-            query = query.Where(entry => entry.QualifiedName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
-        }
-
-        DisplayedItems = query.Select(entry => entry.QualifiedName).ToList();
-    }
-
-    /// <summary>
-    ///     CommunityToolkit.Mvvm-generated hook invoked whenever <see cref="SearchText" />
-    ///     changes (for example via the view's two-way-bound search <c>TextBox</c>),
-    ///     recomputing <see cref="DisplayedItems" /> so the picker updates live as the user
-    ///     types.
-    /// </summary>
-    /// <param name="value">The new search text value.</param>
-    partial void OnSearchTextChanged(string? value)
-    {
-        RecomputeDisplayedItems();
-    }
-
-    /// <summary>
-    ///     Handles external mutation of <see cref="ActiveTypeFilters" /> (beyond the
-    ///     <see cref="AddTypeFilter" />/<see cref="RemoveTypeFilter" /> methods, which already
-    ///     recompute directly) by recomputing <see cref="DisplayedItems" />, since a plain
-    ///     <see cref="ObservableCollection{T}" /> does not itself participate in
-    ///     CommunityToolkit.Mvvm's change notification.
-    /// </summary>
-    private void OnActiveTypeFiltersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        RecomputeDisplayedItems();
     }
 }

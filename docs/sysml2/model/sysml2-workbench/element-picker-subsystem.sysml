@@ -8,6 +8,7 @@ package SysML2WorkbenchArchitecture {
             comment verificationRef /* Verification: docs/verification/sysml2-workbench/element-picker-subsystem.md */
             comment reqRef /* Requirements: docs/reqstream/sysml2-workbench/element-picker-subsystem.yaml */
 
+            part elementFilter: ElementFilter;
             part elementPicker: ElementPicker;
         }
     }

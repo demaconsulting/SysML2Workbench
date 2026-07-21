@@ -403,6 +403,22 @@ reviews:
       - src/**/ElementPickerSubsystem/ElementTypeLabeler.cs
       - test/**/ElementPickerSubsystem/ElementPickerViewModelTests.cs
       - test/**/ElementPickerSubsystem/ElementTypeLabelerTests.cs
+  - id: SysML2Workbench-ElementPickerSubsystem-ElementFilter
+    title: Review that SysML2Workbench ElementPickerSubsystem ElementFilter Implementation
+      is Correct
+    context:
+      - docs/design/sysml2-workbench.md
+      - docs/reqstream/sysml2-workbench.yaml
+      - docs/design/sysml2-workbench/element-picker-subsystem.md
+      - docs/reqstream/sysml2-workbench/element-picker-subsystem.yaml
+    paths:
+      - docs/reqstream/sysml2-workbench/element-picker-subsystem/element-filter.yaml
+      - docs/design/sysml2-workbench/element-picker-subsystem/element-filter.md
+      - docs/verification/sysml2-workbench/element-picker-subsystem/element-filter.md
+      - src/**/ElementPickerSubsystem/ElementFilterViewModel.cs
+      - src/**/ElementPickerSubsystem/ElementFilterView.axaml
+      - src/**/ElementPickerSubsystem/ElementFilterView.axaml.cs
+      - test/**/ElementPickerSubsystem/ElementFilterViewModelTests.cs
   - id: OTS-DemaConsultingSysML2Tools
     title: Review that DemaConsulting.SysML2Tools Provides Required Functionality
     paths:

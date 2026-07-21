@@ -12,9 +12,11 @@ that should trigger it (`SelectedQueryType`, `Picker.SelectedQualifiedName`, `Hi
 `WalkDepthText`, `IncludeStdlib`) and asserting `CurrentResult`/`StatusMessage` update immediately,
 with no intervening method call anywhere in the test bodies. A single Avalonia-headless end-to-end
 test in `test/OtsSoftwareTests/AvaloniaTests.cs` opens the real dialog through the real Query menu
-item, selects the Describe Query Type and an element on the single always-visible picker, and
-right-clicks the results panel to invoke "Copy as Markdown" through its context menu, asserting the
-rendered Markdown reached the headless platform's real clipboard. The scenario list below follows
+item, confirms the dialog opens on "List" with the selection-free filter control visible and the
+element picker hidden, selects the Describe Query Type (confirming the visibility flip) and an
+element on the now-visible picker, and right-clicks the results panel to invoke "Copy as Markdown"
+through its context menu, asserting the rendered Markdown reached the headless platform's real
+clipboard. The scenario list below follows
 the authoritative mappings in
 `docs/reqstream/sysml2-workbench/app-shell-subsystem/query-dialog.yaml` and describes the
 implemented tests in present tense. `QueryDialogView`'s code-behind (control wiring, Query-Type
@@ -45,13 +47,13 @@ log directory plus real collaborator units (`WorkspaceModel`, `FileWatcher`,
 #### Test Scenarios
 
 **Construction_EmptyShell_ReportsWorkspaceEmpty**: Constructing the view model over a zero-source
-shell reports `IsWorkspaceEmpty` as `true`, defaults `SelectedQueryType` to `List`, and leaves the
-single picker empty (with a non-null, empty client-side list result). Verified by
+shell reports `IsWorkspaceEmpty` as `true`, defaults `SelectedQueryType` to `List`, and leaves
+`FilterOnly` empty (with a non-null, empty client-side list result). Verified by
 `QueryDialogViewModelTests.Construction_EmptyShell_ReportsWorkspaceEmpty`.
 
 **Construction_LoadedWorkspace_PopulatesSinglePicker**: Constructing the view model over a
-workspace with declarations populates the single picker with those declarations and reports
-`IsWorkspaceEmpty` as `false`. Verified by
+workspace with declarations populates both `FilterOnly` and `Picker` with those declarations (the
+same candidate list is used for both) and reports `IsWorkspaceEmpty` as `false`. Verified by
 `QueryDialogViewModelTests.Construction_LoadedWorkspace_PopulatesSinglePicker`.
 
 **ListQueryType_BuildsClientSideListResult**: With `SelectedQueryType=List`, `CurrentResult` is a
@@ -59,7 +61,7 @@ client-built `QueryResult` with `Verb="list"`, no target `Element`, and one entr
 `DisplayedItem`, without calling `QueryEngine.List` or `QueryEngine.Find`. Verified by
 `QueryDialogViewModelTests.ListQueryType_BuildsClientSideListResult`.
 
-**ListQueryType_SearchTextEdit_RegeneratesResultLive**: Editing the picker's search text while
+**ListQueryType_SearchTextEdit_RegeneratesResultLive**: Editing `FilterOnly`'s search text while
 `List` is selected recomputes `CurrentResult` and `CurrentResultRows` live, with no explicit "Run"
 gesture. Verified by
 `QueryDialogViewModelTests.ListQueryType_SearchTextEdit_RegeneratesResultLive`.
@@ -124,10 +126,11 @@ to that integer. Verified by
 flag to `QueryOptions.IncludeStdlib`, regardless of Query Type. Verified by
 `QueryDialogViewModelTests.BuildOptions_PropagatesIncludeStdlib`.
 
-**IncludeStdlibToggle_RefreshesPickerAndRecomputesResult**: Toggling `IncludeStdlib` refreshes the
-picker's candidate list to reflect the new stdlib-inclusion rule, and recomputes the current result
-(clearing a now-unselected Describe result to the select-element prompt rather than leaving it
-stale, then confirming the pipeline still functions correctly after re-selecting). Verified by
+**IncludeStdlibToggle_RefreshesPickerAndRecomputesResult**: Toggling `IncludeStdlib` refreshes both
+`FilterOnly`'s and `Picker`'s candidate lists to reflect the new stdlib-inclusion rule, and
+recomputes the current result (clearing a now-unselected Describe result to the select-element
+prompt rather than leaving it stale, then confirming the pipeline still functions correctly after
+re-selecting). Verified by
 `QueryDialogViewModelTests.IncludeStdlibToggle_RefreshesPickerAndRecomputesResult`.
 
 **QueryTypes_HasExpectedElevenEntries**: The static `QueryTypes` list contains exactly the eleven

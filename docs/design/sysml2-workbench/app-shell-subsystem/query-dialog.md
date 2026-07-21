@@ -18,9 +18,11 @@ workspace through a single, always-visible adaptive form — there is no
   `DemaConsulting.SysML2Tools.Query.QueryEngine.Execute`. The user never
   sees `QueryVerb.Find`: "List" always resolves to the client-side filter,
   never to a `QueryEngine.List`/`Find` call.
-- Below the combo, a single always-visible picker (chip-filter row and
-  search box always shown) doubles as the "List" filter source and, for
-  every other Query Type, the target-element selector.
+- Below the combo, one of two controls is shown: for **List**, a
+  selection-free filter control (chip row + search box only); for every
+  other Query Type, the full element picker (the same chip row + search
+  box, plus a selectable candidate list used as the target-element
+  selector).
 - Verb-specific extra controls appear only when relevant: a "Direction"
   combo for `Hierarchy`, and a "Walk depth" text box for `Impact`.
 - Every interaction — Query Type selection, chip add/remove, search text,
@@ -52,11 +54,16 @@ candidate elements (`CurrentWorkspace.Workspace.Declarations`) and to run
 queries against (`CurrentWorkspace.Workspace` handed to
 `QueryEngine.Execute`).
 
-**Picker**: a single `ElementPickerSubsystem.ElementPickerViewModel`
-instance backing the whole form. For "List" its `DisplayedItems` is the
-result source; for every other Query Type its `SelectedQualifiedName` is
-the target element (its `DisplayedItems` remains visible purely as a filter
-aid, with selection otherwise unused for those verbs).
+**FilterOnly**: an `ElementPickerSubsystem.ElementFilterViewModel` instance
+used exclusively when `SelectedQueryType` is `List`: its `DisplayedItems` is
+the client-side result source. Has no selection concept, matching "List"'s
+lack of a target-element concept.
+
+**Picker**: an `ElementPickerSubsystem.ElementPickerViewModel` instance used
+for the ten element-scoped Query Types (every `QueryVerb` other than the
+merged `List` entry): its `SelectedQualifiedName` is the target element
+(its `DisplayedItems` remains visible purely as a filter aid narrowing which
+candidates are selectable).
 
 **QueryTypes**: `IReadOnlyList<QueryVerb>` — the eleven Query Type options
 the combo box binds to, `List` first, never containing `Find`.
@@ -106,14 +113,14 @@ copy.
 
 #### Key Methods
 
-**RefreshFromWorkspace**: Refreshes the picker's candidate list and
-`IsWorkspaceEmpty` from the shell's current workspace, then recomputes the
-result.
+**RefreshFromWorkspace**: Refreshes both `FilterOnly`'s and `Picker`'s
+candidate lists (from the same candidate set) and `IsWorkspaceEmpty` from
+the shell's current workspace, then recomputes the result.
 
 - *Parameters*: none.
-- *Returns*: `void` — the picker's `SetCandidates` is called with the full
-  candidate list (no default chip), and `RecomputeResult` runs immediately
-  afterward.
+- *Returns*: `void` — both `FilterOnly.SetCandidates` and `Picker.SetCandidates`
+  are called with the full candidate list (no default chip for either), and
+  `RecomputeResult` runs immediately afterward.
 - *Postconditions*: Called once at construction and again on every
   `IncludeStdlib` toggle; the dialog does not itself subscribe to
   `MainWindowShell.SourcesChanged`, matching the sibling dialogs' pattern.
@@ -125,8 +132,8 @@ result.
 currently selected `SelectedQueryType`. This is the redesign's entire
 "no explicit Run gesture" mechanism, invoked automatically by every relevant
 property change (Query Type, Hierarchy direction, Walk depth text, and — via
-`Picker`'s `PropertyChanged` subscription — `DisplayedItems`/
-`SelectedQualifiedName`).
+`FilterOnly`'s and `Picker`'s `PropertyChanged` subscriptions —
+`FilterOnly.DisplayedItems`/`Picker.DisplayedItems`/`Picker.SelectedQualifiedName`).
 
 - *Parameters*: none.
 - *Returns*: `void` — `CurrentResult`, `CurrentResultRows`, and
@@ -139,7 +146,7 @@ property change (Query Type, Hierarchy direction, Walk depth text, and — via
   catching `ArgumentException`. Never throws.
 
 **BuildListResult**: Rebuilds `CurrentResult` and `CurrentResultRows` from
-the picker's `DisplayedItems`.
+`FilterOnly`'s `DisplayedItems`.
 
 - *Parameters*: none.
 - *Returns*: `void` — `CurrentResult` becomes a `QueryResult` with
@@ -182,7 +189,9 @@ over from a previous Query Type or selection.
 
 - **MainWindowShell** — supplies `CurrentWorkspace` for candidate resolution
   and for the workspace argument passed to `QueryEngine.Execute`.
-- **ElementPickerSubsystem** — the single composed picker instance.
+- **ElementPickerSubsystem** — `ElementFilter` via `FilterOnly` (used for
+  "List"); `ElementPicker` via `Picker` (used for the other ten
+  element-scoped Query Types).
 - **DemaConsulting.SysML2Tools.Query** — `QueryEngine.Execute` runs the
   verb, `QueryResultRenderer.RenderMarkdown`/`RenderJson` produces the
   clipboard text.

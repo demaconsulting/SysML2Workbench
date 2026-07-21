@@ -71,6 +71,7 @@ thin bootstrap/entry-point project with no independent design of its own.
   - **LoggingSubsystem**
     - **RollingFileLogger** (Unit) — local rolling log file for user-attachable bug reports
   - **ElementPickerSubsystem** — reusable dialog-agnostic element-picker control
+    - **ElementFilter** (Unit) — chip/search filter-only view model + view, composed by ElementPicker for selection-bearing callers
     - **ElementPicker** (Unit) — chip/search/list view model + view for a caller-built candidate list
   - **AppShellSubsystem** — window, navigation, tabbed views
     - **MainWindowShell** (Unit)

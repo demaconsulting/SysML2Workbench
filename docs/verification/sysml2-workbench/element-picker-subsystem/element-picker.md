@@ -4,7 +4,11 @@
 
 Tests in `test/DemaConsulting.SysML2Workbench.Tests/ElementPickerSubsystem/ElementPickerViewModelTests.cs`
 construct `ElementPickerViewModel` directly against inline candidate lists - it has no Avalonia,
-`WorkspaceModel`, or shell dependency, so no UI thread or workspace fixture is required. Tests in
+`WorkspaceModel`, or shell dependency, so no UI thread or workspace fixture is required. Every
+scenario below still exercises the same public API now that `ElementPickerViewModel` composes an
+`ElementFilterViewModel` internally (see `element-filter.md` for that composed unit's own
+dedicated tests): the composing wrapper's pass-through properties/methods preserve the exact same
+observable contract, so no test assertion changed as part of that refactor. Tests in
 `ElementTypeLabelerTests.cs` construct `SysmlNode` fixtures directly (via their public
 no-argument constructors and init properties) and assert against `ElementTypeLabeler.GetTypeLabel`. The scenario
 list below follows the authoritative mappings in

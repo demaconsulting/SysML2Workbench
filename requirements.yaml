@@ -21,6 +21,7 @@ includes:
   - docs/reqstream/sysml2-workbench/logging-subsystem/rolling-file-logger.yaml
   - docs/reqstream/sysml2-workbench/element-picker-subsystem.yaml
   - docs/reqstream/sysml2-workbench/element-picker-subsystem/element-picker.yaml
+  - docs/reqstream/sysml2-workbench/element-picker-subsystem/element-filter.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem/main-window-shell.yaml
   - docs/reqstream/sysml2-workbench/app-shell-subsystem/workspace-panel.yaml

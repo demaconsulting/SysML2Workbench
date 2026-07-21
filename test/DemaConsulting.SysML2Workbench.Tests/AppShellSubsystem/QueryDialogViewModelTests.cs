@@ -102,15 +102,18 @@ public sealed class QueryDialogViewModelTests : IDisposable
         // Assert
         Assert.True(viewModel.IsWorkspaceEmpty);
         Assert.Equal(QueryVerb.List, viewModel.SelectedQueryType);
-        Assert.Empty(viewModel.Picker.DisplayedItems);
+        Assert.Empty(viewModel.FilterOnly.DisplayedItems);
         Assert.NotNull(viewModel.CurrentResult); // BuildListResult fires unconditionally
         Assert.Equal("list", viewModel.CurrentResult!.Verb);
         Assert.Null(viewModel.StatusMessage);
     }
 
     /// <summary>
-    ///     Validates that the single picker populates from a loaded workspace, excludes stdlib names by
-    ///     default, and starts with no default type-filter chip (so every candidate shows immediately).
+    ///     Validates that both <see cref="QueryDialogViewModel.FilterOnly" /> and
+    ///     <see cref="QueryDialogViewModel.Picker" /> populate from a loaded workspace, exclude stdlib
+    ///     names by default, and start with no default type-filter chip (so every candidate shows
+    ///     immediately) - both instances share the same candidate list from
+    ///     <see cref="QueryDialogViewModel.RefreshFromWorkspace" />.
     /// </summary>
     [Fact]
     public async Task Construction_LoadedWorkspace_PopulatesSinglePicker()
@@ -129,6 +132,9 @@ public sealed class QueryDialogViewModelTests : IDisposable
         Assert.Empty(viewModel.Picker.ActiveTypeFilters);
         Assert.Contains("Sample::Engine", viewModel.Picker.DisplayedItems);
         Assert.Contains("Sample::engineInstance", viewModel.Picker.DisplayedItems);
+        Assert.Empty(viewModel.FilterOnly.ActiveTypeFilters);
+        Assert.Contains("Sample::Engine", viewModel.FilterOnly.DisplayedItems);
+        Assert.Contains("Sample::engineInstance", viewModel.FilterOnly.DisplayedItems);
     }
 
     /// <summary>
@@ -155,7 +161,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
         Assert.Null(result.Element);
         Assert.Single(result.Summary);
         Assert.Contains("element(s) match the filter", result.Summary[0]);
-        Assert.Equal(viewModel.Picker.DisplayedItems.Count, result.Entries.Count);
+        Assert.Equal(viewModel.FilterOnly.DisplayedItems.Count, result.Entries.Count);
         Assert.Contains(result.Entries, e => e.QualifiedName == "Sample::Engine" && e.Kind == "part def");
         Assert.Contains(result.Entries, e => e.QualifiedName == "Sample::engineInstance" && e.Kind == "part");
     }
@@ -174,7 +180,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
         var viewModel = new QueryDialogViewModel(shell);
 
         // Act
-        viewModel.Picker.SearchText = "engineInstance";
+        viewModel.FilterOnly.SearchText = "engineInstance";
 
         // Assert
         Assert.NotNull(viewModel.CurrentResult);

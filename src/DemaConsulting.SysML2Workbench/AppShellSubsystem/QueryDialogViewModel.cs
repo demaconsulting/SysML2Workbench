@@ -9,7 +9,9 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 
 /// <summary>
 ///     View model for the modal Query dialog: a single always-visible form over the current workspace's
-///     declarations, driven by one <see cref="Picker" /> and a "Query Type" selector covering all eleven
+///     declarations, driven by two distinct controls - <see cref="FilterOnly" /> (chips + search, no
+///     selection) for <see cref="QueryVerb.List" />, and <see cref="Picker" /> (chips + search +
+///     selection) for the other ten element-scoped verbs - and a "Query Type" selector covering all eleven
 ///     user-facing options (a merged <see cref="QueryVerb.List" /> entry plus the ten element-scoped
 ///     <see cref="QueryVerb" /> operations dispatched through <see cref="QueryEngine.Execute" />). Every
 ///     relevant change - Query Type, chip/search edits, element selection, Hierarchy direction, Impact
@@ -20,11 +22,12 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 ///     Deliberately parallels <see cref="ViewBuilderDialogViewModel" />'s "dialog owned by the shell,
 ///     fresh instance per open" lifetime pattern: no subscription to <see cref="MainWindowShell" />
 ///     workspace events (the dialog is short-lived), a single <see cref="RefreshFromWorkspace" /> call at
-///     construction, and the composed <see cref="ElementPickerViewModel" /> is wholly owned by this view
-///     model. Every user-visible failure surface (no workspace loaded, no element selected, engine
-///     rejects the verb for the resolved node) is reported through the observable
-///     <see cref="StatusMessage" /> string rather than by throwing, matching the plan's
-///     "graceful no-selection/no-workspace handling" acceptance criterion.
+///     construction, and both the composed <see cref="ElementFilterViewModel" /> and
+///     <see cref="ElementPickerViewModel" /> are wholly owned by this view model. Every user-visible
+///     failure surface (no workspace loaded, no element selected, engine rejects the verb for the
+///     resolved node) is reported through the observable <see cref="StatusMessage" /> string rather than
+///     by throwing, matching the plan's "graceful no-selection/no-workspace handling" acceptance
+///     criterion.
 /// </remarks>
 public sealed partial class QueryDialogViewModel : ObservableObject
 {
@@ -108,12 +111,14 @@ public sealed partial class QueryDialogViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(shell);
 
         Shell = shell;
+        FilterOnly = new ElementFilterViewModel();
         Picker = new ElementPickerViewModel();
 
-        // Any change to the picker's displayed items or selected qualified name must immediately
-        // recompute the shared results panel: List-type results regenerate off DisplayedItems, and every
-        // other Query Type's result regenerates off SelectedQualifiedName. This single subscription is
-        // the redesign's entire "no explicit Run gesture" mechanism.
+        // "List" has no target-element concept, so its result regenerates off FilterOnly's
+        // DisplayedItems; every other Query Type's result regenerates off Picker's
+        // SelectedQualifiedName (with Picker's own DisplayedItems as a pure filter aid). These two
+        // subscriptions are the redesign's entire "no explicit Run gesture" mechanism.
+        FilterOnly.PropertyChanged += OnFilterOnlyPropertyChanged;
         Picker.PropertyChanged += OnPickerPropertyChanged;
 
         RefreshFromWorkspace();
@@ -127,13 +132,22 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     public MainWindowShell Shell { get; }
 
     /// <summary>
-    ///     The single picker backing the whole form: full workspace declarations, no exclusions (beyond
-    ///     the stdlib exclusion controlled by <see cref="IncludeStdlib" />), no default type filter chip.
-    ///     For <see cref="QueryVerb.List" /> its <see cref="ElementPickerViewModel.DisplayedItems" /> is
-    ///     the result source; for every other Query Type its
-    ///     <see cref="ElementPickerViewModel.SelectedQualifiedName" /> is the target element and
-    ///     <see cref="ElementPickerViewModel.DisplayedItems" /> is a pure filter aid whose selection is
-    ///     otherwise unused.
+    ///     Selection-free filter used exclusively when <see cref="SelectedQueryType" /> is
+    ///     <see cref="QueryVerb.List" />: full workspace declarations, no exclusions (beyond the
+    ///     stdlib exclusion controlled by <see cref="IncludeStdlib" />), no default type filter chip.
+    ///     <see cref="BuildListResult" /> reads its <see cref="ElementFilterViewModel.DisplayedItems" />
+    ///     directly as the result source - there is no target-element/selection concept for "List".
+    /// </summary>
+    public ElementFilterViewModel FilterOnly { get; }
+
+    /// <summary>
+    ///     Picker used for the ten element-scoped Query Types (every <see cref="QueryVerb" /> other
+    ///     than the merged <see cref="QueryVerb.List" /> entry): full workspace declarations, no
+    ///     exclusions (beyond the stdlib exclusion controlled by <see cref="IncludeStdlib" />), no
+    ///     default type filter chip. Its <see cref="ElementPickerViewModel.SelectedQualifiedName" /> is
+    ///     the target element resolved for <see cref="QueryEngine.Execute" />; its
+    ///     <see cref="ElementPickerViewModel.DisplayedItems" /> is a pure filter aid narrowing which
+    ///     candidates are selectable.
     /// </summary>
     public ElementPickerViewModel Picker { get; }
 
@@ -155,13 +169,14 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     public bool HasCurrentResult => CurrentResult is not null;
 
     /// <summary>
-    ///     Refreshes the picker's candidate list from the current workspace, applying the
-    ///     <see cref="IncludeStdlib" /> filter, then explicitly recomputes the results panel so toggling
-    ///     the checkbox is reflected immediately even though <see cref="ElementPickerViewModel.SetCandidates" />
-    ///     already fires its own <c>PropertyChanged</c> notification (this
-    ///     trailing call is harmless, idempotent defense-in-depth rather than a required step). Called once
-    ///     at construction and again whenever <see cref="IncludeStdlib" /> toggles; the dialog does not
-    ///     observe post-open workspace changes.
+    ///     Refreshes both <see cref="FilterOnly" />'s and <see cref="Picker" />'s candidate lists from
+    ///     the current workspace, applying the <see cref="IncludeStdlib" /> filter, then explicitly
+    ///     recomputes the results panel so toggling the checkbox is reflected immediately even though
+    ///     <see cref="ElementFilterViewModel.SetCandidates" />/<see cref="ElementPickerViewModel.SetCandidates" />
+    ///     already fire their own <c>PropertyChanged</c> notification (this trailing call is harmless,
+    ///     idempotent defense-in-depth rather than a required step). Called once at construction and
+    ///     again whenever <see cref="IncludeStdlib" /> toggles; the dialog does not observe post-open
+    ///     workspace changes.
     /// </summary>
     public void RefreshFromWorkspace()
     {
@@ -180,7 +195,10 @@ public sealed partial class QueryDialogViewModel : ObservableObject
 
         // No default type filter chip: the plan explicitly calls out that the single form starts with
         // "no default filter" so every candidate is shown until the user narrows with a chip or search
-        // text (unlike the ViewBuilder expose-targets picker, which defaults to "part").
+        // text (unlike the ViewBuilder expose-targets picker, which defaults to "part"). Both FilterOnly
+        // and Picker are refreshed from the same candidate list so switching Query Type never shows a
+        // stale candidate set in whichever control was not previously visible.
+        FilterOnly.SetCandidates(candidates);
         Picker.SetCandidates(candidates);
 
         RecomputeResult();
@@ -189,11 +207,11 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     /// <summary>
     ///     Recomputes <see cref="CurrentResult" /> for the currently selected <see cref="SelectedQueryType" />.
     ///     For <see cref="QueryVerb.List" /> this builds a purely client-side filtered list from
-    ///     <see cref="Picker" />'s <see cref="ElementPickerViewModel.DisplayedItems" /> via
+    ///     <see cref="FilterOnly" />'s <see cref="ElementFilterViewModel.DisplayedItems" /> via
     ///     <see cref="BuildListResult" />. For every other Query Type this requires
-    ///     <see cref="ElementPickerViewModel.SelectedQualifiedName" />: with no selection it reports a
-    ///     helpful (non-error) <see cref="StatusMessage" /> and clears the results table rather than
-    ///     leaving a stale prior result, and with a selection it dispatches through
+    ///     <see cref="ElementPickerViewModel.SelectedQualifiedName" /> on <see cref="Picker" />: with no
+    ///     selection it reports a helpful (non-error) <see cref="StatusMessage" /> and clears the results
+    ///     table rather than leaving a stale prior result, and with a selection it dispatches through
     ///     <see cref="QueryEngine.Execute" /> exactly as the design's original "Run" gesture did,
     ///     gracefully catching <see cref="ArgumentException" />. Called automatically by every relevant
     ///     property change - there is no explicit "Run" method in this design.
@@ -259,15 +277,15 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     }
 
     /// <summary>
-    ///     Rebuilds the shared results panel from the picker's current displayed items. Runs
-    ///     automatically whenever <see cref="SelectedQueryType" /> is <see cref="QueryVerb.List" /> and
-    ///     <see cref="Picker" /> emits a <see cref="ElementPickerViewModel.DisplayedItems" /> change (a
-    ///     chip toggle or search-text edit); may also be invoked directly by tests to assert the "List"
-    ///     Query Type's client-side "list" semantics without spinning up an Avalonia view.
+    ///     Rebuilds the shared results panel from <see cref="FilterOnly" />'s current displayed items.
+    ///     Runs automatically whenever <see cref="SelectedQueryType" /> is <see cref="QueryVerb.List" />
+    ///     and <see cref="FilterOnly" /> emits a <see cref="ElementFilterViewModel.DisplayedItems" />
+    ///     change (a chip toggle or search-text edit); may also be invoked directly by tests to assert
+    ///     the "List" Query Type's client-side "list" semantics without spinning up an Avalonia view.
     /// </summary>
     public void BuildListResult()
     {
-        var displayed = Picker.DisplayedItems;
+        var displayed = FilterOnly.DisplayedItems;
 
         var entries = displayed
             .Select(qualifiedName => new QueryResultEntry
@@ -421,6 +439,19 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     {
         if (e.PropertyName is nameof(ElementPickerViewModel.DisplayedItems)
             or nameof(ElementPickerViewModel.SelectedQualifiedName))
+        {
+            RecomputeResult();
+        }
+    }
+
+    /// <summary>
+    ///     Observes <see cref="FilterOnly" />'s <see cref="ElementFilterViewModel.DisplayedItems" />
+    ///     changes and regenerates the results panel so the "List" Query Type stays live as the user
+    ///     types in the search box or toggles a chip.
+    /// </summary>
+    private void OnFilterOnlyPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ElementFilterViewModel.DisplayedItems))
         {
             RecomputeResult();
         }

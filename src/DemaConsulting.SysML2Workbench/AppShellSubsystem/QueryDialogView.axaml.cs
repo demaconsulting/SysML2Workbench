@@ -145,6 +145,18 @@ public partial class QueryDialogView : Window
 
         HierarchyDirectionPanel.IsVisible = _viewModel.SelectedQueryType == QueryVerb.Hierarchy;
         WalkDepthPanel.IsVisible = _viewModel.SelectedQueryType == QueryVerb.Impact;
+
+        // "List" has no target-element concept - its result is a purely client-side filter over the
+        // filter-only control's chip/search state - so ListFilterView is shown and ElementQueryPickerView
+        // (whose selection would otherwise be silently ignored) is hidden; every other Query Type is the
+        // reverse. This is the exact confusion the original two-tab Browse experience had, now resolved
+        // by two physically distinct controls rather than one control with a hidden selectable list.
+        var isList = _viewModel.SelectedQueryType == QueryVerb.List;
+        ListFilterView.IsVisible = isList;
+        ElementQueryPickerView.IsVisible = !isList;
+        PickerHintTextBlock.Text = isList
+            ? "Use the chips and search box to filter the list."
+            : "Pick an element to use as the target for this query.";
     }
 
     /// <summary>

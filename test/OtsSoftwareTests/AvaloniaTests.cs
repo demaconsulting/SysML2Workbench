@@ -345,12 +345,14 @@ public sealed class AvaloniaTests : IDisposable
     ///     <see cref="MainWindowView" />, confirms its Query menu hosts the "Run Query..." entry (the
     ///     view-side counterpart of the plan's new <c>_Query</c> top-level menu), then opens the
     ///     modal <see cref="QueryDialogView" /> directly (rather than through the modal
-    ///     <c>ShowDialog</c> path, which blocks its calling turn until closed), selects the "Describe"
-    ///     entry on the single form's Query Type combo, selects an element on its one always-visible
-    ///     picker, and confirms the real <see cref="DemaConsulting.SysML2Tools.Query.QueryEngine" />
-    ///     result appears immediately with no "Run" gesture of any kind. Then right-clicks the results
-    ///     panel's context menu's "Copy as Markdown" entry and asserts the headless platform's real
-    ///     clipboard now holds the exact text
+    ///     <c>ShowDialog</c> path, which blocks its calling turn until closed), confirms the dialog
+    ///     opens on the "List" Query Type with the selection-free <c>ListFilterView</c> visible and the
+    ///     selectable <c>ElementQueryPickerView</c> hidden, selects the "Describe" entry on the Query
+    ///     Type combo (confirming the two controls' visibility flips), selects an element on the
+    ///     now-visible picker, and confirms the real
+    ///     <see cref="DemaConsulting.SysML2Tools.Query.QueryEngine" /> result appears immediately with
+    ///     no "Run" gesture of any kind. Then right-clicks the results panel's context menu's "Copy as
+    ///     Markdown" entry and asserts the headless platform's real clipboard now holds the exact text
     ///     <see cref="DemaConsulting.SysML2Tools.Query.QueryResultRenderer.RenderMarkdown" /> produces.
     ///     Mirrors <see cref="DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard" />'s right-click
     ///     recipe.
@@ -385,10 +387,15 @@ public sealed class AvaloniaTests : IDisposable
         dialog.Show(window);
         Dispatcher.UIThread.RunJobs();
 
-        // Assert: the single picker is populated from the real workspace, and no TabControl/tab-switch
-        // exists in this design - the picker's ListBox is realized immediately.
-        var pickerListBox = FindByName<ListBox>(dialog, "PickerItemsListBox");
-        Assert.NotNull(pickerListBox);
+        // Assert: the dialog opens defaulting to "List" Query Type, so ListFilterView (the
+        // selection-free filter control) is visible and ElementQueryPickerView (whose selection would
+        // otherwise be silently ignored for "List") is hidden.
+        var listFilterView = FindByName<UserControl>(dialog, "ListFilterView");
+        var elementQueryPickerView = FindByName<UserControl>(dialog, "ElementQueryPickerView");
+        Assert.NotNull(listFilterView);
+        Assert.NotNull(elementQueryPickerView);
+        Assert.True(listFilterView!.IsVisible);
+        Assert.False(elementQueryPickerView!.IsVisible);
 
         // Act: select "Describe" on the Query Type combo. Describe is no longer the VM's
         // construction-time default now that the default Query Type is "List", so this step itself
@@ -400,6 +407,14 @@ public sealed class AvaloniaTests : IDisposable
 
         var vm = (QueryDialogViewModel)dialog.DataContext!;
         Assert.Equal(DemaConsulting.SysML2Tools.Query.QueryVerb.Describe, vm.SelectedQueryType);
+
+        // Assert: switching to an element-scoped Query Type flips the two controls' visibility, and now
+        // that ElementQueryPickerView is visible its inner candidate ListBox is realized - no
+        // TabControl/tab-switch exists in this design.
+        Assert.False(listFilterView.IsVisible);
+        Assert.True(elementQueryPickerView.IsVisible);
+        var pickerListBox = FindByName<ListBox>(dialog, "PickerItemsListBox");
+        Assert.NotNull(pickerListBox);
 
         // Act: select the target element on the single picker - this alone must produce the result,
         // with no "Run" button or method of any kind in this design.

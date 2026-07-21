@@ -31,13 +31,14 @@
         <ColumnDefinition Width="*" MinWidth="300" />
       </Grid.ColumnDefinitions>
 
-      <!-- Left: single adaptive form (Query Type + always-visible picker + verb-specific extras) -->
+      <!-- Left: single adaptive form (Query Type + filter-only/picker pair + verb-specific extras) -->
       <StackPanel Grid.Column="0" Margin="8" Spacing="6">
         <TextBlock Text="Query Type" />
         <ComboBox Name="QueryTypeComboBox" HorizontalAlignment="Stretch" />
 
-        <TextBlock Text="Pick an element to filter the list, or as the target for every other query type." TextWrapping="Wrap" Foreground="Gray" FontSize="11" />
-        <picker:ElementPickerView Name="PickerView" DataContext="{Binding Picker}" />
+        <TextBlock Name="PickerHintTextBlock" TextWrapping="Wrap" Foreground="Gray" FontSize="11" />
+        <picker:ElementFilterView Name="ListFilterView" DataContext="{Binding FilterOnly}" />
+        <picker:ElementPickerView Name="ElementQueryPickerView" DataContext="{Binding Picker}" />
 
         <!-- Hierarchy-only direction selector -->
         <StackPanel Name="HierarchyDirectionPanel" Spacing="4" IsVisible="False">

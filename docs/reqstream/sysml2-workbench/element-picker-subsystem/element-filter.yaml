@@ -1,0 +1,53 @@
+---
+sections:
+  - title: 'SysML2Workbench Requirements'
+    sections:
+      - title: 'ElementPickerSubsystem Requirements'
+        sections:
+          - title: 'ElementFilter Requirements'
+            requirements:
+              - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-AcceptCallerBuiltCandidates'
+                title: 'The ElementFilter shall accept a caller-built list of (qualified name, type label)
+                  candidates through SetCandidates, replace its master state on each call, recompute the
+                  available type-label set, and pre-populate the active chip row with the caller-requested
+                  default label when present in the new candidates (empty otherwise).'
+                justification: |
+                  Callers own the candidate list (which reflects domain-specific exclusions like stdlib names
+                  or disallowed node kinds); the filter must faithfully replace its whole state on every
+                  refresh so a workspace change never leaves a stale chip row in place. Unlike ElementPicker,
+                  there is no selection to clear: ElementFilter has no selection concept at all.
+                tests:
+                  - 'ElementFilterViewModelTests.SetCandidates_NullCandidates_Throws'
+                  - 'ElementFilterViewModelTests.SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
+                  - 'ElementFilterViewModelTests.SetCandidates_DefaultLabelPresent_PrepopulatesChip'
+                  - 'ElementFilterViewModelTests.SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty'
+                  - 'ElementFilterViewModelTests.SetCandidates_SecondCall_ReplacesState'
+
+              - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-FilterByTypeAndText'
+                title: 'The ElementFilter shall combine one or more type-label chips (OR semantics; empty
+                  means no type restriction) with an AND-combined case-insensitive substring search over
+                  qualified names, preserving the caller-supplied candidate order in DisplayedItems.'
+                justification: |
+                  Realistic workspaces contain far more candidate elements than fit comfortably in one list;
+                  narrowing by kind (part def / part / package / ...) and/or by name substring is what makes
+                  a filter-only control (such as the Query dialog''s "List" Query Type) practical without
+                  scrolling through the entire workspace.
+                tests:
+                  - 'ElementFilterViewModelTests.DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages'
+                  - 'ElementFilterViewModelTests.DisplayedItems_NoChips_ShowsAllCandidates'
+                  - 'ElementFilterViewModelTests.DisplayedItems_MultipleChips_AppliesOrSemantics'
+                  - 'ElementFilterViewModelTests.DisplayedItems_SearchText_AppliesAndSemanticsWithChips'
+                  - 'ElementFilterViewModelTests.DisplayedItems_SearchText_IsCaseInsensitive'
+
+              - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-ManageChipsWithoutDuplicates'
+                title: 'The ElementFilter shall add and remove type-filter chips through AddTypeFilter and
+                  RemoveTypeFilter, reject duplicate additions (so a label appears at most once), and no-op
+                  gracefully when asked to remove a chip that is not currently active.'
+                justification: |
+                  A dedupe-safe chip API keeps the OR-filter semantics predictable regardless of how the "+"
+                  add-flyout is driven; graceful removal keeps the view model tolerant of view-side event
+                  ordering.
+                tests:
+                  - 'ElementFilterViewModelTests.AddTypeFilter_DuplicateLabel_KeepsSingleChip'
+                  - 'ElementFilterViewModelTests.RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully'
+                  - 'ElementFilterViewModelTests.GetAddableTypeLabels_ExcludesActiveChips'
