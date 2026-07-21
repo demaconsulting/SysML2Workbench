@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="using:DemaConsulting.SysML2Workbench.AppShellSubsystem"
+        xmlns:picker="using:DemaConsulting.SysML2Workbench.ElementPickerSubsystem"
         x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.ViewBuilderDialogView"
         x:DataType="local:ViewBuilderDialogViewModel"
         Title="Custom View Builder"
@@ -50,38 +51,8 @@
             <StackPanel Margin="8" Spacing="6">
               <TextBlock Text="Available (select, then Add)" />
 
-              <StackPanel Orientation="Horizontal" Spacing="4">
-                <ItemsControl Name="ActiveExposeTypeFiltersItemsControl" ItemsSource="{Binding ActiveExposeTypeFilters}">
-                  <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                      <WrapPanel />
-                    </ItemsPanelTemplate>
-                  </ItemsControl.ItemsPanel>
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Border CornerRadius="8" Padding="6,2" Margin="0,0,4,4" Background="#E0E0E0">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                          <TextBlock Text="{Binding}" VerticalAlignment="Center" />
-                          <Button Content="✕" Tag="{Binding}" Click="OnRemoveExposeTypeFilterClick"
-                                  Padding="2,0" MinWidth="0" MinHeight="0" FontSize="10" />
-                        </StackPanel>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
+              <picker:ElementPickerView Name="ExposeTargetPickerView" DataContext="{Binding ExposeTargetPicker}" />
 
-                <Button Name="AddExposeTypeFilterButton" Content="+" Padding="6,2" MinWidth="0">
-                  <Button.Flyout>
-                    <Flyout Placement="Bottom">
-                      <ListBox Name="AddableExposeTypeFilterListBox" Width="160" MaxHeight="200" />
-                    </Flyout>
-                  </Button.Flyout>
-                </Button>
-              </StackPanel>
-
-              <TextBox Name="ExposeTargetSearchTextBox" PlaceholderText="Filter by name..." Text="{Binding ExposeTargetSearchText, Mode=TwoWay}" />
-
-              <ListBox Name="AvailableExposeTargetsListBox" ItemsSource="{Binding DisplayedExposeTargets}" Height="120" />
               <Button Name="AddExposeTargetButton" Content="Add →" HorizontalAlignment="Stretch" />
 
               <StackPanel Orientation="Horizontal" Spacing="4">

@@ -117,8 +117,8 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
 
         // Assert
         Assert.False(viewModel.IsWorkspaceEmpty);
-        Assert.Contains("Sample::Engine", viewModel.AvailableExposeTargets);
-        Assert.Contains("Sample::Wheel", viewModel.AvailableExposeTargets);
+        Assert.Contains("Sample::Engine", viewModel.ExposeTargetPicker.DisplayedItems);
+        Assert.Contains("Sample::Wheel", viewModel.ExposeTargetPicker.DisplayedItems);
     }
 
     /// <summary>
@@ -136,7 +136,7 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
 
         // Assert
         Assert.True(viewModel.IsWorkspaceEmpty);
-        Assert.Empty(viewModel.AvailableExposeTargets);
+        Assert.Empty(viewModel.ExposeTargetPicker.DisplayedItems);
     }
 
     /// <summary>
@@ -475,13 +475,13 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         var viewModel = new ViewBuilderDialogViewModel(shell);
 
         // Assert
-        Assert.Contains("part def", viewModel.AvailableExposeTargetTypeLabels);
-        Assert.Contains("part", viewModel.AvailableExposeTargetTypeLabels);
-        Assert.Contains("package", viewModel.AvailableExposeTargetTypeLabels);
+        Assert.Contains("part def", viewModel.ExposeTargetPicker.AvailableTypeLabels);
+        Assert.Contains("part", viewModel.ExposeTargetPicker.AvailableTypeLabels);
+        Assert.Contains("package", viewModel.ExposeTargetPicker.AvailableTypeLabels);
     }
 
     /// <summary>
-    ///     Validates that <see cref="ViewBuilderDialogViewModel.AvailableExposeTargetTypeLabels" /> contains no
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.ExposeTargetPicker" /> contains no
     ///     duplicate labels and is sorted ordinally.
     /// </summary>
     [Fact]
@@ -496,13 +496,13 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         var viewModel = new ViewBuilderDialogViewModel(shell);
 
         // Assert
-        var labels = viewModel.AvailableExposeTargetTypeLabels;
+        var labels = viewModel.ExposeTargetPicker.AvailableTypeLabels;
         Assert.Equal(labels.Distinct(), labels);
         Assert.Equal(labels.OrderBy(l => l, StringComparer.Ordinal), labels);
     }
 
     /// <summary>
-    ///     Validates that <see cref="ViewBuilderDialogViewModel.ActiveExposeTypeFilters" /> defaults to a single
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.ExposeTargetPicker" /> defaults to a single
     ///     <c>"part"</c> chip when that label is present in the workspace.
     /// </summary>
     [Fact]
@@ -517,11 +517,11 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         var viewModel = new ViewBuilderDialogViewModel(shell);
 
         // Assert
-        Assert.Equal(["part"], viewModel.ActiveExposeTypeFilters);
+        Assert.Equal(["part"], viewModel.ExposeTargetPicker.ActiveTypeFilters);
     }
 
     /// <summary>
-    ///     Validates that <see cref="ViewBuilderDialogViewModel.ActiveExposeTypeFilters" /> starts empty when the
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.ExposeTargetPicker" /> starts empty when the
     ///     workspace has no <c>"part"</c>-labeled elements, meaning no type restriction is applied by default.
     /// </summary>
     [Fact]
@@ -536,13 +536,14 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         var viewModel = new ViewBuilderDialogViewModel(shell);
 
         // Assert
-        Assert.DoesNotContain("part", viewModel.AvailableExposeTargetTypeLabels);
-        Assert.Empty(viewModel.ActiveExposeTypeFilters);
+        Assert.DoesNotContain("part", viewModel.ExposeTargetPicker.AvailableTypeLabels);
+        Assert.Empty(viewModel.ExposeTargetPicker.ActiveTypeFilters);
     }
 
     /// <summary>
-    ///     Validates that an empty <see cref="ViewBuilderDialogViewModel.ActiveExposeTypeFilters" /> collection
-    ///     applies no type restriction, showing every candidate regardless of type label.
+    ///     Validates that an empty <see cref="ViewBuilderDialogViewModel.ExposeTargetPicker" />
+    ///     <c>ActiveTypeFilters</c> collection applies no type restriction, showing every candidate regardless of
+    ///     type label.
     /// </summary>
     [Fact]
     public async Task DisplayedExposeTargets_EmptyChips_ShowsAllTypes()
@@ -552,11 +553,13 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         using var shell = CreateShell();
         await shell.AddFolderSourceAsync(_tempRoot);
         var viewModel = new ViewBuilderDialogViewModel(shell);
-        viewModel.RemoveExposeTypeFilter("part");
+        viewModel.ExposeTargetPicker.RemoveTypeFilter("part");
 
         // Act & Assert
-        Assert.Empty(viewModel.ActiveExposeTypeFilters);
-        Assert.Equal(viewModel.AvailableExposeTargets, viewModel.DisplayedExposeTargets);
+        Assert.Empty(viewModel.ExposeTargetPicker.ActiveTypeFilters);
+        Assert.Contains("MultiKind::Engine", viewModel.ExposeTargetPicker.DisplayedItems);
+        Assert.Contains("MultiKind::engineInstance", viewModel.ExposeTargetPicker.DisplayedItems);
+        Assert.Contains("MultiKind::SubPackage", viewModel.ExposeTargetPicker.DisplayedItems);
     }
 
     /// <summary>
@@ -571,12 +574,12 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         using var shell = CreateShell();
         await shell.AddFolderSourceAsync(_tempRoot);
         var viewModel = new ViewBuilderDialogViewModel(shell);
-        viewModel.RemoveExposeTypeFilter("part");
-        viewModel.AddExposeTypeFilter("part def");
-        viewModel.AddExposeTypeFilter("package");
+        viewModel.ExposeTargetPicker.RemoveTypeFilter("part");
+        viewModel.ExposeTargetPicker.AddTypeFilter("part def");
+        viewModel.ExposeTargetPicker.AddTypeFilter("package");
 
         // Act
-        var displayed = viewModel.DisplayedExposeTargets;
+        var displayed = viewModel.ExposeTargetPicker.DisplayedItems;
 
         // Assert
         Assert.Contains("MultiKind::Engine", displayed);
@@ -596,20 +599,20 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         using var shell = CreateShell();
         await shell.AddFolderSourceAsync(_tempRoot);
         var viewModel = new ViewBuilderDialogViewModel(shell);
-        viewModel.RemoveExposeTypeFilter("part");
-        viewModel.AddExposeTypeFilter("part def");
-        viewModel.AddExposeTypeFilter("package");
+        viewModel.ExposeTargetPicker.RemoveTypeFilter("part");
+        viewModel.ExposeTargetPicker.AddTypeFilter("part def");
+        viewModel.ExposeTargetPicker.AddTypeFilter("package");
 
         // Act: case-insensitive substring search further narrows the type-filtered set
-        viewModel.ExposeTargetSearchText = "engine";
+        viewModel.ExposeTargetPicker.SearchText = "engine";
 
         // Assert
-        Assert.Contains("MultiKind::Engine", viewModel.DisplayedExposeTargets);
-        Assert.DoesNotContain("MultiKind::SubPackage", viewModel.DisplayedExposeTargets);
+        Assert.Contains("MultiKind::Engine", viewModel.ExposeTargetPicker.DisplayedItems);
+        Assert.DoesNotContain("MultiKind::SubPackage", viewModel.ExposeTargetPicker.DisplayedItems);
     }
 
     /// <summary>
-    ///     Validates that <see cref="ViewBuilderDialogViewModel.AddExposeTypeFilter" /> is dedupe-safe: adding the
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.ExposeTargetPicker" /> is dedupe-safe: adding the
     ///     same label twice results in only one chip.
     /// </summary>
     [Fact]
@@ -622,15 +625,15 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         var viewModel = new ViewBuilderDialogViewModel(shell);
 
         // Act
-        viewModel.AddExposeTypeFilter("package");
-        viewModel.AddExposeTypeFilter("package");
+        viewModel.ExposeTargetPicker.AddTypeFilter("package");
+        viewModel.ExposeTargetPicker.AddTypeFilter("package");
 
         // Assert
-        Assert.Single(viewModel.ActiveExposeTypeFilters, "package");
+        Assert.Single(viewModel.ExposeTargetPicker.ActiveTypeFilters, "package");
     }
 
     /// <summary>
-    ///     Validates that <see cref="ViewBuilderDialogViewModel.RemoveExposeTypeFilter" /> removes an active
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.ExposeTargetPicker" /> removes an active
     ///     chip and recomputes the displayed list, and no-ops when the label is not currently active.
     /// </summary>
     [Fact]
@@ -643,21 +646,21 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         var viewModel = new ViewBuilderDialogViewModel(shell);
 
         // Act: remove the default "part" chip
-        viewModel.RemoveExposeTypeFilter("part");
+        viewModel.ExposeTargetPicker.RemoveTypeFilter("part");
 
         // Assert
-        Assert.Empty(viewModel.ActiveExposeTypeFilters);
+        Assert.Empty(viewModel.ExposeTargetPicker.ActiveTypeFilters);
 
         // Act: removing an already-absent label is a no-op, not a throw
-        viewModel.RemoveExposeTypeFilter("not-a-real-label");
+        viewModel.ExposeTargetPicker.RemoveTypeFilter("not-a-real-label");
 
         // Assert
-        Assert.Empty(viewModel.ActiveExposeTypeFilters);
+        Assert.Empty(viewModel.ExposeTargetPicker.ActiveTypeFilters);
     }
 
     /// <summary>
-    ///     Validates that setting <see cref="ViewBuilderDialogViewModel.ExposeTargetSearchText" /> live-recomputes
-    ///     <see cref="ViewBuilderDialogViewModel.DisplayedExposeTargets" /> without requiring any other call.
+    ///     Validates that setting <see cref="ViewBuilderDialogViewModel.ExposeTargetPicker" /> live-recomputes
+    ///     <see cref="ViewBuilderDialogViewModel.ExposeTargetPicker" /> without requiring any other call.
     /// </summary>
     [Fact]
     public async Task ExposeTargetSearchTextChanged_RecomputesDisplayedExposeTargets()
@@ -667,13 +670,13 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         using var shell = CreateShell();
         await shell.AddFolderSourceAsync(_tempRoot);
         var viewModel = new ViewBuilderDialogViewModel(shell);
-        viewModel.RemoveExposeTypeFilter("part");
+        viewModel.ExposeTargetPicker.RemoveTypeFilter("part");
 
         // Act
-        viewModel.ExposeTargetSearchText = "SubPackage";
+        viewModel.ExposeTargetPicker.SearchText = "SubPackage";
 
         // Assert
-        Assert.Equal(["MultiKind::SubPackage"], viewModel.DisplayedExposeTargets);
+        Assert.Equal(["MultiKind::SubPackage"], viewModel.ExposeTargetPicker.DisplayedItems);
     }
 }
 
