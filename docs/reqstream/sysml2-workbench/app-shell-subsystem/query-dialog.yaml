@@ -16,9 +16,9 @@ sections:
                   opened, the stdlib toggle must be honored consistently, and a clear signal is needed when
                   there is nothing to query yet.
                 tests:
-                  - 'QueryDialogViewModelTests.Construction_EmptyShell_ReportsWorkspaceEmpty'
-                  - 'QueryDialogViewModelTests.Construction_LoadedWorkspace_PopulatesSinglePicker'
-                  - 'QueryDialogViewModelTests.IncludeStdlibToggle_RefreshesPickerAndRecomputesResult'
+                  - 'Construction_EmptyShell_ReportsWorkspaceEmpty'
+                  - 'Construction_LoadedWorkspace_PopulatesSinglePicker'
+                  - 'IncludeStdlibToggle_RefreshesPickerAndRecomputesResult'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-BrowseTabIsClientSideList'
                 title: 'The QueryDialog''s merged "List" Query Type shall produce a client-built QueryResult
@@ -30,8 +30,8 @@ sections:
                   "List" is deliberately a pure client-side filter to give an instant response as the user
                   types, and to avoid pulling the whole workspace through the engine for a trivial name filter.
                 tests:
-                  - 'QueryDialogViewModelTests.ListQueryType_BuildsClientSideListResult'
-                  - 'QueryDialogViewModelTests.ListQueryType_SearchTextEdit_RegeneratesResultLive'
+                  - 'ListQueryType_BuildsClientSideListResult'
+                  - 'ListQueryType_SearchTextEdit_RegeneratesResultLive'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-ElementQueryDispatchesThroughEngine'
                 title: 'The QueryDialog''s single Query Type combo box shall offer all ten element-scoped
@@ -49,18 +49,18 @@ sections:
                   defining usability improvement is that every relevant edit updates the results live rather
                   than requiring a separate "Run" click.
                 tests:
-                  - 'QueryDialogViewModelTests.RecomputeResult_DescribeWithSelection_DispatchesThroughEngineImmediately'
-                  - 'QueryDialogViewModelTests.SwitchingQueryType_FromDescribeToList_ShowsListResultImmediately'
-                  - 'QueryDialogViewModelTests.SwitchingQueryType_FromListToDescribeNoSelection_ShowsSelectPrompt'
-                  - 'QueryDialogViewModelTests.HierarchyDirectionChange_WithSelection_RecomputesImmediately'
-                  - 'QueryDialogViewModelTests.WalkDepthTextChange_WithSelection_RecomputesImmediately'
-                  - 'QueryDialogViewModelTests.BuildOptions_HierarchyVerb_AttachesDirection'
-                  - 'QueryDialogViewModelTests.BuildOptions_NonHierarchyVerb_OmitsDirection'
-                  - 'QueryDialogViewModelTests.BuildOptions_ImpactVerbWithWalkDepth_ParsesWalkDepth'
-                  - 'QueryDialogViewModelTests.BuildOptions_ImpactVerbWithInvalidWalkDepth_LeavesNull'
-                  - 'QueryDialogViewModelTests.BuildOptions_PropagatesIncludeStdlib'
-                  - 'QueryDialogViewModelTests.QueryTypes_HasExpectedElevenEntries'
-                  - 'QueryDialogViewModelTests.HierarchyDirectionOptions_HasExpectedThree'
+                  - 'RecomputeResult_DescribeWithSelection_DispatchesThroughEngineImmediately'
+                  - 'SwitchingQueryType_FromDescribeToList_ShowsListResultImmediately'
+                  - 'SwitchingQueryType_FromListToDescribeNoSelection_ShowsSelectPrompt'
+                  - 'HierarchyDirectionChange_WithSelection_RecomputesImmediately'
+                  - 'WalkDepthTextChange_WithSelection_RecomputesImmediately'
+                  - 'BuildOptions_HierarchyVerb_AttachesDirection'
+                  - 'BuildOptions_NonHierarchyVerb_OmitsDirection'
+                  - 'BuildOptions_ImpactVerbWithWalkDepth_ParsesWalkDepth'
+                  - 'BuildOptions_ImpactVerbWithInvalidWalkDepth_LeavesNull'
+                  - 'BuildOptions_PropagatesIncludeStdlib'
+                  - 'QueryTypes_HasExpectedElevenEntries'
+                  - 'HierarchyDirectionOptions_HasExpectedThree'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-HandleFailuresGracefully'
                 title: 'The QueryDialog shall report every recoverable failure or informational prompt (no
@@ -74,8 +74,8 @@ sections:
                   every change now recomputes automatically, a stale leftover result from a prior Query Type or
                   selection would be actively misleading rather than merely unhelpful.
                 tests:
-                  - 'QueryDialogViewModelTests.RecomputeResult_ElementScopedVerbNoSelection_ReportsPromptAndClearsRows'
-                  - 'QueryDialogViewModelTests.RecomputeResult_EmptyWorkspace_ReportsStatusMessage'
+                  - 'RecomputeResult_ElementScopedVerbNoSelection_ReportsPromptAndClearsRows'
+                  - 'RecomputeResult_EmptyWorkspace_ReportsStatusMessage'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-CopyResultToClipboard'
                 title: 'The QueryDialog shall render the current QueryResult through
@@ -90,9 +90,9 @@ sections:
                   safe when invoked with no result loaded, and moving the actions to a context menu keeps the
                   results panel free of toolbar clutter.
                 tests:
-                  - 'QueryDialogViewModelTests.CopyResultAsMarkdownAsync_WritesRenderedMarkdownToClipboard'
-                  - 'QueryDialogViewModelTests.CopyResultAsJsonAsync_WritesRenderedJsonToClipboard'
-                  - 'QueryDialogViewModelTests.CopyMethods_NoResult_AreNoOps'
+                  - 'CopyResultAsMarkdownAsync_WritesRenderedMarkdownToClipboard'
+                  - 'CopyResultAsJsonAsync_WritesRenderedJsonToClipboard'
+                  - 'CopyMethods_NoResult_AreNoOps'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-EndToEndFromMenu'
                 title: 'The Query menu''s "Run Query..." item shall open the QueryDialog against the main
@@ -106,4 +106,4 @@ sections:
                   end-to-end against a headless Avalonia stack catches menu/dialog/clipboard wiring regressions
                   the pure view-model tests cannot see.
                 tests:
-                  - 'AvaloniaTests.QueryDialog_SelectDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard'
+                  - 'QueryDialog_SelectDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard'

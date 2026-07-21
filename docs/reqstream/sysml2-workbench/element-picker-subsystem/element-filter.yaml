@@ -17,11 +17,11 @@ sections:
                   refresh so a workspace change never leaves a stale chip row in place. Unlike ElementPicker,
                   there is no selection to clear: ElementFilter has no selection concept at all.
                 tests:
-                  - 'ElementFilterViewModelTests.SetCandidates_NullCandidates_Throws'
-                  - 'ElementFilterViewModelTests.SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
-                  - 'ElementFilterViewModelTests.SetCandidates_DefaultLabelPresent_PrepopulatesChip'
-                  - 'ElementFilterViewModelTests.SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty'
-                  - 'ElementFilterViewModelTests.SetCandidates_SecondCall_ReplacesState'
+                  - 'SetCandidates_NullCandidates_Throws'
+                  - 'SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
+                  - 'SetCandidates_DefaultLabelPresent_PrepopulatesChip'
+                  - 'SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty'
+                  - 'SetCandidates_SecondCall_ReplacesState'
 
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-FilterByTypeAndText'
                 title: 'The ElementFilter shall combine one or more type-label chips (OR semantics; empty
@@ -33,11 +33,11 @@ sections:
                   a filter-only control (such as the Query dialog''s "List" Query Type) practical without
                   scrolling through the entire workspace.
                 tests:
-                  - 'ElementFilterViewModelTests.DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages'
-                  - 'ElementFilterViewModelTests.DisplayedItems_NoChips_ShowsAllCandidates'
-                  - 'ElementFilterViewModelTests.DisplayedItems_MultipleChips_AppliesOrSemantics'
-                  - 'ElementFilterViewModelTests.DisplayedItems_SearchText_AppliesAndSemanticsWithChips'
-                  - 'ElementFilterViewModelTests.DisplayedItems_SearchText_IsCaseInsensitive'
+                  - 'DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages'
+                  - 'DisplayedItems_NoChips_ShowsAllCandidates'
+                  - 'DisplayedItems_MultipleChips_AppliesOrSemantics'
+                  - 'DisplayedItems_SearchText_AppliesAndSemanticsWithChips'
+                  - 'DisplayedItems_SearchText_IsCaseInsensitive'
 
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-ManageChipsWithoutDuplicates'
                 title: 'The ElementFilter shall add and remove type-filter chips through AddTypeFilter and
@@ -48,6 +48,6 @@ sections:
                   add-flyout is driven; graceful removal keeps the view model tolerant of view-side event
                   ordering.
                 tests:
-                  - 'ElementFilterViewModelTests.AddTypeFilter_DuplicateLabel_KeepsSingleChip'
-                  - 'ElementFilterViewModelTests.RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully'
-                  - 'ElementFilterViewModelTests.GetAddableTypeLabels_ExcludesActiveChips'
+                  - 'AddTypeFilter_DuplicateLabel_KeepsSingleChip'
+                  - 'RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully'
+                  - 'GetAddableTypeLabels_ExcludesActiveChips'

@@ -17,11 +17,11 @@ sections:
                   or disallowed node kinds); the picker must faithfully replace its whole state on every refresh
                   so a workspace change never leaves a stale selection or chip row in place.
                 tests:
-                  - 'ElementPickerViewModelTests.SetCandidates_NullCandidates_Throws'
-                  - 'ElementPickerViewModelTests.SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
-                  - 'ElementPickerViewModelTests.SetCandidates_DefaultLabelPresent_PrepopulatesChip'
-                  - 'ElementPickerViewModelTests.SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty'
-                  - 'ElementPickerViewModelTests.SetCandidates_SecondCall_ReplacesState'
+                  - 'SetCandidates_NullCandidates_Throws'
+                  - 'SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
+                  - 'SetCandidates_DefaultLabelPresent_PrepopulatesChip'
+                  - 'SetCandidates_DefaultLabelAbsent_LeavesChipsEmpty'
+                  - 'SetCandidates_SecondCall_ReplacesState'
 
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-FilterByTypeAndText'
                 title: 'The ElementPicker shall combine one or more type-label chips (OR semantics; empty
@@ -32,11 +32,11 @@ sections:
                   narrowing by kind (part def / part / package / ...) and/or by name substring is what makes the
                   picker practical without scrolling through the entire workspace.
                 tests:
-                  - 'ElementPickerViewModelTests.DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages'
-                  - 'ElementPickerViewModelTests.DisplayedItems_NoChips_ShowsAllCandidates'
-                  - 'ElementPickerViewModelTests.DisplayedItems_MultipleChips_AppliesOrSemantics'
-                  - 'ElementPickerViewModelTests.DisplayedItems_SearchText_AppliesAndSemanticsWithChips'
-                  - 'ElementPickerViewModelTests.DisplayedItems_SearchText_IsCaseInsensitive'
+                  - 'DisplayedItems_DefaultPartChip_ShowsOnlyPartUsages'
+                  - 'DisplayedItems_NoChips_ShowsAllCandidates'
+                  - 'DisplayedItems_MultipleChips_AppliesOrSemantics'
+                  - 'DisplayedItems_SearchText_AppliesAndSemanticsWithChips'
+                  - 'DisplayedItems_SearchText_IsCaseInsensitive'
 
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-ManageChipsWithoutDuplicates'
                 title: 'The ElementPicker shall add and remove type-filter chips through AddTypeFilter and
@@ -47,9 +47,9 @@ sections:
                   add-flyout is driven; graceful removal keeps the view model tolerant of view-side event
                   ordering.
                 tests:
-                  - 'ElementPickerViewModelTests.AddTypeFilter_DuplicateLabel_KeepsSingleChip'
-                  - 'ElementPickerViewModelTests.RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully'
-                  - 'ElementPickerViewModelTests.GetAddableTypeLabels_ExcludesActiveChips'
+                  - 'AddTypeFilter_DuplicateLabel_KeepsSingleChip'
+                  - 'RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully'
+                  - 'GetAddableTypeLabels_ExcludesActiveChips'
 
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-TrackSelection'
                 title: 'The ElementPicker shall expose the currently-highlighted qualified name through the
@@ -60,7 +60,7 @@ sections:
                   dialog's Browse tab's live result) needs the currently-selected qualified name to act on the
                   picker; a two-way observable property is the minimum contract that makes it useful.
                 tests:
-                  - 'ElementPickerViewModelTests.SelectedQualifiedName_RoundTrips'
+                  - 'SelectedQualifiedName_RoundTrips'
 
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-LabelKnownNodeKinds'
                 title: 'The ElementTypeLabeler shall compute a stable human-readable type label for every
@@ -72,8 +72,8 @@ sections:
                   a shared static helper (rather than per-caller mapping logic) is what makes the labels
                   identical across every dialog that hosts the picker.
                 tests:
-                  - 'ElementTypeLabelerTests.GetTypeLabel_DefinitionNode_ReturnsDefinitionKeyword'
-                  - 'ElementTypeLabelerTests.GetTypeLabel_FeatureNode_ReturnsFeatureKeyword'
-                  - 'ElementTypeLabelerTests.GetTypeLabel_ConnectionNode_ReturnsConnectionKeyword'
-                  - 'ElementTypeLabelerTests.GetTypeLabel_FixedLiteralNode_ReturnsExpectedLiteral'
-                  - 'ElementTypeLabelerTests.GetTypeLabel_UnknownSubtype_UsesFallbackFromTypeName'
+                  - 'GetTypeLabel_DefinitionNode_ReturnsDefinitionKeyword'
+                  - 'GetTypeLabel_FeatureNode_ReturnsFeatureKeyword'
+                  - 'GetTypeLabel_ConnectionNode_ReturnsConnectionKeyword'
+                  - 'GetTypeLabel_FixedLiteralNode_ReturnsExpectedLiteral'
+                  - 'GetTypeLabel_UnknownSubtype_UsesFallbackFromTypeName'
