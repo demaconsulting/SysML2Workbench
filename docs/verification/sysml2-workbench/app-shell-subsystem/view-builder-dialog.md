@@ -100,3 +100,51 @@ filter expression, display name) that is never committed leaves the shell's `Ope
 over the same shell right after a prior instance was edited, starts from a completely clean `Definition` - no
 view kind, expose targets, filter expression, or display name carried over. Verified by
 `ViewBuilderDialogViewModelTests.Construction_FreshInstance_DoesNotCarryOverPriorInstanceSelections`.
+
+**RefreshFromWorkspace_ComputesTypeLabelsPerNodeKind**: Constructing the view model over a workspace containing a
+`part def`, a `part` usage, and a bare `package` computes the correct type label for each - `"part def"`,
+`"part"`, and `"package"` respectively - in `AvailableExposeTargetTypeLabels`. Verified by
+`ViewBuilderDialogViewModelTests.RefreshFromWorkspace_ComputesTypeLabelsPerNodeKind`.
+
+**RefreshFromWorkspace_AvailableExposeTargetTypeLabels_IsDistinctAndSorted**: `AvailableExposeTargetTypeLabels`
+contains no duplicate labels and is sorted ordinally. Verified by
+`ViewBuilderDialogViewModelTests.RefreshFromWorkspace_AvailableExposeTargetTypeLabels_IsDistinctAndSorted`.
+
+**Construction_PartLabelPresent_DefaultsActiveExposeTypeFiltersToPart**: Constructing the view model over a
+workspace where `"part"` is an available type label pre-populates `ActiveExposeTypeFilters` with exactly that one
+chip. Verified by
+`ViewBuilderDialogViewModelTests.Construction_PartLabelPresent_DefaultsActiveExposeTypeFiltersToPart`.
+
+**Construction_PartLabelAbsent_ActiveExposeTypeFiltersStartsEmpty**: Constructing the view model over a workspace
+with no `"part"`-labeled elements leaves `ActiveExposeTypeFilters` empty, applying no type restriction by default.
+Verified by
+`ViewBuilderDialogViewModelTests.Construction_PartLabelAbsent_ActiveExposeTypeFiltersStartsEmpty`.
+
+**DisplayedExposeTargets_EmptyChips_ShowsAllTypes**: Removing the only active type-filter chip leaves
+`DisplayedExposeTargets` equal to the full `AvailableExposeTargets` list, confirming empty chips means no type
+restriction. Verified by
+`ViewBuilderDialogViewModelTests.DisplayedExposeTargets_EmptyChips_ShowsAllTypes`.
+
+**DisplayedExposeTargets_MultipleChips_AppliesOrSemantics**: Activating two type-filter chips (`"part def"` and
+`"package"`) shows candidates matching either label while excluding a candidate whose label matches neither,
+confirming OR semantics across chips. Verified by
+`ViewBuilderDialogViewModelTests.DisplayedExposeTargets_MultipleChips_AppliesOrSemantics`.
+
+**DisplayedExposeTargets_TypeFilterAndTextSearch_CombineWithAndSemantics**: With two type-filter chips active,
+setting `ExposeTargetSearchText` to a case-insensitive substring further narrows `DisplayedExposeTargets` to only
+the candidates matching both the type filter and the text search, confirming AND semantics between the two
+filters. Verified by
+`ViewBuilderDialogViewModelTests.DisplayedExposeTargets_TypeFilterAndTextSearch_CombineWithAndSemantics`.
+
+**AddExposeTypeFilter_DuplicateLabel_DoesNotAddSecondChip**: Calling `AddExposeTypeFilter` twice with the same
+label results in exactly one chip in `ActiveExposeTypeFilters`, confirming dedupe-safe behavior. Verified by
+`ViewBuilderDialogViewModelTests.AddExposeTypeFilter_DuplicateLabel_DoesNotAddSecondChip`.
+
+**RemoveExposeTypeFilter_RemovesChipAndNoOpsWhenAbsent**: Removing the default `"part"` chip clears
+`ActiveExposeTypeFilters`, and a subsequent removal of a label that is not currently active is a no-op rather
+than a throw. Verified by
+`ViewBuilderDialogViewModelTests.RemoveExposeTypeFilter_RemovesChipAndNoOpsWhenAbsent`.
+
+**ExposeTargetSearchTextChanged_RecomputesDisplayedExposeTargets**: Setting `ExposeTargetSearchText` alone (with
+no other method call) live-recomputes `DisplayedExposeTargets` to the matching subset. Verified by
+`ViewBuilderDialogViewModelTests.ExposeTargetSearchTextChanged_RecomputesDisplayedExposeTargets`.

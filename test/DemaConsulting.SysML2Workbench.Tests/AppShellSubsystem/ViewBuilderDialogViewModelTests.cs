@@ -53,6 +53,38 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
     }
 
     /// <summary>
+    ///     Writes a richer sample workspace exercising multiple <see cref="SysmlNode" /> kinds - a
+    ///     <c>part def</c>, a <c>part</c> usage, and a bare <c>package</c> - so the type-label computation and
+    ///     type-filter chip behavior can be exercised against more than one type label.
+    /// </summary>
+    private async Task WriteMultiKindSampleWorkspaceAsync()
+    {
+        await File.WriteAllTextAsync(
+            Path.Combine(_tempRoot, "MultiKind.sysml"),
+            "package MultiKind {\n"
+            + "    part def Engine;\n"
+            + "    part engineInstance : Engine;\n"
+            + "    package SubPackage;\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    ///     Writes a sample workspace containing no <c>part</c> usages (only a <c>part def</c> and a
+    ///     <c>package</c>), so the default <c>"part"</c> type-filter chip's absent-label behavior can be
+    ///     exercised.
+    /// </summary>
+    private async Task WriteNoPartUsageSampleWorkspaceAsync()
+    {
+        await File.WriteAllTextAsync(
+            Path.Combine(_tempRoot, "NoPartUsage.sysml"),
+            "package NoPartUsage {\n"
+            + "    part def Engine;\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     ///     Builds a shell wired with real (non-mocked) subsystem units.
     /// </summary>
     private MainWindowShell CreateShell()
@@ -425,4 +457,223 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
         Assert.Null(second.Definition.DisplayName);
         Assert.NotSame(first.Definition, second.Definition);
     }
+
+    /// <summary>
+    ///     Validates that each recognized <see cref="SysmlNode" /> subtype is labeled correctly: a
+    ///     <c>part def</c> yields its definition keyword, a <c>part</c> usage yields its feature keyword, and a
+    ///     bare <c>package</c> yields the literal <c>"package"</c> label.
+    /// </summary>
+    [Fact]
+    public async Task RefreshFromWorkspace_ComputesTypeLabelsPerNodeKind()
+    {
+        // Arrange
+        await WriteMultiKindSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+
+        // Act
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+
+        // Assert
+        Assert.Contains("part def", viewModel.AvailableExposeTargetTypeLabels);
+        Assert.Contains("part", viewModel.AvailableExposeTargetTypeLabels);
+        Assert.Contains("package", viewModel.AvailableExposeTargetTypeLabels);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.AvailableExposeTargetTypeLabels" /> contains no
+    ///     duplicate labels and is sorted ordinally.
+    /// </summary>
+    [Fact]
+    public async Task RefreshFromWorkspace_AvailableExposeTargetTypeLabels_IsDistinctAndSorted()
+    {
+        // Arrange
+        await WriteMultiKindSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+
+        // Act
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+
+        // Assert
+        var labels = viewModel.AvailableExposeTargetTypeLabels;
+        Assert.Equal(labels.Distinct(), labels);
+        Assert.Equal(labels.OrderBy(l => l, StringComparer.Ordinal), labels);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.ActiveExposeTypeFilters" /> defaults to a single
+    ///     <c>"part"</c> chip when that label is present in the workspace.
+    /// </summary>
+    [Fact]
+    public async Task Construction_PartLabelPresent_DefaultsActiveExposeTypeFiltersToPart()
+    {
+        // Arrange
+        await WriteMultiKindSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+
+        // Act
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+
+        // Assert
+        Assert.Equal(["part"], viewModel.ActiveExposeTypeFilters);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.ActiveExposeTypeFilters" /> starts empty when the
+    ///     workspace has no <c>"part"</c>-labeled elements, meaning no type restriction is applied by default.
+    /// </summary>
+    [Fact]
+    public async Task Construction_PartLabelAbsent_ActiveExposeTypeFiltersStartsEmpty()
+    {
+        // Arrange
+        await WriteNoPartUsageSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+
+        // Act
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+
+        // Assert
+        Assert.DoesNotContain("part", viewModel.AvailableExposeTargetTypeLabels);
+        Assert.Empty(viewModel.ActiveExposeTypeFilters);
+    }
+
+    /// <summary>
+    ///     Validates that an empty <see cref="ViewBuilderDialogViewModel.ActiveExposeTypeFilters" /> collection
+    ///     applies no type restriction, showing every candidate regardless of type label.
+    /// </summary>
+    [Fact]
+    public async Task DisplayedExposeTargets_EmptyChips_ShowsAllTypes()
+    {
+        // Arrange
+        await WriteMultiKindSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+        viewModel.RemoveExposeTypeFilter("part");
+
+        // Act & Assert
+        Assert.Empty(viewModel.ActiveExposeTypeFilters);
+        Assert.Equal(viewModel.AvailableExposeTargets, viewModel.DisplayedExposeTargets);
+    }
+
+    /// <summary>
+    ///     Validates that multiple active type-filter chips combine with OR semantics: an item is shown when its
+    ///     type label matches any active chip.
+    /// </summary>
+    [Fact]
+    public async Task DisplayedExposeTargets_MultipleChips_AppliesOrSemantics()
+    {
+        // Arrange
+        await WriteMultiKindSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+        viewModel.RemoveExposeTypeFilter("part");
+        viewModel.AddExposeTypeFilter("part def");
+        viewModel.AddExposeTypeFilter("package");
+
+        // Act
+        var displayed = viewModel.DisplayedExposeTargets;
+
+        // Assert
+        Assert.Contains("MultiKind::Engine", displayed);
+        Assert.Contains("MultiKind::SubPackage", displayed);
+        Assert.DoesNotContain("MultiKind::engineInstance", displayed);
+    }
+
+    /// <summary>
+    ///     Validates that the text search filter combines with AND semantics against the active type filter: an
+    ///     item must satisfy both the type restriction and the case-insensitive name substring match.
+    /// </summary>
+    [Fact]
+    public async Task DisplayedExposeTargets_TypeFilterAndTextSearch_CombineWithAndSemantics()
+    {
+        // Arrange
+        await WriteMultiKindSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+        viewModel.RemoveExposeTypeFilter("part");
+        viewModel.AddExposeTypeFilter("part def");
+        viewModel.AddExposeTypeFilter("package");
+
+        // Act: case-insensitive substring search further narrows the type-filtered set
+        viewModel.ExposeTargetSearchText = "engine";
+
+        // Assert
+        Assert.Contains("MultiKind::Engine", viewModel.DisplayedExposeTargets);
+        Assert.DoesNotContain("MultiKind::SubPackage", viewModel.DisplayedExposeTargets);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.AddExposeTypeFilter" /> is dedupe-safe: adding the
+    ///     same label twice results in only one chip.
+    /// </summary>
+    [Fact]
+    public async Task AddExposeTypeFilter_DuplicateLabel_DoesNotAddSecondChip()
+    {
+        // Arrange
+        await WriteMultiKindSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+
+        // Act
+        viewModel.AddExposeTypeFilter("package");
+        viewModel.AddExposeTypeFilter("package");
+
+        // Assert
+        Assert.Single(viewModel.ActiveExposeTypeFilters, "package");
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="ViewBuilderDialogViewModel.RemoveExposeTypeFilter" /> removes an active
+    ///     chip and recomputes the displayed list, and no-ops when the label is not currently active.
+    /// </summary>
+    [Fact]
+    public async Task RemoveExposeTypeFilter_RemovesChipAndNoOpsWhenAbsent()
+    {
+        // Arrange
+        await WriteMultiKindSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+
+        // Act: remove the default "part" chip
+        viewModel.RemoveExposeTypeFilter("part");
+
+        // Assert
+        Assert.Empty(viewModel.ActiveExposeTypeFilters);
+
+        // Act: removing an already-absent label is a no-op, not a throw
+        viewModel.RemoveExposeTypeFilter("not-a-real-label");
+
+        // Assert
+        Assert.Empty(viewModel.ActiveExposeTypeFilters);
+    }
+
+    /// <summary>
+    ///     Validates that setting <see cref="ViewBuilderDialogViewModel.ExposeTargetSearchText" /> live-recomputes
+    ///     <see cref="ViewBuilderDialogViewModel.DisplayedExposeTargets" /> without requiring any other call.
+    /// </summary>
+    [Fact]
+    public async Task ExposeTargetSearchTextChanged_RecomputesDisplayedExposeTargets()
+    {
+        // Arrange
+        await WriteMultiKindSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new ViewBuilderDialogViewModel(shell);
+        viewModel.RemoveExposeTypeFilter("part");
+
+        // Act
+        viewModel.ExposeTargetSearchText = "SubPackage";
+
+        // Assert
+        Assert.Equal(["MultiKind::SubPackage"], viewModel.DisplayedExposeTargets);
+    }
 }
+

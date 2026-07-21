@@ -59,6 +59,9 @@ public partial class ViewBuilderDialogView : Window
 
         AddExposeTargetButton.Click += OnAddExposeTargetClick;
 
+        AddExposeTypeFilterButton.Flyout!.Opened += OnAddExposeTypeFilterFlyoutOpening;
+        AddableExposeTypeFilterListBox.SelectionChanged += OnAddableExposeTypeFilterSelectionChanged;
+
         FilterExpressionTextBox.LostFocus += OnFilterExpressionLostFocus;
         DisplayNameTextBox.LostFocus += OnDisplayNameLostFocus;
 
@@ -104,6 +107,42 @@ public partial class ViewBuilderDialogView : Window
     private void OnPreviewChanged(object? sender, EventArgs e)
     {
         LoadPreviewImage();
+    }
+
+    /// <summary>
+    ///     Populates <see cref="AddableExposeTypeFilterListBox" /> from the view model's currently addable type
+    ///     labels each time the "+" button's flyout is about to open, so the list always reflects the latest
+    ///     workspace/active-filter state rather than a stale snapshot from construction time.
+    /// </summary>
+    private void OnAddExposeTypeFilterFlyoutOpening(object? sender, EventArgs e)
+    {
+        AddableExposeTypeFilterListBox.ItemsSource = _viewModel.GetAddableExposeTargetTypeLabels();
+    }
+
+    /// <summary>
+    ///     Adds the selected type label as a new active filter chip and closes the flyout.
+    /// </summary>
+    private void OnAddableExposeTypeFilterSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (AddableExposeTypeFilterListBox.SelectedItem is not string typeLabel)
+        {
+            return;
+        }
+
+        _viewModel.AddExposeTypeFilter(typeLabel);
+        AddableExposeTypeFilterListBox.SelectedItem = null;
+        AddExposeTypeFilterButton.Flyout?.Hide();
+    }
+
+    /// <summary>
+    ///     Removes the clicked chip's type label from the active filters.
+    /// </summary>
+    private void OnRemoveExposeTypeFilterClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string typeLabel })
+        {
+            _viewModel.RemoveExposeTypeFilter(typeLabel);
+        }
     }
 
     /// <summary>
