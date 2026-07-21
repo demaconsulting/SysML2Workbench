@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using DemaConsulting.SysML2Tools.Query;
 
@@ -44,6 +45,10 @@ public partial class QueryDialogView : Window
 
         QueryTypeComboBox.SelectionChanged += OnQueryTypeSelectionChanged;
         HierarchyDirectionComboBox.SelectionChanged += OnHierarchyDirectionSelectionChanged;
+
+        // Open the results panel's ContextMenu explicitly on every right-click instead of relying on
+        // Avalonia's automatic ContextRequested routing - see OnResultsBorderPointerPressed for why.
+        ResultsBorder.AddHandler(PointerPressedEvent, OnResultsBorderPointerPressed, RoutingStrategies.Tunnel);
 
         DataContext = new QueryDialogViewModel(shell);
         AttachViewModel();
@@ -225,5 +230,43 @@ public partial class QueryDialogView : Window
     private void OnCloseButtonClick(object? sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    /// <summary>
+    ///     Explicitly opens the results panel's <c>ContextMenu</c> on every right-click, instead of
+    ///     relying on Avalonia's automatic <c>ContextRequested</c> routing. The results panel hosts a
+    ///     real <see cref="DataGrid" />, which captures the pointer for its own cell-selection / column
+    ///     drag-detection handling; that capture is not always released cleanly once a row is selected
+    ///     and a <see cref="Avalonia.Controls.ContextMenu" /> popup has opened and closed over it, which
+    ///     otherwise silently swallows every right-click on an already-selected row after the first
+    ///     ("one-shot" copy-menu bug reported when the results panel switched to a real DataGrid).
+    ///     Intercepting the right button during the tunnel phase - before the DataGrid's own bubble-phase
+    ///     handlers run - guarantees the menu opens every time regardless of the grid's internal pointer
+    ///     state, while left-clicks are left completely untouched so normal row selection still works.
+    /// </summary>
+    private void OnResultsBorderPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(ResultsBorder).Properties.IsRightButtonPressed)
+        {
+            return;
+        }
+
+        // Release any pointer capture the DataGrid may be holding from a prior press so it can't
+        // interfere with (or itself swallow) this right-click.
+        e.Pointer.Capture(null);
+
+        var menu = ResultsBorder.ContextMenu;
+        if (menu is null)
+        {
+            return;
+        }
+
+        if (menu.IsOpen)
+        {
+            menu.Close();
+        }
+
+        menu.Open(ResultsBorder);
+        e.Handled = true;
     }
 }

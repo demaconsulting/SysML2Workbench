@@ -425,8 +425,9 @@ public sealed class AvaloniaTests : IDisposable
         Assert.Equal("describe", vm.CurrentResult!.Verb);
         Assert.Equal("Sample::Engine", vm.CurrentResult.Element);
 
-        // Act: right-click the results panel (open its context menu) and click "Copy as Markdown",
-        // mirroring DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard's exact recipe.
+        // Act: right-click the results panel (open its context menu) and click "Copy as Markdown", then
+        // do the exact same gesture a *second* time and click "Copy as JSON" - this is the regression
+        // check for the "one-shot" bug where the context menu stopped opening after the first use.
         var resultsBorder = FindByName<Border>(dialog, "ResultsBorder");
         Assert.NotNull(resultsBorder);
         var contextMenu = resultsBorder!.ContextMenu;
@@ -452,6 +453,28 @@ public sealed class AvaloniaTests : IDisposable
             "\n",
             DemaConsulting.SysML2Tools.Query.QueryResultRenderer.RenderMarkdown(vm.CurrentResult));
         Assert.Equal(expected, clipboardText);
+
+        // Act: open the context menu a *second* time and click "Copy as JSON" - previously this second
+        // open silently did nothing once the results panel switched to a real DataGrid.
+        contextMenu.Open(resultsBorder);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(contextMenu.IsOpen, "ContextMenu failed to open on a second use.");
+
+        var copyJsonMenuItem = FindByName<MenuItem>(dialog, "CopyAsJsonMenuItem");
+        Assert.NotNull(copyJsonMenuItem);
+        Assert.True(copyJsonMenuItem!.IsEnabled);
+        copyJsonMenuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        await Task.Yield();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert: the second right-click still opened the menu and the clipboard now holds the JSON
+        // rendering, proving the context menu did not "brick itself" after the first use.
+        var secondClipboardText = await clipboard!.TryGetTextAsync();
+        var expectedJson = DemaConsulting.SysML2Tools.Query.QueryResultRenderer.RenderJson(vm.CurrentResult);
+        Assert.Equal(expectedJson, secondClipboardText);
+        Assert.NotEqual(clipboardText, secondClipboardText);
 
         dialog.Close();
         window.Close();
