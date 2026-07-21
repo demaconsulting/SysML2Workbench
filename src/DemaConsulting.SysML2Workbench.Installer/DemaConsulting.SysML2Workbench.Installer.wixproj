@@ -23,6 +23,12 @@
     <!-- Exposes MSBuild properties as WiX preprocessor variables ($(Version), $(SysML2WorkbenchPublishDir),
          $(SysML2WorkbenchIconFile) in .wxs). -->
     <DefineConstants>Version=$(Version);SysML2WorkbenchPublishDir=$(SysML2WorkbenchPublishDir);SysML2WorkbenchIconFile=$(SysML2WorkbenchIconFile)</DefineConstants>
+    <!-- ICE61 flags this product's Upgrade table as having no Maximum version - that is exactly
+         what Package.wxs's MajorUpgrade AllowDowngrades="yes" intentionally configures, so any
+         version (older, same, or newer) always replaces what's installed instead of ever being
+         refused (see https://docs.firegiant.com/wix/schema/wxs/majorupgrade/). This ICE is a
+         known false positive for that setting and must be suppressed rather than acted on. -->
+    <SuppressIces>ICE61</SuppressIces>
   </PropertyGroup>
 
 </Project>

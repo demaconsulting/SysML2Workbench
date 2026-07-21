@@ -9,7 +9,13 @@
     Compressed="yes"
     Scope="perMachine">
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of SysML2 Workbench is already installed." />
+    <!-- AllowDowngrades="yes" means installing SysML2 Workbench always replaces whatever
+         version is already present - older, same, or newer - rather than ever refusing
+         to install or leaving two side-by-side entries in Add/Remove Programs. This also
+         covers the same-version case (WiX docs: "AllowDowngrades already allows two
+         products with the same version number to upgrade each other"), so it must not be
+         combined with AllowSameVersionUpgrades. -->
+    <MajorUpgrade AllowDowngrades="yes" />
     <MediaTemplate EmbedCab="yes" />
 
     <!-- Sets the icon shown in Add/Remove Programs (Apps & Features). -->
