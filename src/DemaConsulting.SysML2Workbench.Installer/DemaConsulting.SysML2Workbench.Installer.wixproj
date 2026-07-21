@@ -31,4 +31,10 @@
     <SuppressIces>ICE61</SuppressIces>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Provides the WixCloseApplication custom action used to prompt the user to close
+         a running SysML2 Workbench before the installer replaces its files. -->
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
 </Project>
