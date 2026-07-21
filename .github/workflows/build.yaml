@@ -234,6 +234,12 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
+          # MSI ProductVersion only supports three numeric fields (major.minor.build, each
+          # 0-65535) and cannot represent a SemVer prerelease suffix (e.g. "-beta.12"), so
+          # it's simply truncated off here. Package.wxs's MajorUpgrade AllowDowngrades="yes"
+          # is what makes this safe: it always replaces whatever version is installed -
+          # older, same, or newer - so two builds truncating to the same MSI version (e.g.
+          # a prerelease and its eventual stable release) is not a problem.
           MSI_VERSION=$(echo "${{ inputs.version }}" | cut -d'-' -f1)
           echo "MSI_VERSION=${MSI_VERSION}" >> "$GITHUB_ENV"
           echo "Computed MSI version: ${MSI_VERSION}"

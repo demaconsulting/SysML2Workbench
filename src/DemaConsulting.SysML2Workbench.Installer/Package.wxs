@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
   <Package
     Name="SysML2 Workbench"
     Manufacturer="DEMA Consulting"
@@ -9,12 +10,41 @@
     Compressed="yes"
     Scope="perMachine">
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of SysML2 Workbench is already installed." />
+    <!-- AllowDowngrades="yes" means installing SysML2 Workbench always replaces whatever
+         version is already present - older, same, or newer - rather than ever refusing
+         to install or leaving two side-by-side entries in Add/Remove Programs. This also
+         covers the same-version case (WiX docs: "AllowDowngrades already allows two
+         products with the same version number to upgrade each other"), so it must not be
+         combined with AllowSameVersionUpgrades. -->
+    <MajorUpgrade AllowDowngrades="yes" />
     <MediaTemplate EmbedCab="yes" />
+
+    <!-- Closes a running SysML2 Workbench before install/upgrade so file replacement never
+         fails because the app is open. Sends a close message first (giving the user a chance
+         to save work), then forcibly terminates it after Timeout seconds if it hasn't exited -
+         RebootPrompt must be "no" to combine with TerminateProcess. -->
+    <util:CloseApplication
+      Id="CloseSysML2Workbench"
+      Target="DemaConsulting.SysML2Workbench.Desktop.exe"
+      Description="SysML2 Workbench is running and will be closed to continue installing."
+      CloseMessage="yes"
+      RebootPrompt="no"
+      TerminateProcess="1"
+      Timeout="5" />
 
     <!-- Sets the icon shown in Add/Remove Programs (Apps & Features). -->
     <Icon Id="AppIcon" SourceFile="$(SysML2WorkbenchIconFile)" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+    <!-- Points Add/Remove Programs' support/about links at the project's GitHub page. -->
+    <Property Id="ARPHELPLINK" Value="https://github.com/demaconsulting/SysML2Workbench" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/demaconsulting/SysML2Workbench" />
+    <Property Id="ARPCONTACT" Value="DEMA Consulting" />
+
+    <!-- There is no WixUI dialog sequence, so the "Modify" and "Repair" buttons in Add/Remove
+         Programs have no UI to drive - hide them rather than offer non-functional options. -->
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ARPNOREPAIR" Value="1" />
 
     <Feature Id="MainFeature" Title="SysML2 Workbench" Level="1">
       <ComponentGroupRef Id="ApplicationFiles" />
