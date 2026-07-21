@@ -235,43 +235,14 @@ jobs:
         shell: bash
         run: |
           # MSI ProductVersion only supports three numeric fields (major.minor.build, each
-          # 0-65535) and cannot represent a SemVer prerelease suffix (e.g. "-beta.12").
-          # Naively truncating at the first '-' collapses every prerelease of a version
-          # (and its eventual stable release) onto the identical MSI version number, so
-          # Windows Installer cannot tell a newer prerelease/stable build apart from an
-          # older one already installed - MajorUpgrade then leaves the old install in
-          # place and adds a second, independent Add/Remove Programs entry instead of
-          # replacing it. Encode patch+prerelease into the build field instead:
-          # build = patch*1000 + prerelease-number, reserving 999 for stable (non-
-          # prerelease) releases so a stable release always sorts above every prerelease
-          # of the same patch.
-          FULL_VERSION="${{ inputs.version }}"
-          NUMERIC_PART="${FULL_VERSION%%-*}"
-          MAJOR=$(echo "$NUMERIC_PART" | cut -d'.' -f1)
-          MINOR=$(echo "$NUMERIC_PART" | cut -d'.' -f2)
-          PATCH=$(echo "$NUMERIC_PART" | cut -d'.' -f3)
-
-          if [ "$FULL_VERSION" = "$NUMERIC_PART" ]; then
-            # Stable release - reserve the top of this patch's build range.
-            PRERELEASE_NUM=999
-          else
-            PRERELEASE_PART="${FULL_VERSION#*-}"
-            PRERELEASE_NUM=$(echo "$PRERELEASE_PART" | grep -oE '[0-9]+$')
-            if [ -z "$PRERELEASE_NUM" ] || [ "$PRERELEASE_NUM" -ge 999 ]; then
-              echo "Error: prerelease number in '${FULL_VERSION}' must be a non-negative integer less than 999" >&2
-              exit 1
-            fi
-          fi
-
-          BUILD=$((PATCH * 1000 + PRERELEASE_NUM))
-          if [ "$BUILD" -gt 65535 ]; then
-            echo "Error: computed MSI build number ${BUILD} exceeds the 65535 field limit" >&2
-            exit 1
-          fi
-
-          MSI_VERSION="${MAJOR}.${MINOR}.${BUILD}"
+          # 0-65535) and cannot represent a SemVer prerelease suffix (e.g. "-beta.12"), so
+          # it's simply truncated off here. Package.wxs's MajorUpgrade AllowDowngrades="yes"
+          # is what makes this safe: it always replaces whatever version is installed -
+          # older, same, or newer - so two builds truncating to the same MSI version (e.g.
+          # a prerelease and its eventual stable release) is not a problem.
+          MSI_VERSION=$(echo "${{ inputs.version }}" | cut -d'-' -f1)
           echo "MSI_VERSION=${MSI_VERSION}" >> "$GITHUB_ENV"
-          echo "Computed MSI version: ${MSI_VERSION} (from ${FULL_VERSION})"
+          echo "Computed MSI version: ${MSI_VERSION}"
 
       - name: Build MSI installer
         if: matrix.os == 'windows-latest'
