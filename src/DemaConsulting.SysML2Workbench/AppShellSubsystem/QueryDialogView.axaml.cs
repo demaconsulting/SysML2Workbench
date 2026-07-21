@@ -180,10 +180,10 @@ public partial class QueryDialogView : Window
         SummaryItemsControl.ItemsSource = result?.Summary;
         EntriesTableBorder.IsVisible = hasEntries;
 
-        // The Direction column is dependency-verb specific per the plan; keep the header in lockstep
-        // with the row-template columns by only showing it when the current result is a dependency-verb
-        // result.
-        DirectionHeaderTextBlock.IsVisible = string.Equals(result?.Verb, "dependencies", StringComparison.Ordinal);
+        // The Direction column is dependency-verb specific per the plan; only show it when the current
+        // result is a dependency-verb result. Indexed rather than named: DataGridColumn does not
+        // participate in Avalonia's compiled-bindings field generation the way a Control does.
+        EntriesDataGrid.Columns[3].IsVisible = string.Equals(result?.Verb, "dependencies", StringComparison.Ordinal);
     }
 
     private void OnQueryTypeSelectionChanged(object? sender, SelectionChangedEventArgs e)

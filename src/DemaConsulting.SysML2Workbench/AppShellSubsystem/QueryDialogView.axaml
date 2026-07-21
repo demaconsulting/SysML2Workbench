@@ -65,49 +65,42 @@
         </Border.ContextMenu>
         <DockPanel>
 
-          <ScrollViewer>
-            <StackPanel Margin="8" Spacing="8">
+          <!-- Summary bullets: short narrative caption, pinned above the table, never scrolled. -->
+          <ItemsControl Name="SummaryItemsControl" DockPanel.Dock="Top" Margin="8,8,8,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
 
-              <!-- Summary bullets -->
-              <ItemsControl Name="SummaryItemsControl">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-
-              <!-- Entries table (Grid-based, not DataGrid) -->
-              <Border BorderBrush="LightGray" BorderThickness="1" Padding="0" IsVisible="False" Name="EntriesTableBorder">
-                <StackPanel>
-
-                  <!-- Header row: explicit Foreground fixes a contrast bug where the app's default
-                       dark-theme TextBlock foreground rendered near-white on this light-gray background,
-                       making the header text unreadable. -->
-                  <Grid ColumnDefinitions="2*,1*,2*,1*" Background="#F0F0F0">
-                    <TextBlock Grid.Column="0" Text="Qualified Name" FontWeight="Bold" Padding="6,4" Foreground="Black" />
-                    <TextBlock Grid.Column="1" Text="Kind" FontWeight="Bold" Padding="6,4" Foreground="Black" />
-                    <TextBlock Grid.Column="2" Text="Detail" FontWeight="Bold" Padding="6,4" Foreground="Black" />
-                    <TextBlock Name="DirectionHeaderTextBlock" Grid.Column="3" Text="Direction" FontWeight="Bold" Padding="6,4" IsVisible="False" Foreground="Black" />
-                  </Grid>
-
-                  <ItemsControl Name="EntriesItemsControl" ItemsSource="{Binding CurrentResultRows}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate DataType="local:QueryResultRow">
-                        <Grid ColumnDefinitions="2*,1*,2*,1*" ToolTip.Tip="{Binding Notes}">
-                          <TextBlock Grid.Column="0" Text="{Binding QualifiedName}" Padding="6,2" TextWrapping="Wrap" />
-                          <TextBlock Grid.Column="1" Text="{Binding Kind}" Padding="6,2" />
-                          <TextBlock Grid.Column="2" Text="{Binding Detail}" Padding="6,2" TextWrapping="Wrap" />
-                          <TextBlock Grid.Column="3" Text="{Binding Direction}" Padding="6,2" />
-                        </Grid>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </StackPanel>
-              </Border>
-
-            </StackPanel>
-          </ScrollViewer>
+          <!-- Entries table: Avalonia's own DataGrid control (Avalonia.Controls.DataGrid package),
+               which pins its column headers above a scrollable row area out of the box - replacing an
+               earlier hand-rolled Grid+ItemsControl "table" whose header scrolled away with the rows. -->
+          <Border BorderBrush="LightGray" BorderThickness="1" Padding="0" IsVisible="False" Name="EntriesTableBorder" Margin="8">
+            <DataGrid Name="EntriesDataGrid"
+                      ItemsSource="{Binding CurrentResultRows}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="False"
+                      GridLinesVisibility="Horizontal"
+                      HeadersVisibility="Column">
+              <DataGrid.Styles>
+                <!-- Restores the row-level "Notes" tooltip the earlier hand-rolled table showed via
+                     ToolTip.Tip on its per-row Grid; DataGridRow's DataContext is the bound QueryResultRow. -->
+                <Style Selector="DataGridRow" x:DataType="local:QueryResultRow">
+                  <Setter Property="ToolTip.Tip" Value="{Binding Notes}" />
+                </Style>
+              </DataGrid.Styles>
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Qualified Name" Binding="{Binding QualifiedName}" Width="2*" />
+                <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="1*" />
+                <DataGridTextColumn Header="Detail" Binding="{Binding Detail}" Width="2*" />
+                <DataGridTextColumn Header="Direction" Binding="{Binding Direction}" Width="1*" IsVisible="False" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </Border>
 
         </DockPanel>
       </Border>

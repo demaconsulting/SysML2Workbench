@@ -16,6 +16,7 @@
     <PackageReference Include="Dock.Model.Mvvm" Version="12.0.0.2" />
     <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="12.0.0.2" />
     <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="DemaConsulting.SysML2Tools.Core" Version="0.1.0-beta.15" />
     <PackageReference Include="DemaConsulting.SysML2Tools.Language" Version="0.1.0-beta.15" />
