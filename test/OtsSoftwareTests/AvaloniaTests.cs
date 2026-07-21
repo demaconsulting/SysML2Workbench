@@ -341,19 +341,22 @@ public sealed class AvaloniaTests : IDisposable
     }
 
     /// <summary>
-    ///     End-to-end regression for the new Query dialog: constructs a real
+    ///     End-to-end regression for the redesigned Query dialog: constructs a real
     ///     <see cref="MainWindowView" />, confirms its Query menu hosts the "Run Query..." entry (the
     ///     view-side counterpart of the plan's new <c>_Query</c> top-level menu), then opens the
     ///     modal <see cref="QueryDialogView" /> directly (rather than through the modal
-    ///     <c>ShowDialog</c> path, which blocks its calling turn until closed), runs an element-scoped
-    ///     Describe verb through the real <see cref="DemaConsulting.SysML2Tools.Query.QueryEngine" />
-    ///     via the "Run Query" button, clicks "Copy as Markdown", and asserts the headless platform's
-    ///     real clipboard now holds the exact text
+    ///     <c>ShowDialog</c> path, which blocks its calling turn until closed), selects the "Describe"
+    ///     entry on the single form's Query Type combo, selects an element on its one always-visible
+    ///     picker, and confirms the real <see cref="DemaConsulting.SysML2Tools.Query.QueryEngine" />
+    ///     result appears immediately with no "Run" gesture of any kind. Then right-clicks the results
+    ///     panel's context menu's "Copy as Markdown" entry and asserts the headless platform's real
+    ///     clipboard now holds the exact text
     ///     <see cref="DemaConsulting.SysML2Tools.Query.QueryResultRenderer.RenderMarkdown" /> produces.
-    ///     Mirrors <see cref="DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard" />'s pattern.
+    ///     Mirrors <see cref="DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard" />'s right-click
+    ///     recipe.
     /// </summary>
     [AvaloniaFact]
-    public async Task QueryDialog_RunDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard()
+    public async Task QueryDialog_SelectDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard()
     {
         // Arrange: a real workspace with one part def, so Describe has something meaningful to say
         await File.WriteAllTextAsync(
@@ -382,37 +385,44 @@ public sealed class AvaloniaTests : IDisposable
         dialog.Show(window);
         Dispatcher.UIThread.RunJobs();
 
-        // Assert: both pickers are populated from the real workspace
-        var elementQueryPickerListBox = FindByName<ListBox>(dialog, "PickerItemsListBox");
-        Assert.NotNull(elementQueryPickerListBox);
+        // Assert: the single picker is populated from the real workspace, and no TabControl/tab-switch
+        // exists in this design - the picker's ListBox is realized immediately.
+        var pickerListBox = FindByName<ListBox>(dialog, "PickerItemsListBox");
+        Assert.NotNull(pickerListBox);
 
-        // Switch to the Element Query tab (index 1) so its content - including RunQueryButton and the
-        // ElementQueryPickerView - is realized in the visual tree. TabControl only materializes the
-        // active tab's content, so the "Run Query" button doesn't otherwise exist yet.
-        var tabControl = FindByName<TabControl>(dialog, "QueryTabControl");
-        Assert.NotNull(tabControl);
-        tabControl!.SelectedIndex = 1;
+        // Act: select "Describe" on the Query Type combo. Describe is no longer the VM's
+        // construction-time default now that the default Query Type is "List", so this step itself
+        // exercises the Query Type combo's wiring.
+        var queryTypeComboBox = FindByName<ComboBox>(dialog, "QueryTypeComboBox");
+        Assert.NotNull(queryTypeComboBox);
+        queryTypeComboBox!.SelectedItem = DemaConsulting.SysML2Tools.Query.QueryVerb.Describe;
         Dispatcher.UIThread.RunJobs();
 
-        // Drive the Element Query tab: pick Engine, keep the default Describe verb, click Run Query
         var vm = (QueryDialogViewModel)dialog.DataContext!;
-        vm.ElementQueryPicker.SelectedQualifiedName = "Sample::Engine";
-        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(DemaConsulting.SysML2Tools.Query.QueryVerb.Describe, vm.SelectedQueryType);
 
-        var runButton = FindByName<Button>(dialog, "RunQueryButton");
-        Assert.NotNull(runButton);
-        runButton!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        // Act: select the target element on the single picker - this alone must produce the result,
+        // with no "Run" button or method of any kind in this design.
+        vm.Picker.SelectedQualifiedName = "Sample::Engine";
         Dispatcher.UIThread.RunJobs();
 
         Assert.NotNull(vm.CurrentResult);
         Assert.Equal("describe", vm.CurrentResult!.Verb);
         Assert.Equal("Sample::Engine", vm.CurrentResult.Element);
 
-        // Act: click the "Copy as Markdown" button
-        var copyMarkdownButton = FindByName<Button>(dialog, "CopyAsMarkdownButton");
-        Assert.NotNull(copyMarkdownButton);
-        Assert.True(copyMarkdownButton!.IsEnabled);
-        copyMarkdownButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        // Act: right-click the results panel (open its context menu) and click "Copy as Markdown",
+        // mirroring DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard's exact recipe.
+        var resultsBorder = FindByName<Border>(dialog, "ResultsBorder");
+        Assert.NotNull(resultsBorder);
+        var contextMenu = resultsBorder!.ContextMenu;
+        Assert.NotNull(contextMenu);
+        contextMenu!.Open(resultsBorder);
+        Dispatcher.UIThread.RunJobs();
+
+        var copyMarkdownMenuItem = FindByName<MenuItem>(dialog, "CopyAsMarkdownMenuItem");
+        Assert.NotNull(copyMarkdownMenuItem);
+        Assert.True(copyMarkdownMenuItem!.IsEnabled);
+        copyMarkdownMenuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
         // Wait a beat for the async clipboard write to complete on the UI thread

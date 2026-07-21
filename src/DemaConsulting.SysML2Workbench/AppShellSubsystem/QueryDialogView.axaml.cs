@@ -8,8 +8,10 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 ///     Thin Avalonia code-behind for the modal Query dialog. Owns the Avalonia clipboard-service
 ///     assignment (mirroring <see cref="DiagramDocumentView" />'s unconditional
 ///     <c>OnDataContextChanged</c> pattern so the same clipboard-plumbing rules apply here) and the
-///     verb-specific control visibility toggles that would be awkward to express as pure XAML data
-///     triggers in Avalonia 11.
+///     Query-Type-specific control visibility toggles that would be awkward to express as pure XAML data
+///     triggers in Avalonia 11. This single-form design has no "Run" button and no toolbar: every
+///     interaction recomputes the view model's result synchronously, and the results panel's copy
+///     actions live entirely on its right-click <c>ContextMenu</c>.
 /// </summary>
 public partial class QueryDialogView : Window
 {
@@ -34,13 +36,13 @@ public partial class QueryDialogView : Window
     {
         InitializeComponent();
 
-        // Populate verb / direction combo boxes from the view-model's canonical option lists so the
-        // AXAML markup stays independent of the QueryVerb enum's declaration order and the
+        // Populate the Query Type / direction combo boxes from the view-model's canonical option lists
+        // so the AXAML markup stays independent of the QueryVerb enum's declaration order and the
         // hierarchy-direction string vocabulary.
-        VerbComboBox.ItemsSource = QueryDialogViewModel.ElementScopedVerbs;
+        QueryTypeComboBox.ItemsSource = QueryDialogViewModel.QueryTypes;
         HierarchyDirectionComboBox.ItemsSource = QueryDialogViewModel.HierarchyDirectionOptions;
 
-        VerbComboBox.SelectionChanged += OnVerbSelectionChanged;
+        QueryTypeComboBox.SelectionChanged += OnQueryTypeSelectionChanged;
         HierarchyDirectionComboBox.SelectionChanged += OnHierarchyDirectionSelectionChanged;
 
         DataContext = new QueryDialogViewModel(shell);
@@ -50,10 +52,11 @@ public partial class QueryDialogView : Window
     }
 
     /// <summary>
-    ///     Re-anchors the view's dependencies (VM back-reference, clipboard service, verb/direction
-    ///     combos, initial results-panel state) whenever the <c>DataContext</c> is reassigned. Follows
-    ///     <see cref="DiagramDocumentView" />'s "always rebind" (unconditional, no <c>??=</c>) pattern
-    ///     so a re-shown dialog never leaves the clipboard service pointing at a stale window instance.
+    ///     Re-anchors the view's dependencies (VM back-reference, clipboard service, Query
+    ///     Type/direction combos, initial results-panel state) whenever the <c>DataContext</c> is
+    ///     reassigned. Follows <see cref="DiagramDocumentView" />'s "always rebind" (unconditional, no
+    ///     <c>??=</c>) pattern so a re-shown dialog never leaves the clipboard service pointing at a
+    ///     stale window instance.
     /// </summary>
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
@@ -67,10 +70,11 @@ public partial class QueryDialogView : Window
 
     /// <summary>
     ///     Wires the current <c>DataContext</c> as the active view model: subscribes to its
-    ///     <c>PropertyChanged</c> stream so verb-visibility, results-panel visibility, and
-    ///     copy-button-enabled state stay in sync; primes the initial UI from the VM's current state;
-    ///     and unconditionally assigns a fresh <see cref="AvaloniaClipboardService" /> so the copy
-    ///     buttons write to this window's clipboard.
+    ///     <c>PropertyChanged</c> stream so Query-Type-visibility and results-panel visibility stay in
+    ///     sync (copy-menu-item enablement is handled purely by the <c>HasCurrentResult</c> binding);
+    ///     primes the initial UI from the VM's current state; and unconditionally assigns a fresh
+    ///     <see cref="AvaloniaClipboardService" /> so the context-menu copy actions write to this
+    ///     window's clipboard.
     /// </summary>
     private void AttachViewModel()
     {
@@ -82,7 +86,7 @@ public partial class QueryDialogView : Window
 
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
 
-        VerbComboBox.SelectedItem = _viewModel.SelectedVerb;
+        QueryTypeComboBox.SelectedItem = _viewModel.SelectedQueryType;
         HierarchyDirectionComboBox.SelectedItem = _viewModel.HierarchyDirection;
 
         // See DiagramDocumentView.OnDataContextChanged for the "always rebind (unconditional, no `??=`)"
@@ -90,26 +94,26 @@ public partial class QueryDialogView : Window
         // clipboard service to THIS window instance so TopLevel.GetTopLevel(this) resolves live.
         _viewModel.ClipboardService = new AvaloniaClipboardService(this);
 
-        ApplyVerbVisibility();
+        ApplyQueryTypeVisibility();
         ApplyResultVisibility();
     }
 
     /// <summary>
-    ///     Observes the view model's property changes and drives the code-behind's visibility and
-    ///     enablement toggles: verb changes retarget which per-verb controls are visible, and current
-    ///     result / result-rows changes toggle the results panel and the copy buttons.
+    ///     Observes the view model's property changes and drives the code-behind's visibility toggles:
+    ///     Query Type changes retarget which per-verb controls are visible, and current result / result
+    ///     rows changes toggle the results panel's visibility.
     /// </summary>
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
         {
-            case nameof(QueryDialogViewModel.SelectedVerb):
+            case nameof(QueryDialogViewModel.SelectedQueryType):
                 if (_viewModel is not null)
                 {
-                    VerbComboBox.SelectedItem = _viewModel.SelectedVerb;
+                    QueryTypeComboBox.SelectedItem = _viewModel.SelectedQueryType;
                 }
 
-                ApplyVerbVisibility();
+                ApplyQueryTypeVisibility();
                 ApplyResultVisibility();
                 break;
 
@@ -130,22 +134,24 @@ public partial class QueryDialogView : Window
 
     /// <summary>
     ///     Toggles the Hierarchy / Impact per-verb control panels' visibility based on the currently
-    ///     selected verb.
+    ///     selected Query Type.
     /// </summary>
-    private void ApplyVerbVisibility()
+    private void ApplyQueryTypeVisibility()
     {
         if (_viewModel is null)
         {
             return;
         }
 
-        HierarchyDirectionPanel.IsVisible = _viewModel.SelectedVerb == QueryVerb.Hierarchy;
-        WalkDepthPanel.IsVisible = _viewModel.SelectedVerb == QueryVerb.Impact;
+        HierarchyDirectionPanel.IsVisible = _viewModel.SelectedQueryType == QueryVerb.Hierarchy;
+        WalkDepthPanel.IsVisible = _viewModel.SelectedQueryType == QueryVerb.Impact;
     }
 
     /// <summary>
-    ///     Toggles the results panel's visibility and the copy buttons' enablement based on the current
-    ///     <see cref="QueryDialogViewModel.CurrentResult" />.
+    ///     Toggles the results panel's visibility based on the current
+    ///     <see cref="QueryDialogViewModel.CurrentResult" />. Copy-menu-item enablement is handled purely
+    ///     by the AXAML's <c>IsEnabled="{Binding HasCurrentResult}"</c> bindings, so this method no longer
+    ///     needs to imperatively toggle any button/menu-item state (unlike the old toolbar-button design).
     /// </summary>
     private void ApplyResultVisibility()
     {
@@ -155,7 +161,6 @@ public partial class QueryDialogView : Window
         }
 
         var result = _viewModel.CurrentResult;
-        var hasResult = result is not null;
         var hasEntries = _viewModel.CurrentResultRows.Count > 0;
 
         // Summary lines: bind directly (rather than through a converter) so unit tests that only touch
@@ -167,16 +172,13 @@ public partial class QueryDialogView : Window
         // with the row-template columns by only showing it when the current result is a dependency-verb
         // result.
         DirectionHeaderTextBlock.IsVisible = string.Equals(result?.Verb, "dependencies", StringComparison.Ordinal);
-
-        CopyAsMarkdownButton.IsEnabled = hasResult;
-        CopyAsJsonButton.IsEnabled = hasResult;
     }
 
-    private void OnVerbSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void OnQueryTypeSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_viewModel is not null && VerbComboBox.SelectedItem is QueryVerb verb)
+        if (_viewModel is not null && QueryTypeComboBox.SelectedItem is QueryVerb queryType)
         {
-            _viewModel.SelectedVerb = verb;
+            _viewModel.SelectedQueryType = queryType;
         }
     }
 
@@ -188,12 +190,7 @@ public partial class QueryDialogView : Window
         }
     }
 
-    private void OnRunQueryClick(object? sender, RoutedEventArgs e)
-    {
-        _viewModel?.RunElementQuery();
-    }
-
-    private async void OnCopyAsMarkdownClick(object? sender, RoutedEventArgs e)
+    private async void OnCopyAsMarkdownMenuItemClick(object? sender, RoutedEventArgs e)
     {
         if (_viewModel is null)
         {
@@ -203,7 +200,7 @@ public partial class QueryDialogView : Window
         await _viewModel.CopyResultAsMarkdownAsync();
     }
 
-    private async void OnCopyAsJsonClick(object? sender, RoutedEventArgs e)
+    private async void OnCopyAsJsonMenuItemClick(object? sender, RoutedEventArgs e)
     {
         if (_viewModel is null)
         {

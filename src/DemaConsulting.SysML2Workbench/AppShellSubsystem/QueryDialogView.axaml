@@ -31,52 +31,38 @@
         <ColumnDefinition Width="*" MinWidth="300" />
       </Grid.ColumnDefinitions>
 
-      <!-- Left: Browse / Element Query tabs -->
-      <TabControl Grid.Column="0" Name="QueryTabControl">
+      <!-- Left: single adaptive form (Query Type + always-visible picker + verb-specific extras) -->
+      <StackPanel Grid.Column="0" Margin="8" Spacing="6">
+        <TextBlock Text="Query Type" />
+        <ComboBox Name="QueryTypeComboBox" HorizontalAlignment="Stretch" />
 
-        <TabItem Header="Browse">
-          <StackPanel Margin="8" Spacing="6">
-            <TextBlock Text="Every element in the workspace. Type or add a chip to narrow." TextWrapping="Wrap" Foreground="Gray" FontSize="11" />
-            <picker:ElementPickerView Name="BrowsePickerView" DataContext="{Binding BrowsePicker}" />
-          </StackPanel>
-        </TabItem>
+        <TextBlock Text="Pick an element to filter the list, or as the target for every other query type." TextWrapping="Wrap" Foreground="Gray" FontSize="11" />
+        <picker:ElementPickerView Name="PickerView" DataContext="{Binding Picker}" />
 
-        <TabItem Header="Element Query">
-          <StackPanel Margin="8" Spacing="6">
-            <TextBlock Text="Pick a target element, choose a verb, then click Run." TextWrapping="Wrap" Foreground="Gray" FontSize="11" />
-            <picker:ElementPickerView Name="ElementQueryPickerView" DataContext="{Binding ElementQueryPicker}" />
+        <!-- Hierarchy-only direction selector -->
+        <StackPanel Name="HierarchyDirectionPanel" Spacing="4" IsVisible="False">
+          <TextBlock Text="Direction (Hierarchy)" />
+          <ComboBox Name="HierarchyDirectionComboBox" HorizontalAlignment="Stretch" />
+        </StackPanel>
 
-            <TextBlock Text="Verb" Margin="0,6,0,0" />
-            <ComboBox Name="VerbComboBox" HorizontalAlignment="Stretch" />
-
-            <!-- Hierarchy-only direction selector -->
-            <StackPanel Name="HierarchyDirectionPanel" Spacing="4" IsVisible="False">
-              <TextBlock Text="Direction (Hierarchy)" />
-              <ComboBox Name="HierarchyDirectionComboBox" HorizontalAlignment="Stretch" />
-            </StackPanel>
-
-            <!-- Impact-only walk depth input -->
-            <StackPanel Name="WalkDepthPanel" Spacing="4" IsVisible="False">
-              <TextBlock Text="Walk depth (Impact, blank = unlimited)" />
-              <TextBox Name="WalkDepthTextBox" Text="{Binding WalkDepthText, Mode=TwoWay}" />
-            </StackPanel>
-
-            <Button Name="RunQueryButton" Content="Run Query" HorizontalAlignment="Stretch" Margin="0,8,0,0" Click="OnRunQueryClick" />
-          </StackPanel>
-        </TabItem>
-
-      </TabControl>
+        <!-- Impact-only walk depth input -->
+        <StackPanel Name="WalkDepthPanel" Spacing="4" IsVisible="False">
+          <TextBlock Text="Walk depth (blank = unlimited)" />
+          <TextBox Name="WalkDepthTextBox" Text="{Binding WalkDepthText, Mode=TwoWay}" />
+        </StackPanel>
+      </StackPanel>
 
       <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" ResizeDirection="Columns" Background="Transparent" />
 
-      <!-- Right: shared results panel -->
-      <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1">
+      <!-- Right: shared results panel, no toolbar - copy actions live on the right-click context menu -->
+      <Border Grid.Column="2" Name="ResultsBorder" BorderBrush="Gray" BorderThickness="1">
+        <Border.ContextMenu>
+          <ContextMenu>
+            <MenuItem Name="CopyAsMarkdownMenuItem" Header="Copy as Markdown" Click="OnCopyAsMarkdownMenuItemClick" IsEnabled="{Binding HasCurrentResult}" />
+            <MenuItem Name="CopyAsJsonMenuItem" Header="Copy as JSON" Click="OnCopyAsJsonMenuItemClick" IsEnabled="{Binding HasCurrentResult}" />
+          </ContextMenu>
+        </Border.ContextMenu>
         <DockPanel>
-
-          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="6">
-            <Button Name="CopyAsMarkdownButton" Content="Copy as Markdown" Click="OnCopyAsMarkdownClick" IsEnabled="False" />
-            <Button Name="CopyAsJsonButton" Content="Copy as JSON" Click="OnCopyAsJsonClick" IsEnabled="False" />
-          </StackPanel>
 
           <ScrollViewer>
             <StackPanel Margin="8" Spacing="8">
@@ -94,12 +80,14 @@
               <Border BorderBrush="LightGray" BorderThickness="1" Padding="0" IsVisible="False" Name="EntriesTableBorder">
                 <StackPanel>
 
-                  <!-- Header row -->
+                  <!-- Header row: explicit Foreground fixes a contrast bug where the app's default
+                       dark-theme TextBlock foreground rendered near-white on this light-gray background,
+                       making the header text unreadable. -->
                   <Grid ColumnDefinitions="2*,1*,2*,1*" Background="#F0F0F0">
-                    <TextBlock Grid.Column="0" Text="Qualified Name" FontWeight="Bold" Padding="6,4" />
-                    <TextBlock Grid.Column="1" Text="Kind" FontWeight="Bold" Padding="6,4" />
-                    <TextBlock Grid.Column="2" Text="Detail" FontWeight="Bold" Padding="6,4" />
-                    <TextBlock Name="DirectionHeaderTextBlock" Grid.Column="3" Text="Direction" FontWeight="Bold" Padding="6,4" IsVisible="False" />
+                    <TextBlock Grid.Column="0" Text="Qualified Name" FontWeight="Bold" Padding="6,4" Foreground="Black" />
+                    <TextBlock Grid.Column="1" Text="Kind" FontWeight="Bold" Padding="6,4" Foreground="Black" />
+                    <TextBlock Grid.Column="2" Text="Detail" FontWeight="Bold" Padding="6,4" Foreground="Black" />
+                    <TextBlock Name="DirectionHeaderTextBlock" Grid.Column="3" Text="Direction" FontWeight="Bold" Padding="6,4" IsVisible="False" Foreground="Black" />
                   </Grid>
 
                   <ItemsControl Name="EntriesItemsControl" ItemsSource="{Binding CurrentResultRows}">

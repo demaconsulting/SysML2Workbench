@@ -2,6 +2,7 @@ using DemaConsulting.SysML2Tools.Query;
 using DemaConsulting.SysML2Tools.Semantic.Model;
 using DemaConsulting.SysML2Workbench.AppShellSubsystem;
 using DemaConsulting.SysML2Workbench.DiagnosticsPanelSubsystem;
+using DemaConsulting.SysML2Workbench.ElementPickerSubsystem;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
 using DemaConsulting.SysML2Workbench.LoggingSubsystem;
 using DemaConsulting.SysML2Workbench.ViewBuilderSubsystem;
@@ -11,9 +12,12 @@ using DemaConsulting.SysML2Workbench.WorkspaceSubsystem;
 namespace DemaConsulting.SysML2Workbench.Tests.AppShellSubsystem;
 
 /// <summary>
-///     Unit tests for <see cref="QueryDialogViewModel" />: verb-specific option construction, Browse tab's
-///     purely-client-side result generation, Element Query tab dispatch through <see cref="QueryEngine" />,
-///     and graceful reporting of every recoverable failure mode through <see cref="QueryDialogViewModel.StatusMessage" />.
+///     Unit tests for <see cref="QueryDialogViewModel" />: the single form's Query-Type-driven auto
+///     recompute contract (List's purely-client-side result, the ten element-scoped verbs' dispatch
+///     through <see cref="QueryEngine" />), verb-specific option construction, and graceful reporting of
+///     every recoverable failure mode through <see cref="QueryDialogViewModel.StatusMessage" /> - all
+///     without any explicit "Run" method call, since the redesign recomputes on every relevant property
+///     change.
 /// </summary>
 public sealed class QueryDialogViewModelTests : IDisposable
 {
@@ -82,8 +86,9 @@ public sealed class QueryDialogViewModelTests : IDisposable
 
     /// <summary>
     ///     Validates the initial dialog state over an empty shell (no workspace open): no candidates in
-    ///     either picker, <see cref="QueryDialogViewModel.IsWorkspaceEmpty" /> is <see langword="true" />,
-    ///     and <see cref="QueryDialogViewModel.CurrentResult" /> is <see langword="null" />.
+    ///     the picker, <see cref="QueryDialogViewModel.IsWorkspaceEmpty" /> is <see langword="true" />,
+    ///     and the default Query Type (<see cref="QueryVerb.List" />) still produces a (empty) client-side
+    ///     result rather than <see langword="null" />.
     /// </summary>
     [Fact]
     public void Construction_EmptyShell_ReportsWorkspaceEmpty()
@@ -96,19 +101,19 @@ public sealed class QueryDialogViewModelTests : IDisposable
 
         // Assert
         Assert.True(viewModel.IsWorkspaceEmpty);
-        Assert.Empty(viewModel.BrowsePicker.DisplayedItems);
-        Assert.Empty(viewModel.ElementQueryPicker.DisplayedItems);
-        Assert.NotNull(viewModel.CurrentResult); // BuildBrowseResult fires unconditionally
+        Assert.Equal(QueryVerb.List, viewModel.SelectedQueryType);
+        Assert.Empty(viewModel.Picker.DisplayedItems);
+        Assert.NotNull(viewModel.CurrentResult); // BuildListResult fires unconditionally
         Assert.Equal("list", viewModel.CurrentResult!.Verb);
         Assert.Null(viewModel.StatusMessage);
     }
 
     /// <summary>
-    ///     Validates that both pickers populate from a loaded workspace, exclude stdlib names by default,
-    ///     and start with no default type-filter chip (so every candidate shows immediately).
+    ///     Validates that the single picker populates from a loaded workspace, excludes stdlib names by
+    ///     default, and starts with no default type-filter chip (so every candidate shows immediately).
     /// </summary>
     [Fact]
-    public async Task Construction_LoadedWorkspace_PopulatesBothPickers()
+    public async Task Construction_LoadedWorkspace_PopulatesSinglePicker()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -121,21 +126,19 @@ public sealed class QueryDialogViewModelTests : IDisposable
         // Assert
         Assert.False(viewModel.IsWorkspaceEmpty);
         Assert.False(viewModel.IncludeStdlib);
-        Assert.Empty(viewModel.BrowsePicker.ActiveTypeFilters);
-        Assert.Empty(viewModel.ElementQueryPicker.ActiveTypeFilters);
-        Assert.Contains("Sample::Engine", viewModel.BrowsePicker.DisplayedItems);
-        Assert.Contains("Sample::engineInstance", viewModel.BrowsePicker.DisplayedItems);
-        Assert.Contains("Sample::Engine", viewModel.ElementQueryPicker.DisplayedItems);
+        Assert.Empty(viewModel.Picker.ActiveTypeFilters);
+        Assert.Contains("Sample::Engine", viewModel.Picker.DisplayedItems);
+        Assert.Contains("Sample::engineInstance", viewModel.Picker.DisplayedItems);
     }
 
     /// <summary>
-    ///     Validates that the Browse tab's <see cref="QueryDialogViewModel.CurrentResult" /> is a
+    ///     Validates that the "List" Query Type's <see cref="QueryDialogViewModel.CurrentResult" /> is a
     ///     client-built <see cref="QueryResult" /> with <see cref="QueryResult.Verb" /> equal to
     ///     <c>"list"</c>, no <see cref="QueryResult.Element" />, a count-summary line, and one entry per
     ///     displayed picker item (kind label sourced from the same candidate map).
     /// </summary>
     [Fact]
-    public async Task BrowseTab_BuildsClientSideListResult()
+    public async Task ListQueryType_BuildsClientSideListResult()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -152,17 +155,17 @@ public sealed class QueryDialogViewModelTests : IDisposable
         Assert.Null(result.Element);
         Assert.Single(result.Summary);
         Assert.Contains("element(s) match the filter", result.Summary[0]);
-        Assert.Equal(viewModel.BrowsePicker.DisplayedItems.Count, result.Entries.Count);
+        Assert.Equal(viewModel.Picker.DisplayedItems.Count, result.Entries.Count);
         Assert.Contains(result.Entries, e => e.QualifiedName == "Sample::Engine" && e.Kind == "part def");
         Assert.Contains(result.Entries, e => e.QualifiedName == "Sample::engineInstance" && e.Kind == "part");
     }
 
     /// <summary>
-    ///     Validates that as the Browse tab's picker narrows (via a search text edit here), the Browse
-    ///     result regenerates automatically - the plan's "live" contract for the tab.
+    ///     Validates that as the picker narrows (via a search text edit here) while "List" is selected,
+    ///     the result regenerates automatically - the redesign's "live, no Run gesture" contract.
     /// </summary>
     [Fact]
-    public async Task BrowseTab_SearchTextEdit_RegeneratesResultLive()
+    public async Task ListQueryType_SearchTextEdit_RegeneratesResultLive()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -171,7 +174,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
         var viewModel = new QueryDialogViewModel(shell);
 
         // Act
-        viewModel.BrowsePicker.SearchText = "engineInstance";
+        viewModel.Picker.SearchText = "engineInstance";
 
         // Assert
         Assert.NotNull(viewModel.CurrentResult);
@@ -180,70 +183,67 @@ public sealed class QueryDialogViewModelTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that <see cref="QueryDialogViewModel.RunElementQuery" /> with no selection stops
-    ///     before touching <see cref="QueryEngine" />, reports a user-visible
-    ///     <see cref="QueryDialogViewModel.StatusMessage" />, and leaves the Browse-derived result in
-    ///     place.
+    ///     Validates that selecting an element-scoped Query Type with no picker selection reports a
+    ///     helpful (non-error) prompt naming the Query Type, and clears any stale prior result rather
+    ///     than leaving it on screen.
     /// </summary>
     [Fact]
-    public async Task RunElementQuery_NoSelection_ReportsStatusMessage()
+    public async Task RecomputeResult_ElementScopedVerbNoSelection_ReportsPromptAndClearsRows()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
         await shell.AddFolderSourceAsync(_tempRoot);
         var viewModel = new QueryDialogViewModel(shell);
-        var browseResult = viewModel.CurrentResult;
-        viewModel.SelectedVerb = QueryVerb.Describe;
 
-        // Act
-        viewModel.RunElementQuery();
+        // Act: switch to Describe with no selection on the picker
+        viewModel.SelectedQueryType = QueryVerb.Describe;
 
         // Assert
         Assert.NotNull(viewModel.StatusMessage);
-        Assert.Contains("Select an element", viewModel.StatusMessage);
-        Assert.Same(browseResult, viewModel.CurrentResult);
+        Assert.Contains("Select an element above", viewModel.StatusMessage);
+        Assert.Contains("Describe", viewModel.StatusMessage);
+        Assert.Null(viewModel.CurrentResult);
+        Assert.Empty(viewModel.CurrentResultRows);
     }
 
     /// <summary>
-    ///     Validates that <see cref="QueryDialogViewModel.RunElementQuery" /> over an empty workspace
-    ///     stops early with a user-visible status, without touching <see cref="QueryEngine" />.
+    ///     Validates that selecting an element-scoped Query Type over an empty workspace stops early with
+    ///     a user-visible status, without touching <see cref="QueryEngine" />.
     /// </summary>
     [Fact]
-    public void RunElementQuery_EmptyWorkspace_ReportsStatusMessage()
+    public void RecomputeResult_EmptyWorkspace_ReportsStatusMessage()
     {
         // Arrange
         using var shell = CreateShell();
         var viewModel = new QueryDialogViewModel(shell);
-        viewModel.ElementQueryPicker.SelectedQualifiedName = "something";
-        viewModel.SelectedVerb = QueryVerb.Describe;
 
         // Act
-        viewModel.RunElementQuery();
+        viewModel.SelectedQueryType = QueryVerb.Describe;
 
         // Assert
         Assert.NotNull(viewModel.StatusMessage);
         Assert.Contains("No workspace", viewModel.StatusMessage);
+        Assert.Null(viewModel.CurrentResult);
     }
 
     /// <summary>
-    ///     Validates that a valid Describe run over a real workspace dispatches through
-    ///     <see cref="QueryEngine.Execute" />: the resulting <see cref="QueryResult" /> carries the
-    ///     kebab-case verb token and the resolved element's qualified name.
+    ///     Validates that selecting Describe and then setting the picker's selected qualified name
+    ///     dispatches through <see cref="QueryEngine.Execute" /> immediately, with no intervening method
+    ///     call - proving the auto-recompute contract at the heart of this redesign.
     /// </summary>
     [Fact]
-    public async Task RunElementQuery_Describe_DispatchesThroughEngine()
+    public async Task RecomputeResult_DescribeWithSelection_DispatchesThroughEngineImmediately()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
         await shell.AddFolderSourceAsync(_tempRoot);
         var viewModel = new QueryDialogViewModel(shell);
-        viewModel.ElementQueryPicker.SelectedQualifiedName = "Sample::Engine";
-        viewModel.SelectedVerb = QueryVerb.Describe;
+        viewModel.SelectedQueryType = QueryVerb.Describe;
 
-        // Act
-        viewModel.RunElementQuery();
+        // Act: the assignment itself is the trigger under test - no Run call exists in this design.
+        viewModel.Picker.SelectedQualifiedName = "Sample::Engine";
 
         // Assert
         Assert.NotNull(viewModel.CurrentResult);
@@ -253,8 +253,109 @@ public sealed class QueryDialogViewModelTests : IDisposable
     }
 
     /// <summary>
+    ///     Validates that switching from Describe (with a selection) to List immediately shows the
+    ///     client-side list result, proving Query Type switches recompute without stale state from the
+    ///     previous verb.
+    /// </summary>
+    [Fact]
+    public async Task SwitchingQueryType_FromDescribeToList_ShowsListResultImmediately()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new QueryDialogViewModel(shell);
+        viewModel.SelectedQueryType = QueryVerb.Describe;
+        viewModel.Picker.SelectedQualifiedName = "Sample::Engine";
+        Assert.Equal("describe", viewModel.CurrentResult!.Verb);
+
+        // Act
+        viewModel.SelectedQueryType = QueryVerb.List;
+
+        // Assert
+        Assert.NotNull(viewModel.CurrentResult);
+        Assert.Equal("list", viewModel.CurrentResult!.Verb);
+        Assert.Null(viewModel.StatusMessage);
+    }
+
+    /// <summary>
+    ///     Validates that switching from the default List Query Type (which always has a result) to
+    ///     Describe with no selection shows the "select an element" prompt rather than a stale List
+    ///     result or a thrown exception.
+    /// </summary>
+    [Fact]
+    public async Task SwitchingQueryType_FromListToDescribeNoSelection_ShowsSelectPrompt()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new QueryDialogViewModel(shell);
+        Assert.NotNull(viewModel.CurrentResult); // List's default result
+
+        // Act
+        viewModel.SelectedQueryType = QueryVerb.Describe;
+
+        // Assert
+        Assert.Null(viewModel.CurrentResult);
+        Assert.NotNull(viewModel.StatusMessage);
+        Assert.Contains("Select an element above", viewModel.StatusMessage);
+    }
+
+    /// <summary>
+    ///     Validates that changing <see cref="QueryDialogViewModel.HierarchyDirection" /> while
+    ///     <see cref="QueryVerb.Hierarchy" /> is selected with an active selection recomputes immediately,
+    ///     without requiring any manual call.
+    /// </summary>
+    [Fact]
+    public async Task HierarchyDirectionChange_WithSelection_RecomputesImmediately()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new QueryDialogViewModel(shell);
+        viewModel.SelectedQueryType = QueryVerb.Hierarchy;
+        viewModel.Picker.SelectedQualifiedName = "Sample::Engine";
+        Assert.NotNull(viewModel.CurrentResult);
+
+        // Act
+        viewModel.HierarchyDirection = "up";
+
+        // Assert: recomputed live with no stale state or thrown exception
+        Assert.Null(viewModel.StatusMessage);
+        Assert.NotNull(viewModel.CurrentResult);
+        Assert.Equal("hierarchy", viewModel.CurrentResult!.Verb);
+    }
+
+    /// <summary>
+    ///     Validates that editing <see cref="QueryDialogViewModel.WalkDepthText" /> while
+    ///     <see cref="QueryVerb.Impact" /> is selected with an active selection recomputes immediately.
+    /// </summary>
+    [Fact]
+    public async Task WalkDepthTextChange_WithSelection_RecomputesImmediately()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new QueryDialogViewModel(shell);
+        viewModel.SelectedQueryType = QueryVerb.Impact;
+        viewModel.Picker.SelectedQualifiedName = "Sample::Engine";
+        Assert.NotNull(viewModel.CurrentResult);
+
+        // Act
+        viewModel.WalkDepthText = "1";
+
+        // Assert
+        Assert.NotNull(viewModel.CurrentResult);
+        Assert.Equal("impact", viewModel.CurrentResult!.Verb);
+        Assert.Null(viewModel.StatusMessage);
+    }
+
+    /// <summary>
     ///     Validates that <see cref="QueryDialogViewModel.BuildOptions" /> only attaches
-    ///     <see cref="QueryOptions.Direction" /> when the current verb is
+    ///     <see cref="QueryOptions.Direction" /> when the current Query Type is
     ///     <see cref="QueryVerb.Hierarchy" />, matching the plan's per-verb visibility rules.
     /// </summary>
     [Fact]
@@ -263,7 +364,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var viewModel = new QueryDialogViewModel(shell);
-        viewModel.SelectedVerb = QueryVerb.Hierarchy;
+        viewModel.SelectedQueryType = QueryVerb.Hierarchy;
         viewModel.HierarchyDirection = "up";
 
         // Act
@@ -286,7 +387,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var viewModel = new QueryDialogViewModel(shell);
-        viewModel.SelectedVerb = QueryVerb.Describe;
+        viewModel.SelectedQueryType = QueryVerb.Describe;
         viewModel.HierarchyDirection = "up";
 
         // Act
@@ -307,7 +408,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var viewModel = new QueryDialogViewModel(shell);
-        viewModel.SelectedVerb = QueryVerb.Impact;
+        viewModel.SelectedQueryType = QueryVerb.Impact;
         viewModel.WalkDepthText = "3";
 
         // Act
@@ -334,7 +435,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var viewModel = new QueryDialogViewModel(shell);
-        viewModel.SelectedVerb = QueryVerb.Impact;
+        viewModel.SelectedQueryType = QueryVerb.Impact;
         viewModel.WalkDepthText = walkDepthText;
 
         // Act
@@ -355,7 +456,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
         using var shell = CreateShell();
         var viewModel = new QueryDialogViewModel(shell);
         viewModel.IncludeStdlib = true;
-        viewModel.SelectedVerb = QueryVerb.Uses;
+        viewModel.SelectedQueryType = QueryVerb.Uses;
 
         // Act
         var options = viewModel.BuildOptions("Some::Element");
@@ -365,35 +466,54 @@ public sealed class QueryDialogViewModelTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that toggling <see cref="QueryDialogViewModel.IncludeStdlib" /> recomputes both
-    ///     pickers' candidates (which is the mechanism the checkbox uses to add/remove stdlib names
-    ///     from view). At minimum the toggle must not leave state broken; a re-toggle back yields the
-    ///     same displayed set.
+    ///     Validates that toggling <see cref="QueryDialogViewModel.IncludeStdlib" /> recomputes both the
+    ///     picker's candidate set (added/removed stdlib names) and the current result. Because
+    ///     <see cref="ElementPickerViewModel.SetCandidates" /> unconditionally clears
+    ///     <see cref="ElementPickerViewModel.SelectedQualifiedName" /> on every refresh (so a stale prior
+    ///     selection can never linger past a workspace-derived refresh), the immediately-following
+    ///     recompute correctly drops the Describe-tab's prior result and shows the "select an element"
+    ///     prompt instead of silently leaving the old (now unselected) result on screen - proving the
+    ///     toggle live-recomputes rather than leaving a stale <see cref="QueryResult" /> from before the
+    ///     toggle. Re-selecting after the toggle then confirms the whole
+    ///     refresh-candidates-then-recompute pipeline still functions end to end.
     /// </summary>
     [Fact]
-    public async Task IncludeStdlibToggle_RefreshesBothPickers()
+    public async Task IncludeStdlibToggle_RefreshesPickerAndRecomputesResult()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
         await shell.AddFolderSourceAsync(_tempRoot);
         var viewModel = new QueryDialogViewModel(shell);
-        var initialBrowseCount = viewModel.BrowsePicker.DisplayedItems.Count;
-        var initialQueryCount = viewModel.ElementQueryPicker.DisplayedItems.Count;
+        var initialCount = viewModel.Picker.DisplayedItems.Count;
 
-        // Act - enable stdlib (adds the stdlib names)
+        viewModel.SelectedQueryType = QueryVerb.Describe;
+        viewModel.Picker.SelectedQualifiedName = "Sample::Engine";
+        Assert.NotNull(viewModel.CurrentResult);
+
+        // Act - enable stdlib (adds the stdlib names); SetCandidates clears the prior selection, so the
+        // recompute correctly drops the stale Describe result rather than leaving it in place.
         viewModel.IncludeStdlib = true;
-        var withStdlibBrowseCount = viewModel.BrowsePicker.DisplayedItems.Count;
+        var withStdlibCount = viewModel.Picker.DisplayedItems.Count;
 
-        // Assert
-        Assert.True(withStdlibBrowseCount >= initialBrowseCount);
+        // Assert: candidate set grew (or stayed the same, if the sample workspace has no stdlib
+        // declarations reachable), and the result was actively recomputed to the no-selection prompt
+        // rather than left stale.
+        Assert.True(withStdlibCount >= initialCount);
+        Assert.Null(viewModel.CurrentResult);
+        Assert.NotNull(viewModel.StatusMessage);
+        Assert.Contains("Select an element above", viewModel.StatusMessage);
+
+        // Act - reselect the element post-toggle, confirming the pipeline still recomputes correctly.
+        viewModel.Picker.SelectedQualifiedName = "Sample::Engine";
+        Assert.NotNull(viewModel.CurrentResult);
+        Assert.Equal("describe", viewModel.CurrentResult!.Verb);
 
         // Act - toggle back
         viewModel.IncludeStdlib = false;
 
         // Assert
-        Assert.Equal(initialBrowseCount, viewModel.BrowsePicker.DisplayedItems.Count);
-        Assert.Equal(initialQueryCount, viewModel.ElementQueryPicker.DisplayedItems.Count);
+        Assert.Equal(initialCount, viewModel.Picker.DisplayedItems.Count);
     }
 
     /// <summary>
@@ -411,9 +531,8 @@ public sealed class QueryDialogViewModelTests : IDisposable
         var viewModel = new QueryDialogViewModel(shell);
         var clipboard = new FakeClipboardService();
         viewModel.ClipboardService = clipboard;
-        viewModel.ElementQueryPicker.SelectedQualifiedName = "Sample::Engine";
-        viewModel.SelectedVerb = QueryVerb.Describe;
-        viewModel.RunElementQuery();
+        viewModel.SelectedQueryType = QueryVerb.Describe;
+        viewModel.Picker.SelectedQualifiedName = "Sample::Engine";
 
         // Act
         await viewModel.CopyResultAsMarkdownAsync();
@@ -439,9 +558,8 @@ public sealed class QueryDialogViewModelTests : IDisposable
         var viewModel = new QueryDialogViewModel(shell);
         var clipboard = new FakeClipboardService();
         viewModel.ClipboardService = clipboard;
-        viewModel.ElementQueryPicker.SelectedQualifiedName = "Sample::Engine";
-        viewModel.SelectedVerb = QueryVerb.Describe;
-        viewModel.RunElementQuery();
+        viewModel.SelectedQueryType = QueryVerb.Describe;
+        viewModel.Picker.SelectedQualifiedName = "Sample::Engine";
 
         // Act
         await viewModel.CopyResultAsJsonAsync();
@@ -453,7 +571,9 @@ public sealed class QueryDialogViewModelTests : IDisposable
 
     /// <summary>
     ///     Validates that the copy methods are a no-op (no exception, no clipboard write) when
-    ///     <see cref="QueryDialogViewModel.CurrentResult" /> is <see langword="null" />.
+    ///     <see cref="QueryDialogViewModel.CurrentResult" /> is <see langword="null" /> - exercised here
+    ///     via the natural no-selection path (Describe with no picker selection) rather than a reflection
+    ///     hack, which doubles as coverage for that path.
     /// </summary>
     [Fact]
     public async Task CopyMethods_NoResult_AreNoOps()
@@ -461,10 +581,8 @@ public sealed class QueryDialogViewModelTests : IDisposable
         // Arrange
         using var shell = CreateShell();
         var viewModel = new QueryDialogViewModel(shell);
-        // Force CurrentResult back to null (Construction sets it to the Browse-tab list result).
-        viewModel.GetType()
-            .GetProperty(nameof(QueryDialogViewModel.CurrentResult))!
-            .SetValue(viewModel, null);
+        viewModel.SelectedQueryType = QueryVerb.Describe;
+        Assert.Null(viewModel.CurrentResult);
         var clipboard = new FakeClipboardService();
         viewModel.ClipboardService = clipboard;
 
@@ -477,19 +595,19 @@ public sealed class QueryDialogViewModelTests : IDisposable
     }
 
     /// <summary>
-    ///     Validates that <see cref="QueryDialogViewModel.ElementScopedVerbs" /> exposes exactly the ten
-    ///     element-scoped verbs, in the plan's stated order, and never includes <c>List</c> or
-    ///     <c>Find</c>.
+    ///     Validates that <see cref="QueryDialogViewModel.QueryTypes" /> exposes exactly the eleven
+    ///     user-facing Query Type options, with <see cref="QueryVerb.List" /> first, and never includes
+    ///     <see cref="QueryVerb.Find" /> (which "List" always merges into, so the user never sees it).
     /// </summary>
     [Fact]
-    public void ElementScopedVerbs_HasExpectedTenVerbs()
+    public void QueryTypes_HasExpectedElevenEntries()
     {
         // Assert
-        Assert.Equal(10, QueryDialogViewModel.ElementScopedVerbs.Count);
-        Assert.DoesNotContain(QueryVerb.List, QueryDialogViewModel.ElementScopedVerbs);
-        Assert.DoesNotContain(QueryVerb.Find, QueryDialogViewModel.ElementScopedVerbs);
-        Assert.Contains(QueryVerb.Describe, QueryDialogViewModel.ElementScopedVerbs);
-        Assert.Contains(QueryVerb.Hierarchy, QueryDialogViewModel.ElementScopedVerbs);
+        Assert.Equal(11, QueryDialogViewModel.QueryTypes.Count);
+        Assert.Equal(QueryVerb.List, QueryDialogViewModel.QueryTypes[0]);
+        Assert.DoesNotContain(QueryVerb.Find, QueryDialogViewModel.QueryTypes);
+        Assert.Contains(QueryVerb.Describe, QueryDialogViewModel.QueryTypes);
+        Assert.Contains(QueryVerb.Hierarchy, QueryDialogViewModel.QueryTypes);
     }
 
     /// <summary>

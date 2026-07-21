@@ -8,17 +8,20 @@ using DemaConsulting.SysML2Workbench.ElementPickerSubsystem;
 namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 
 /// <summary>
-///     View model for the modal Query dialog: a two-tab picker (Browse / Element Query) over the
-///     current workspace's declarations that lets the user either see a filtered client-side list of
-///     elements or run one of the ten element-scoped <see cref="QueryVerb" /> operations through
-///     <see cref="QueryEngine.Execute" /> and render the result via <see cref="QueryResultRenderer" />.
+///     View model for the modal Query dialog: a single always-visible form over the current workspace's
+///     declarations, driven by one <see cref="Picker" /> and a "Query Type" selector covering all eleven
+///     user-facing options (a merged <see cref="QueryVerb.List" /> entry plus the ten element-scoped
+///     <see cref="QueryVerb" /> operations dispatched through <see cref="QueryEngine.Execute" />). Every
+///     relevant change - Query Type, chip/search edits, element selection, Hierarchy direction, Impact
+///     walk depth, or the Include-standard-library toggle - immediately recomputes
+///     <see cref="CurrentResult" />; there is no explicit "Run" gesture anywhere in this design.
 /// </summary>
 /// <remarks>
 ///     Deliberately parallels <see cref="ViewBuilderDialogViewModel" />'s "dialog owned by the shell,
 ///     fresh instance per open" lifetime pattern: no subscription to <see cref="MainWindowShell" />
 ///     workspace events (the dialog is short-lived), a single <see cref="RefreshFromWorkspace" /> call at
-///     construction, and the two composed <see cref="ElementPickerViewModel" />s are wholly owned by this
-///     view model. Every user-visible failure surface (no workspace loaded, no element selected, engine
+///     construction, and the composed <see cref="ElementPickerViewModel" /> is wholly owned by this view
+///     model. Every user-visible failure surface (no workspace loaded, no element selected, engine
 ///     rejects the verb for the resolved node) is reported through the observable
 ///     <see cref="StatusMessage" /> string rather than by throwing, matching the plan's
 ///     "graceful no-selection/no-workspace handling" acceptance criterion.
@@ -26,19 +29,21 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 public sealed partial class QueryDialogViewModel : ObservableObject
 {
     /// <summary>
-    ///     The ten element-scoped verbs the Element Query tab exposes, in the order the plan's UI mock
-    ///     lists them. Deliberately excludes <see cref="QueryVerb.List" /> and <see cref="QueryVerb.Find" />
-    ///     (whose "workspace-wide, no target element" semantics the Browse tab already covers with a
-    ///     purely client-side filter), so the verb selector never presents an option that
-    ///     <see cref="QueryEngine.Execute" /> would need a <see langword="null" /> element for.
+    ///     The eleven Query Type choices the single form's combo box exposes, in the order the redesign's
+    ///     UI mock lists them: the merged <see cref="QueryVerb.List" /> entry first (the user never sees
+    ///     <see cref="QueryVerb.Find" />; selecting "List" always recomputes the client-side filter, never
+    ///     calls <see cref="QueryEngine.List" />/<see cref="QueryEngine.Find" />), followed by the ten
+    ///     element-scoped verbs that require <see cref="ElementPickerViewModel.SelectedQualifiedName" /> to
+    ///     be set on <see cref="Picker" /> before <see cref="QueryEngine.Execute" /> is called.
     /// </summary>
-    public static readonly IReadOnlyList<QueryVerb> ElementScopedVerbs =
+    public static readonly IReadOnlyList<QueryVerb> QueryTypes =
     [
+        QueryVerb.List,
+        QueryVerb.Describe,
         QueryVerb.Uses,
         QueryVerb.UsedBy,
         QueryVerb.Dependencies,
         QueryVerb.Impact,
-        QueryVerb.Describe,
         QueryVerb.Hierarchy,
         QueryVerb.Requirements,
         QueryVerb.Interface,
@@ -57,11 +62,11 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     /// <summary>
     ///     Master, unfiltered candidate map (qualified name → underlying <see cref="SysmlNode" />) built
     ///     from <see cref="MainWindowShell.CurrentWorkspace" /> by <see cref="RefreshFromWorkspace" />.
-    ///     Kept alongside the two <see cref="ElementPickerViewModel" />s (which expose only qualified-name
-    ///     strings) so <see cref="RunElementQuery" /> can resolve the picker's selected qualified name
-    ///     back to a <see cref="SysmlNode" /> for <see cref="QueryEngine.Execute" /> without re-querying
-    ///     the workspace, and so <see cref="BuildBrowseResult" /> can attach the same
-    ///     <see cref="ElementTypeLabeler" /> kind label to each Browse-tab entry.
+    ///     Kept alongside <see cref="Picker" /> (which exposes only qualified-name strings) so
+    ///     <see cref="RecomputeResult" /> can resolve the picker's selected qualified name back to a
+    ///     <see cref="SysmlNode" /> for <see cref="QueryEngine.Execute" /> without re-querying the
+    ///     workspace, and so <see cref="BuildListResult" /> can attach the same
+    ///     <see cref="ElementTypeLabeler" /> kind label to each List-type entry.
     /// </summary>
     private IReadOnlyDictionary<string, SysmlNode> _candidateMap =
         new Dictionary<string, SysmlNode>(StringComparer.Ordinal);
@@ -73,7 +78,7 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     private bool _isWorkspaceEmpty;
 
     [ObservableProperty]
-    private QueryVerb _selectedVerb = QueryVerb.Describe;
+    private QueryVerb _selectedQueryType = QueryVerb.List;
 
     [ObservableProperty]
     private string? _hierarchyDirection = "both";
@@ -91,8 +96,8 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     private string? _statusMessage;
 
     /// <summary>
-    ///     Creates the dialog view model over <paramref name="shell" /> and immediately populates both
-    ///     tabs' pickers from the current workspace. The observable <see cref="IncludeStdlib" /> flag
+    ///     Creates the dialog view model over <paramref name="shell" /> and immediately populates the
+    ///     single picker from the current workspace. The observable <see cref="IncludeStdlib" /> flag
     ///     starts <see langword="false" /> (matching the CLI's own <c>--include-stdlib</c> default) so
     ///     stdlib names are excluded until the user toggles the checkbox.
     /// </summary>
@@ -103,13 +108,13 @@ public sealed partial class QueryDialogViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(shell);
 
         Shell = shell;
-        BrowsePicker = new ElementPickerViewModel();
-        ElementQueryPicker = new ElementPickerViewModel();
+        Picker = new ElementPickerViewModel();
 
-        // Any change to Browse-tab's displayed items must regenerate the shared results panel so the
-        // Browse tab remains "live" (typing in its search box updates the results panel with no
-        // Run-button gesture) - the plan's contract for that tab.
-        BrowsePicker.PropertyChanged += OnBrowsePickerPropertyChanged;
+        // Any change to the picker's displayed items or selected qualified name must immediately
+        // recompute the shared results panel: List-type results regenerate off DisplayedItems, and every
+        // other Query Type's result regenerates off SelectedQualifiedName. This single subscription is
+        // the redesign's entire "no explicit Run gesture" mechanism.
+        Picker.PropertyChanged += OnPickerPropertyChanged;
 
         RefreshFromWorkspace();
     }
@@ -117,36 +122,46 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     /// <summary>
     ///     Fully composed application shell providing the current workspace and its declarations. Held
     ///     as a public property so the code-behind (which owns the two-way search-textbox focus and the
-    ///     copy-buttons' click handlers) and the design-time constructor factory can both reach it.
+    ///     context-menu copy handlers) and the design-time constructor factory can both reach it.
     /// </summary>
     public MainWindowShell Shell { get; }
 
     /// <summary>
-    ///     Picker backing the "Browse" tab: full workspace declarations, no exclusions (beyond the
-    ///     stdlib exclusion controlled by <see cref="IncludeStdlib" />), no default type filter chip.
+    ///     The single picker backing the whole form: full workspace declarations, no exclusions (beyond
+    ///     the stdlib exclusion controlled by <see cref="IncludeStdlib" />), no default type filter chip.
+    ///     For <see cref="QueryVerb.List" /> its <see cref="ElementPickerViewModel.DisplayedItems" /> is
+    ///     the result source; for every other Query Type its
+    ///     <see cref="ElementPickerViewModel.SelectedQualifiedName" /> is the target element and
+    ///     <see cref="ElementPickerViewModel.DisplayedItems" /> is a pure filter aid whose selection is
+    ///     otherwise unused.
     /// </summary>
-    public ElementPickerViewModel BrowsePicker { get; }
-
-    /// <summary>
-    ///     Picker backing the "Element Query" tab: same candidate set as <see cref="BrowsePicker" />
-    ///     (they share <see cref="RefreshFromWorkspace" />), no default type filter chip. Selection
-    ///     drives <see cref="RunElementQuery" />.
-    /// </summary>
-    public ElementPickerViewModel ElementQueryPicker { get; }
+    public ElementPickerViewModel Picker { get; }
 
     /// <summary>
     ///     Clipboard write seam used by <see cref="CopyResultAsMarkdownAsync" /> and
     ///     <see cref="CopyResultAsJsonAsync" />. Left unset (<see langword="null" />) until the owning
     ///     <see cref="QueryDialogView" /> attaches to the visual tree and assigns a real
     ///     <see cref="AvaloniaClipboardService" />; unit tests instead assign a fake test double directly
-    ///     so the run-and-copy orchestration can be verified without any live UI/OS clipboard.
+    ///     so the recompute-and-copy orchestration can be verified without any live UI/OS clipboard.
     /// </summary>
     public IClipboardService? ClipboardService { get; set; }
 
     /// <summary>
-    ///     Refreshes both pickers' candidate lists from the current workspace, applying the
-    ///     <see cref="IncludeStdlib" /> filter. Called once at construction and again whenever
-    ///     <see cref="IncludeStdlib" /> toggles; the dialog does not observe post-open workspace changes.
+    ///     Computed mirror of "is there a result to copy right now", exposed so the results panel's
+    ///     right-click context-menu items can bind their <c>IsEnabled</c> directly to a VM property
+    ///     (mirroring <see cref="DiagramDocumentViewModel.CanCopyAsSysml" />'s proven pattern) rather than
+    ///     the code-behind imperatively toggling button enablement, as the old toolbar buttons did.
+    /// </summary>
+    public bool HasCurrentResult => CurrentResult is not null;
+
+    /// <summary>
+    ///     Refreshes the picker's candidate list from the current workspace, applying the
+    ///     <see cref="IncludeStdlib" /> filter, then explicitly recomputes the results panel so toggling
+    ///     the checkbox is reflected immediately even though <see cref="ElementPickerViewModel.SetCandidates" />
+    ///     already fires its own <c>PropertyChanged</c> notification (this
+    ///     trailing call is harmless, idempotent defense-in-depth rather than a required step). Called once
+    ///     at construction and again whenever <see cref="IncludeStdlib" /> toggles; the dialog does not
+    ///     observe post-open workspace changes.
     /// </summary>
     public void RefreshFromWorkspace()
     {
@@ -163,76 +178,62 @@ public sealed partial class QueryDialogViewModel : ObservableObject
             .OrderBy(entry => entry.QualifiedName, StringComparer.Ordinal)
             .ToList();
 
-        // Neither tab has a default type filter chip: the plan explicitly calls out that both start
+        // No default type filter chip: the plan explicitly calls out that the single form starts with
         // "no default filter" so every candidate is shown until the user narrows with a chip or search
         // text (unlike the ViewBuilder expose-targets picker, which defaults to "part").
-        BrowsePicker.SetCandidates(candidates);
-        ElementQueryPicker.SetCandidates(candidates);
+        Picker.SetCandidates(candidates);
+
+        RecomputeResult();
     }
 
     /// <summary>
-    ///     Rebuilds the shared results panel from the Browse tab's current displayed items. Runs
-    ///     automatically whenever <see cref="BrowsePicker" /> emits a <see cref="ElementPickerViewModel.DisplayedItems" />
-    ///     change (a chip toggle or search-text edit); may also be invoked directly by tests to assert
-    ///     the tab's client-side "list" semantics without spinning up an Avalonia view.
+    ///     Recomputes <see cref="CurrentResult" /> for the currently selected <see cref="SelectedQueryType" />.
+    ///     For <see cref="QueryVerb.List" /> this builds a purely client-side filtered list from
+    ///     <see cref="Picker" />'s <see cref="ElementPickerViewModel.DisplayedItems" /> via
+    ///     <see cref="BuildListResult" />. For every other Query Type this requires
+    ///     <see cref="ElementPickerViewModel.SelectedQualifiedName" />: with no selection it reports a
+    ///     helpful (non-error) <see cref="StatusMessage" /> and clears the results table rather than
+    ///     leaving a stale prior result, and with a selection it dispatches through
+    ///     <see cref="QueryEngine.Execute" /> exactly as the design's original "Run" gesture did,
+    ///     gracefully catching <see cref="ArgumentException" />. Called automatically by every relevant
+    ///     property change - there is no explicit "Run" method in this design.
     /// </summary>
-    public void BuildBrowseResult()
+    public void RecomputeResult()
     {
-        var displayed = BrowsePicker.DisplayedItems;
-
-        var entries = displayed
-            .Select(qualifiedName => new QueryResultEntry
-            {
-                QualifiedName = qualifiedName,
-                Kind = _candidateMap.TryGetValue(qualifiedName, out var node)
-                    ? ElementTypeLabeler.GetTypeLabel(node)
-                    : null,
-            })
-            .ToList();
-
-        // The Browse tab is deliberately a purely client-side filter: it does NOT call
-        // QueryEngine.List/Find (the plan's explicit deviation). Rendered with Verb="list" so the
-        // shared markdown/json renderer produces a consistent "query list" heading, but Element is null
-        // (there is no target element, and the workspace-wide list/find verbs already allow null).
-        CurrentResult = new QueryResult
+        if (SelectedQueryType == QueryVerb.List)
         {
-            Verb = "list",
-            Element = null,
-            Summary = [$"{displayed.Count} element(s) match the filter."],
-            Entries = entries,
-        };
-
-        CurrentResultRows = entries.Select(BuildRow).ToList();
-        StatusMessage = null;
-    }
-
-    /// <summary>
-    ///     Runs the Element Query tab's currently-configured verb against
-    ///     <see cref="ElementQueryPicker" />'s selected qualified name. Reports every recoverable failure
-    ///     (no selection, empty workspace, unknown qualified name, engine argument rejection) through
-    ///     <see cref="StatusMessage" /> and leaves <see cref="CurrentResult" /> unchanged; never throws.
-    /// </summary>
-    public void RunElementQuery()
-    {
-        if (IsWorkspaceEmpty)
-        {
-            StatusMessage = "No workspace is open. Add a file or folder from the Workspace panel first.";
+            BuildListResult();
             return;
         }
 
-        var qualifiedName = ElementQueryPicker.SelectedQualifiedName;
+        if (IsWorkspaceEmpty)
+        {
+            StatusMessage = "No workspace is open. Add a file or folder from the Workspace panel first.";
+            CurrentResult = null;
+            CurrentResultRows = [];
+            return;
+        }
+
+        var qualifiedName = Picker.SelectedQualifiedName;
         if (string.IsNullOrEmpty(qualifiedName))
         {
-            StatusMessage = "Select an element from the list before running a query.";
+            // Not an error: the user simply hasn't picked a target element yet for this element-scoped
+            // Query Type. Clear any stale prior result (e.g. from a previously selected Query Type)
+            // rather than leaving it on screen.
+            StatusMessage = $"Select an element above to see results for '{SelectedQueryType}'.";
+            CurrentResult = null;
+            CurrentResultRows = [];
             return;
         }
 
         if (!_candidateMap.TryGetValue(qualifiedName, out var node))
         {
             // A qualified name from the picker that isn't in the candidate map means the workspace
-            // changed under us between the last refresh and this run; treat as a user-visible error
-            // rather than a crash, and stop before touching QueryEngine.
+            // changed under us between the last refresh and this recompute; treat as a user-visible
+            // error rather than a crash, and stop before touching QueryEngine.
             StatusMessage = $"Element '{qualifiedName}' is no longer in the workspace. Reopen the dialog.";
+            CurrentResult = null;
+            CurrentResultRows = [];
             return;
         }
 
@@ -252,15 +253,54 @@ public sealed partial class QueryDialogViewModel : ObservableObject
             // Convert to a user-visible message rather than a crash, matching the plan's "graceful
             // handling" acceptance criterion.
             StatusMessage = $"Could not run query: {ex.Message}";
+            CurrentResult = null;
+            CurrentResultRows = [];
         }
+    }
+
+    /// <summary>
+    ///     Rebuilds the shared results panel from the picker's current displayed items. Runs
+    ///     automatically whenever <see cref="SelectedQueryType" /> is <see cref="QueryVerb.List" /> and
+    ///     <see cref="Picker" /> emits a <see cref="ElementPickerViewModel.DisplayedItems" /> change (a
+    ///     chip toggle or search-text edit); may also be invoked directly by tests to assert the "List"
+    ///     Query Type's client-side "list" semantics without spinning up an Avalonia view.
+    /// </summary>
+    public void BuildListResult()
+    {
+        var displayed = Picker.DisplayedItems;
+
+        var entries = displayed
+            .Select(qualifiedName => new QueryResultEntry
+            {
+                QualifiedName = qualifiedName,
+                Kind = _candidateMap.TryGetValue(qualifiedName, out var node)
+                    ? ElementTypeLabeler.GetTypeLabel(node)
+                    : null,
+            })
+            .ToList();
+
+        // "List" is deliberately a purely client-side filter: it does NOT call QueryEngine.List/Find
+        // (the plan's explicit deviation). Rendered with Verb="list" so the shared markdown/json
+        // renderer produces a consistent "query list" heading, but Element is null (there is no target
+        // element, and the workspace-wide list/find verbs already allow null).
+        CurrentResult = new QueryResult
+        {
+            Verb = "list",
+            Element = null,
+            Summary = [$"{displayed.Count} element(s) match the filter."],
+            Entries = entries,
+        };
+
+        CurrentResultRows = entries.Select(BuildRow).ToList();
+        StatusMessage = null;
     }
 
     /// <summary>
     ///     Copies <see cref="CurrentResult" /> to the clipboard as the Markdown rendering produced by
     ///     <see cref="QueryResultRenderer.RenderMarkdown" />, joined with newline separators. A no-op
     ///     (rather than an exception) when either <see cref="CurrentResult" /> or
-    ///     <see cref="ClipboardService" /> is <see langword="null" />, so the "Copy as Markdown" button
-    ///     can be safely wired unconditionally in the view.
+    ///     <see cref="ClipboardService" /> is <see langword="null" />, so the "Copy as Markdown" context
+    ///     menu item can be safely wired unconditionally in the view.
     /// </summary>
     public async Task CopyResultAsMarkdownAsync()
     {
@@ -291,7 +331,7 @@ public sealed partial class QueryDialogViewModel : ObservableObject
 
     /// <summary>
     ///     Builds a <see cref="QueryOptions" /> instance for <paramref name="qualifiedName" /> that
-    ///     reflects the current tab's verb-specific state: <see cref="HierarchyDirection" /> is only
+    ///     reflects the current form's verb-specific state: <see cref="HierarchyDirection" /> is only
     ///     attached for <see cref="QueryVerb.Hierarchy" />, and <see cref="WalkDepthText" /> is only
     ///     parsed for <see cref="QueryVerb.Impact" />. Every option unconditionally carries
     ///     <see cref="IncludeStdlib" />.
@@ -301,7 +341,7 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     public QueryOptions BuildOptions(string qualifiedName)
     {
         int? walkDepth = null;
-        if (SelectedVerb == QueryVerb.Impact
+        if (SelectedQueryType == QueryVerb.Impact
             && !string.IsNullOrWhiteSpace(WalkDepthText)
             && int.TryParse(WalkDepthText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var depth)
             && depth >= 0)
@@ -311,17 +351,17 @@ public sealed partial class QueryDialogViewModel : ObservableObject
 
         return new QueryOptions
         {
-            Verb = SelectedVerb,
+            Verb = SelectedQueryType,
             Element = qualifiedName,
             IncludeStdlib = IncludeStdlib,
-            Direction = SelectedVerb == QueryVerb.Hierarchy ? HierarchyDirection : null,
+            Direction = SelectedQueryType == QueryVerb.Hierarchy ? HierarchyDirection : null,
             WalkDepth = walkDepth,
         };
     }
 
     /// <summary>
-    ///     Refreshes both pickers whenever <see cref="IncludeStdlib" /> toggles, matching the plan's
-    ///     "toggling recomputes both tabs' candidates via <c>SetCandidates</c> again" contract.
+    ///     Refreshes the picker whenever <see cref="IncludeStdlib" /> toggles, matching the plan's
+    ///     "toggling recomputes both the candidate set and the current result" contract.
     /// </summary>
     /// <param name="value">The new value of the <see cref="IncludeStdlib" /> property.</param>
     partial void OnIncludeStdlibChanged(bool value)
@@ -330,15 +370,59 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     }
 
     /// <summary>
-    ///     Observes <see cref="BrowsePicker" />'s <see cref="ElementPickerViewModel.DisplayedItems" />
-    ///     changes and regenerates the Browse-tab result so the shared results panel stays in sync as
-    ///     the user types in the search box or toggles a chip - the Browse tab's "live" contract.
+    ///     Recomputes immediately whenever the user changes the Query Type - the redesign's central
+    ///     "no explicit Run gesture" contract for the verb selector itself.
     /// </summary>
-    private void OnBrowsePickerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    /// <param name="value">The newly selected Query Type.</param>
+    partial void OnSelectedQueryTypeChanged(QueryVerb value)
     {
-        if (e.PropertyName == nameof(ElementPickerViewModel.DisplayedItems))
+        RecomputeResult();
+    }
+
+    /// <summary>
+    ///     Recomputes immediately whenever the Hierarchy direction changes, so a selection already made
+    ///     for <see cref="QueryVerb.Hierarchy" /> stays live as the user flips between up/down/both.
+    /// </summary>
+    /// <param name="value">The newly selected hierarchy direction.</param>
+    partial void OnHierarchyDirectionChanged(string? value)
+    {
+        RecomputeResult();
+    }
+
+    /// <summary>
+    ///     Recomputes immediately whenever the Impact walk-depth text changes, so a selection already
+    ///     made for <see cref="QueryVerb.Impact" /> stays live as the user edits the depth limit.
+    /// </summary>
+    /// <param name="value">The newly edited walk-depth text.</param>
+    partial void OnWalkDepthTextChanged(string? value)
+    {
+        RecomputeResult();
+    }
+
+    /// <summary>
+    ///     Raises the computed <see cref="HasCurrentResult" /> property's change notification whenever
+    ///     <see cref="CurrentResult" /> changes, so the results panel's context-menu <c>IsEnabled</c>
+    ///     bindings stay in sync without a backing <c>[ObservableProperty]</c> field.
+    /// </summary>
+    /// <param name="value">The newly computed current result.</param>
+    partial void OnCurrentResultChanged(QueryResult? value)
+    {
+        OnPropertyChanged(nameof(HasCurrentResult));
+    }
+
+    /// <summary>
+    ///     Observes <see cref="Picker" />'s <see cref="ElementPickerViewModel.DisplayedItems" /> and
+    ///     <see cref="ElementPickerViewModel.SelectedQualifiedName" /> changes and regenerates the results
+    ///     panel so it stays in sync as the user types in the search box, toggles a chip, or selects an
+    ///     element - the single form's "live" contract, replacing the old two-tab design's single-purpose
+    ///     Browse-only handler.
+    /// </summary>
+    private void OnPickerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ElementPickerViewModel.DisplayedItems)
+            or nameof(ElementPickerViewModel.SelectedQualifiedName))
         {
-            BuildBrowseResult();
+            RecomputeResult();
         }
     }
 

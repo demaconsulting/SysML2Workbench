@@ -6,24 +6,37 @@
 
 QueryDialog is the modal dialog opened from the main window's Query menu
 ("_Run Query...") that lets the user browse or query the currently-loaded
-workspace. It exposes two tabs:
+workspace through a single, always-visible adaptive form — there is no
+`TabControl` and no explicit "Run" gesture anywhere in this design:
 
-- **Browse** — a purely-client-side filter over every workspace declaration
-  (respecting the global "Include standard library" checkbox), regenerating
-  a shared results panel live as the user types.
-- **Element Query** — a target-plus-verb form that dispatches one of the ten
-  element-scoped `QueryVerb` operations through
-  `DemaConsulting.SysML2Tools.Query.QueryEngine.Execute` when the user clicks
-  "Run Query".
+- A "Query Type" combo box offers eleven choices: a merged **List** entry
+  first (a purely-client-side filter over every workspace declaration,
+  respecting the global "Include standard library" checkbox), followed by
+  the ten element-scoped `QueryVerb` operations (`Describe`, `Uses`,
+  `UsedBy`, `Dependencies`, `Impact`, `Hierarchy`, `Requirements`,
+  `Interface`, `Connections`, `States`) dispatched through
+  `DemaConsulting.SysML2Tools.Query.QueryEngine.Execute`. The user never
+  sees `QueryVerb.Find`: "List" always resolves to the client-side filter,
+  never to a `QueryEngine.List`/`Find` call.
+- Below the combo, a single always-visible picker (chip-filter row and
+  search box always shown) doubles as the "List" filter source and, for
+  every other Query Type, the target-element selector.
+- Verb-specific extra controls appear only when relevant: a "Direction"
+  combo for `Hierarchy`, and a "Walk depth" text box for `Impact`.
+- Every interaction — Query Type selection, chip add/remove, search text,
+  element selection, Direction change, Walk depth text change, or the
+  Include-standard-library toggle — immediately recomputes and displays the
+  result synchronously; there is no "Run Query" button.
 
-Results in both tabs feed the same shared results panel: a summary bullet
-list plus a `Grid`-based (not `DataGrid`) entries table with columns for
-Qualified Name, Kind, Detail, and a Direction column shown only when the
-current result is a `dependencies` verb result. "Copy as Markdown" and "Copy
-as JSON" buttons write the rendered result to the clipboard via
-`QueryResultRenderer.RenderMarkdown`/`RenderJson`, using the same
+Results feed the same shared results panel: a summary bullet list plus a
+`Grid`-based (not `DataGrid`) entries table with columns for Qualified Name,
+Kind, Detail, and a Direction column shown only when the current result is a
+`dependencies` verb result. There is no toolbar: "Copy as Markdown" and
+"Copy as JSON" are right-click `ContextMenu` items on the results panel,
+wired to `QueryResultRenderer.RenderMarkdown`/`RenderJson` via the same
 `AvaloniaClipboardService` pattern `DiagramDocumentView` uses for its "Copy
-as SysML" action.
+as SysML" action, and enabled through a `HasCurrentResult` binding mirroring
+`DiagramDocumentViewModel.CanCopyAsSysml`.
 
 It is documented as one unit covering both `QueryDialogViewModel` (the
 Avalonia-free composition and dispatch state) and `QueryDialogView` (the
@@ -39,10 +52,14 @@ candidate elements (`CurrentWorkspace.Workspace.Declarations`) and to run
 queries against (`CurrentWorkspace.Workspace` handed to
 `QueryEngine.Execute`).
 
-**BrowsePicker** / **ElementQueryPicker**: two
-`ElementPickerSubsystem.ElementPickerViewModel` instances, one per tab. The
-Browse tab's picker feeds a live client-side result; the Element Query
-tab's picker resolves the target element for the verb.
+**Picker**: a single `ElementPickerSubsystem.ElementPickerViewModel`
+instance backing the whole form. For "List" its `DisplayedItems` is the
+result source; for every other Query Type its `SelectedQualifiedName` is
+the target element (its `DisplayedItems` remains visible purely as a filter
+aid, with selection otherwise unused for those verbs).
+
+**QueryTypes**: `IReadOnlyList<QueryVerb>` — the eleven Query Type options
+the combo box binds to, `List` first, never containing `Find`.
 
 **IncludeStdlib**: `bool` — the global "Include standard library" checkbox
 state, threaded through both `RefreshFromWorkspace` (as a candidate-filter
@@ -53,20 +70,21 @@ every engine call).
 zero sources, used to show the dialog's own empty-state hint alongside the
 checkbox.
 
-**SelectedVerb**: `QueryVerb` — the currently-selected element-scoped verb;
-defaults to `Describe`.
+**SelectedQueryType**: `QueryVerb` — the currently-selected Query Type;
+defaults to `List` (the always-available, no-selection-required option).
 
 **HierarchyDirection**: `string?` — the direction option accepted by the
 Hierarchy verb (`"up"`, `"down"`, or `"both"`); defaults to `"both"`. Only
-attached to `QueryOptions.Direction` when `SelectedVerb` is `Hierarchy`.
+attached to `QueryOptions.Direction` when `SelectedQueryType` is `Hierarchy`.
 
 **WalkDepthText**: `string?` — the free-text input for the Impact verb's
 optional walk-depth bound. Only parsed for `Impact`, and only when it parses
 cleanly as a non-negative integer.
 
 **CurrentResult**: `QueryResult?` — the most recently produced `QueryResult`
-(either the Browse tab's client-built list result or the engine's response).
-Feeds the shared results panel and enables the copy buttons.
+(either List's client-built list result or the engine's response), or
+`null` when an element-scoped Query Type has no selection yet. Feeds the
+shared results panel.
 
 **CurrentResultRows**: `IReadOnlyList<QueryResultRow>` — a flattened,
 view-friendly projection of `CurrentResult.Entries` (empty strings replacing
@@ -74,8 +92,13 @@ nullable fields, `Direction` mapped to a human-readable label, notes joined
 into a tooltip string), bound directly by the results-panel `ItemsControl`.
 
 **StatusMessage**: `string?` — user-visible error/hint text set on every
-recoverable failure (no workspace, no selection, engine argument rejection).
-Cleared on a successful run.
+recoverable failure or prompt (no workspace, no selection yet, engine
+argument rejection). Cleared on a successful recompute.
+
+**HasCurrentResult**: `bool` — computed mirror of `CurrentResult is not
+null`, bound by the results panel's right-click context-menu items'
+`IsEnabled` so the copy actions are only enabled when there is something to
+copy.
 
 **ClipboardService**: `IClipboardService?` — the same clipboard-write seam
 `DiagramDocumentViewModel` uses. Assigned by `QueryDialogView` to an
@@ -83,39 +106,50 @@ Cleared on a successful run.
 
 #### Key Methods
 
-**RefreshFromWorkspace**: Refreshes both pickers' candidate lists and
-`IsWorkspaceEmpty` from the shell's current workspace.
+**RefreshFromWorkspace**: Refreshes the picker's candidate list and
+`IsWorkspaceEmpty` from the shell's current workspace, then recomputes the
+result.
 
 - *Parameters*: none.
-- *Returns*: `void` — both pickers' `SetCandidates` are called with the same
-  candidate list (no default chip on either).
+- *Returns*: `void` — the picker's `SetCandidates` is called with the full
+  candidate list (no default chip), and `RecomputeResult` runs immediately
+  afterward.
 - *Postconditions*: Called once at construction and again on every
   `IncludeStdlib` toggle; the dialog does not itself subscribe to
   `MainWindowShell.SourcesChanged`, matching the sibling dialogs' pattern.
+  Because `ElementPickerViewModel.SetCandidates` unconditionally clears any
+  prior `SelectedQualifiedName`, a stale selection can never linger past a
+  workspace-derived refresh.
 
-**BuildBrowseResult**: Rebuilds `CurrentResult` and `CurrentResultRows` from
-the Browse tab's `DisplayedItems`.
-
-- *Parameters*: none.
-- *Returns*: `void` — `CurrentResult` becomes a `QueryResult` with
-  `Verb="list"`, `Element=null`, one entry per displayed item.
-- *Postconditions*: The Browse tab is deliberately a purely-client-side
-  filter; it does NOT call `QueryEngine.List`/`Find`. Invoked automatically
-  whenever `BrowsePicker.DisplayedItems` changes so the results panel stays
-  live.
-
-**RunElementQuery**: Runs the Element Query tab's currently-configured verb
-against `ElementQueryPicker.SelectedQualifiedName`.
+**RecomputeResult**: Recomputes `CurrentResult`/`CurrentResultRows` for the
+currently selected `SelectedQueryType`. This is the redesign's entire
+"no explicit Run gesture" mechanism, invoked automatically by every relevant
+property change (Query Type, Hierarchy direction, Walk depth text, and — via
+`Picker`'s `PropertyChanged` subscription — `DisplayedItems`/
+`SelectedQualifiedName`).
 
 - *Parameters*: none.
 - *Returns*: `void` — `CurrentResult`, `CurrentResultRows`, and
   `StatusMessage` update in place.
-- *Postconditions*: Every recoverable failure surface (no workspace, no
-  selection, unknown qualified name, engine `ArgumentException`) is
-  reported through `StatusMessage`; never throws.
+- *Postconditions*: For `List`, delegates to `BuildListResult`. For every
+  other Query Type: with no workspace, reports the existing empty-workspace
+  message; with no `Picker.SelectedQualifiedName`, reports a helpful
+  (non-error) prompt naming the Query Type and clears any stale prior
+  result; otherwise dispatches through `QueryEngine.Execute`, gracefully
+  catching `ArgumentException`. Never throws.
+
+**BuildListResult**: Rebuilds `CurrentResult` and `CurrentResultRows` from
+the picker's `DisplayedItems`.
+
+- *Parameters*: none.
+- *Returns*: `void` — `CurrentResult` becomes a `QueryResult` with
+  `Verb="list"`, `Element=null`, one entry per displayed item.
+- *Postconditions*: "List" is deliberately a purely-client-side filter; it
+  does NOT call `QueryEngine.List`/`Find`. Invoked by `RecomputeResult`
+  whenever `SelectedQueryType` is `List`.
 
 **BuildOptions**: Builds a `QueryOptions` instance reflecting the current
-verb-specific state.
+form's verb-specific state.
 
 - *Parameters*: `string qualifiedName` — the resolved target's qualified name.
 - *Returns*: `QueryOptions` — always carries `IncludeStdlib`; attaches
@@ -133,20 +167,22 @@ verb-specific state.
 
 #### Error Handling
 
-QueryDialog treats every recoverable failure - no workspace, no selection,
-a picker qualified name that vanished under a mid-session workspace change,
-or an engine `ArgumentException` (thrown when the verb requires an element
-and none is resolvable, or when the verb value itself is out of range) - as
-a locally recoverable condition surfaced through `StatusMessage` rather
-than an unhandled exception. `CurrentResult` is left unchanged on failure,
-so a prior successful result stays visible while the user fixes the
-selection or verb configuration.
+QueryDialog treats every recoverable failure or informational prompt - no
+workspace, no selection yet for an element-scoped Query Type, a picker
+qualified name that vanished under a mid-session workspace change, or an
+engine `ArgumentException` (thrown when the verb requires an element and
+none is resolvable, or when the verb value itself is out of range) - as a
+locally recoverable condition surfaced through `StatusMessage` rather than
+an unhandled exception. Unlike the prior "leave the last result visible"
+behavior, every one of these paths also clears `CurrentResult`/
+`CurrentResultRows` so the results panel never shows a stale result left
+over from a previous Query Type or selection.
 
 #### Dependencies
 
 - **MainWindowShell** — supplies `CurrentWorkspace` for candidate resolution
   and for the workspace argument passed to `QueryEngine.Execute`.
-- **ElementPickerSubsystem** — the two composed picker instances.
+- **ElementPickerSubsystem** — the single composed picker instance.
 - **DemaConsulting.SysML2Tools.Query** — `QueryEngine.Execute` runs the
   verb, `QueryResultRenderer.RenderMarkdown`/`RenderJson` produces the
   clipboard text.
