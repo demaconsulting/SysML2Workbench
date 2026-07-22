@@ -5,6 +5,8 @@
   </Folder>
   <Folder Name="/test/">
     <Project Path="test/DemaConsulting.SysML2Workbench.Tests/DemaConsulting.SysML2Workbench.Tests.csproj" />
+    <Project Path="test/DemaConsulting.SysML2Workbench.UiTests/DemaConsulting.SysML2Workbench.UiTests.csproj" />
+    <Project Path="test/DemaConsulting.SysML2Workbench.IntegrationTests/DemaConsulting.SysML2Workbench.IntegrationTests.csproj" />
     <Project Path="test/OtsSoftwareTests/OtsSoftwareTests.csproj" />
   </Folder>
 </Solution>

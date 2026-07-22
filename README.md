@@ -43,6 +43,12 @@ building a custom view.
   (Windows/Linux/macOS entry point).
 - `test/DemaConsulting.SysML2Workbench.Tests/` - unit and subsystem-level
   tests mirroring `src/`.
+- `test/DemaConsulting.SysML2Workbench.UiTests/` - headless, in-process
+  Avalonia UI tests (view/view-model interaction, no real window).
+- `test/DemaConsulting.SysML2Workbench.IntegrationTests/` - Appium-driven
+  end-to-end tests against the compiled Desktop application (Windows-only
+  in CI today; requires a running Appium server - see "Building and
+  Testing" below).
 - `test/OtsSoftwareTests/` - integration tests for the off-the-shelf (OTS)
   dependencies (SysML2Tools, Rendering, Avalonia, xUnit).
 - `docs/` - requirements (`docs/reqstream/`), design (`docs/design/`),
@@ -56,3 +62,13 @@ pwsh ./build.ps1   # restore, build, and run all tests
 pwsh ./fix.ps1      # auto-fix formatting
 pwsh ./lint.ps1     # lint and compliance checks
 ```
+
+`build.ps1` and CI's cross-platform build job both run `dotnet test --filter
+"Category!=Integration"`, so `test/DemaConsulting.SysML2Workbench.IntegrationTests`'
+Appium-driven tests are excluded from the default local/CI test run. That
+tier only runs for real in CI's dedicated `appium-windows-integration-tests`
+job (`windows-latest`), which publishes the Desktop application, starts a
+local Appium server with the NovaWindows driver, and runs
+`dotnet test test/DemaConsulting.SysML2Workbench.IntegrationTests/...`
+against it. Running it locally requires a published Desktop build, a
+running Appium server, and the NovaWindows driver installed.

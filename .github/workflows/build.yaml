@@ -180,6 +180,9 @@ jobs:
           --property:Version=${{ inputs.version }}
 
       - name: Test
+        # IntegrationTests' Appium-driven tests are excluded here (Category!=Integration) because no Appium
+        # server is running in this cross-platform matrix job; they run for real only in the dedicated
+        # appium-windows-integration-tests job below, on windows-latest, where an Appium server is started.
         run: >
           dotnet test
           --no-build
@@ -188,6 +191,7 @@ jobs:
           --collect "XPlat Code Coverage;Format=opencover"
           --logger "trx;LogFilePrefix=${{ matrix.os }}"
           --results-directory artifacts
+          --filter "Category!=Integration"
 
       - name: End Sonar Scanner
         env:
@@ -346,6 +350,124 @@ jobs:
         with:
           name: package-msi
           path: package/*.msi
+
+  # Builds and publishes the Desktop application, then drives it end-to-end through a locally
+  # started Appium server and its NovaWindows driver (the maintained successor to the deprecated
+  # WinAppDriver), exercising test/DemaConsulting.SysML2Workbench.IntegrationTests' real Windows-path
+  # tests. This is intentionally windows-latest-only for now: Avalonia's AutomationPeer also exposes
+  # controls to macOS's NSAccessibility (Appium's Mac2 driver) and Linux's AT-SPI2 (X11 backend only;
+  # Wayland is unconfirmed), and test/DemaConsulting.SysML2Workbench.IntegrationTests/AppFixture.cs
+  # already contains structurally correct OS-branching code for both, but neither has a provisioned
+  # CI runner/driver install yet - see .agent-logs/planning-appium-integration-tests-7f3a1c2e.md for
+  # the scope decision. This job is independent of (does not `need`) the build job above, so it does
+  # not block or duplicate that job's cross-platform packaging; it publishes its own copy of the
+  # Desktop app instead of depending on build's artifact, keeping its job graph simple and
+  # self-contained in the same style as the rest of this workflow.
+  appium-windows-integration-tests:
+    name: Appium Windows Integration Tests
+    needs: quality-checks
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      # === INSTALL DEPENDENCIES ===
+      # This section installs all required dependencies and tools for the Appium/NovaWindows session.
+      # Downstream projects: Add any additional dependency installations here.
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.x
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+
+      - name: Install Appium and the NovaWindows driver
+        run: |
+          npm install -g appium
+          appium driver install --source=npm appium-novawindows-driver
+
+      # === BUILD AND PUBLISH THE DESKTOP APPLICATION ===
+      # This section builds the solution and publishes the self-contained Desktop executable that the
+      # Appium session below launches.
+      # Downstream projects: Add any additional build or publish steps here.
+
+      - name: Restore Dependencies
+        run: >
+          dotnet restore
+
+      - name: Build
+        run: >
+          dotnet build
+          --no-restore
+          --configuration Release
+          --property:Version=${{ inputs.version }}
+
+      - name: Publish self-contained build (win-x64)
+        run: >
+          dotnet publish
+          src/DemaConsulting.SysML2Workbench.Desktop/DemaConsulting.SysML2Workbench.Desktop.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --property:Version=${{ inputs.version }}
+          --property:PublishSingleFile=true
+          --output publish/win-x64
+
+      # === START APPIUM AND RUN THE INTEGRATION TESTS ===
+      # This section starts a local Appium server, waits for it to be ready, then runs the
+      # IntegrationTests project against the published Desktop application.
+      # Downstream projects: Add any additional Appium setup or test steps here.
+
+      - name: Start Appium server
+        shell: pwsh
+        run: |
+          Start-Process -FilePath "appium" -ArgumentList "--base-path / --allow-insecure chromedriver_autodownload" -WindowStyle Hidden
+          $ready = $false
+          for ($i = 0; $i -lt 30; $i++) {
+            try {
+              $response = Invoke-WebRequest -Uri "http://127.0.0.1:4723/status" -UseBasicParsing -TimeoutSec 2
+              if ($response.StatusCode -eq 200) {
+                $ready = $true
+                break
+              }
+            } catch {
+              Start-Sleep -Seconds 2
+            }
+          }
+          if (-not $ready) {
+            throw "Appium server did not become ready within the expected time."
+          }
+
+      - name: Run Appium IntegrationTests
+        env:
+          SYSML2WORKBENCH_APP_PATH: ${{ github.workspace }}\publish\win-x64\DemaConsulting.SysML2Workbench.Desktop.exe
+        run: >
+          dotnet test
+          test/DemaConsulting.SysML2Workbench.IntegrationTests/DemaConsulting.SysML2Workbench.IntegrationTests.csproj
+          --configuration Release
+          --property:Version=${{ inputs.version }}
+          --logger "trx;LogFilePrefix=appium-windows"
+          --results-directory artifacts
+
+      # === UPLOAD ARTIFACTS ===
+      # This section uploads the Appium test results for use by downstream jobs.
+      # Downstream projects: Add any additional artifact uploads here.
+
+      - name: Upload Appium test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: artifacts-appium-windows-integration-tests
+          path: artifacts/
 
   # Runs CodeQL security and quality analysis, gathering results to include
   # in the code quality report.

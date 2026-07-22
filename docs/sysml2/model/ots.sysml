@@ -49,5 +49,12 @@ package SysML2WorkbenchArchitecture {
             comment verificationRef /* Verification: docs/verification/ots/avaloniaedit.md */
             comment reqRef /* Requirements: docs/reqstream/ots/avaloniaedit.yaml */
         }
+        part def Appium {
+            doc /* Appium.WebDriver NuGet dependency, together with Appium's NovaWindows driver, used to drive the compiled Desktop application end-to-end through its real accessibility tree from test/DemaConsulting.SysML2Workbench.IntegrationTests. */
+
+            comment designRef /* Design: docs/design/ots/appium.md */
+            comment verificationRef /* Verification: docs/verification/ots/appium.md */
+            comment reqRef /* Requirements: docs/reqstream/ots/appium.yaml */
+        }
     }
 }

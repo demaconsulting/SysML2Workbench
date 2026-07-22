@@ -10,9 +10,9 @@
     <TextBlock DockPanel.Dock="Top" Text="Workspace" FontWeight="Bold" />
 
     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4" Margin="0,4,0,4">
-      <Button Name="AddFileButton" Content="Add File..." Command="{Binding AddFileCommand}" />
-      <Button Name="AddFolderButton" Content="Add Folder..." Command="{Binding AddFolderCommand}" />
-      <Button Name="RemoveButton" Content="Remove" Command="{Binding RemoveSelectedCommand}" />
+      <Button Name="AddFileButton" Content="Add File..." Command="{Binding AddFileCommand}" AutomationProperties.AutomationId="WorkspaceAddFileButton" />
+      <Button Name="AddFolderButton" Content="Add Folder..." Command="{Binding AddFolderCommand}" AutomationProperties.AutomationId="WorkspaceAddFolderButton" />
+      <Button Name="RemoveButton" Content="Remove" Command="{Binding RemoveSelectedCommand}" AutomationProperties.AutomationId="WorkspaceRemoveButton" />
     </StackPanel>
 
     <TextBlock DockPanel.Dock="Bottom" Name="StatusTextBlock" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="Red" />
@@ -26,7 +26,8 @@
     <TreeView Name="WorkspaceTreeView"
               IsVisible="{Binding !IsEmpty}"
               ItemsSource="{Binding RootNodes}"
-              SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+              SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
+              AutomationProperties.AutomationId="WorkspaceTreeView">
       <TreeView.DataTemplates>
         <TreeDataTemplate DataType="local:WorkspaceSourceNode" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal" Spacing="4">

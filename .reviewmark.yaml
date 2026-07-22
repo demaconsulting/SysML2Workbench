@@ -310,6 +310,9 @@ reviews:
       - src/**/AppShellSubsystem/SourceTextDocumentView.axaml.cs
       - test/**/AppShellSubsystem/MainWindowShellTests.cs
       - test/**/AppShellSubsystem/SourceTextDocumentViewModelTests.cs
+      - test/**/AppShellSubsystem/MainWindowShellUiTests.cs
+      - test/DemaConsulting.SysML2Workbench.UiTests/GlobalUsings.cs
+      - test/DemaConsulting.SysML2Workbench.UiTests/TestAppBuilder.cs
   - id: SysML2Workbench-AppShellSubsystem-WorkspacePanel
     title: Review that SysML2Workbench AppShellSubsystem WorkspacePanel Implementation
       is Correct
@@ -326,6 +329,7 @@ reviews:
       - src/**/AppShellSubsystem/WorkspacePanelToolView.axaml
       - src/**/AppShellSubsystem/WorkspacePanelToolView.axaml.cs
       - test/**/AppShellSubsystem/WorkspacePanelToolViewModelTests.cs
+      - test/**/AppShellSubsystem/WorkspacePanelUiTests.cs
   - id: SysML2Workbench-AppShellSubsystem-AboutDialog
     title: Review that SysML2Workbench AppShellSubsystem AboutDialog Implementation
       is Correct
@@ -462,3 +466,10 @@ reviews:
       - docs/design/ots/avaloniaedit.md
       - docs/verification/ots/avaloniaedit.md
       - test/OtsSoftwareTests/AvaloniaEditTests.cs
+  - id: OTS-Appium
+    title: Review that Appium Provides Required Functionality
+    paths:
+      - docs/reqstream/ots/appium.yaml
+      - docs/design/ots/appium.md
+      - docs/verification/ots/appium.md
+      - test/DemaConsulting.SysML2Workbench.IntegrationTests/**
