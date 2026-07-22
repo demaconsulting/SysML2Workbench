@@ -354,15 +354,15 @@ jobs:
   # Builds and publishes the Desktop application, then drives it end-to-end through a locally
   # started Appium server and its NovaWindows driver (the maintained successor to the deprecated
   # WinAppDriver), exercising test/DemaConsulting.SysML2Workbench.IntegrationTests' real Windows-path
-  # tests. This is intentionally windows-latest-only for now: Avalonia's AutomationPeer also exposes
-  # controls to macOS's NSAccessibility (Appium's Mac2 driver) and Linux's AT-SPI2 (X11 backend only;
-  # Wayland is unconfirmed), and test/DemaConsulting.SysML2Workbench.IntegrationTests/AppFixture.cs
-  # already contains structurally correct OS-branching code for both, but neither has a provisioned
-  # CI runner/driver install yet - see .agent-logs/planning-appium-integration-tests-7f3a1c2e.md for
-  # the scope decision. This job is independent of (does not `need`) the build job above, so it does
-  # not block or duplicate that job's cross-platform packaging; it publishes its own copy of the
-  # Desktop app instead of depending on build's artifact, keeping its job graph simple and
-  # self-contained in the same style as the rest of this workflow.
+  # tests via run-under-appium.ps1 (the same script a developer uses locally via
+  # `build.ps1 -IntegrationTest`). This job is intentionally windows-latest-only for now: Avalonia's
+  # AutomationPeer also exposes controls to macOS's NSAccessibility (Appium's Mac2 driver) and Linux's
+  # AT-SPI2 (via KDE's selenium-webdriver-at-spi), and both AppFixture.cs and run-under-appium.ps1
+  # already contain correct OS-branching code for all three platforms, but only Windows has a
+  # provisioned CI runner/driver install today. This job is independent of (does not `need`) the build
+  # job above, so it does not block or duplicate that job's cross-platform packaging; it publishes its
+  # own copy of the Desktop app instead of depending on build's artifact, keeping its job graph simple
+  # and self-contained in the same style as the rest of this workflow.
   appium-windows-integration-tests:
     name: Appium Windows Integration Tests
     needs: quality-checks
@@ -423,34 +423,18 @@ jobs:
           --output publish/win-x64
 
       # === START APPIUM AND RUN THE INTEGRATION TESTS ===
-      # This section starts a local Appium server, waits for it to be ready, then runs the
-      # IntegrationTests project against the published Desktop application.
+      # This section delegates to run-under-appium.ps1 (the same wrapper a developer uses locally via
+      # `build.ps1 -IntegrationTest`) to start a local Appium server, run the IntegrationTests project
+      # against the published Desktop application, then stop the server - sharing one tested code path
+      # instead of duplicating the start/poll/stop logic here.
       # Downstream projects: Add any additional Appium setup or test steps here.
 
-      - name: Start Appium server
-        shell: pwsh
-        run: |
-          Start-Process -FilePath "appium.cmd" -ArgumentList "--base-path / --allow-insecure `"*:chromedriver_autodownload`"" -WindowStyle Hidden
-          $ready = $false
-          for ($i = 0; $i -lt 30; $i++) {
-            try {
-              $response = Invoke-WebRequest -Uri "http://127.0.0.1:4723/status" -UseBasicParsing -TimeoutSec 2
-              if ($response.StatusCode -eq 200) {
-                $ready = $true
-                break
-              }
-            } catch {
-              Start-Sleep -Seconds 2
-            }
-          }
-          if (-not $ready) {
-            throw "Appium server did not become ready within the expected time."
-          }
-
       - name: Run Appium IntegrationTests
+        shell: pwsh
         env:
           SYSML2WORKBENCH_APP_PATH: ${{ github.workspace }}\publish\win-x64\DemaConsulting.SysML2Workbench.Desktop.exe
         run: >
+          ./run-under-appium.ps1 --
           dotnet test
           test/DemaConsulting.SysML2Workbench.IntegrationTests/DemaConsulting.SysML2Workbench.IntegrationTests.csproj
           --configuration Release

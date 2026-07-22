@@ -21,7 +21,7 @@ function Show-Usage {
     Write-Host "Usage: build.ps1 [-Build] [-Test] [-IntegrationTest] [-All]"
     Write-Host "  -Build            Restore and build the solution (Release configuration)"
     Write-Host "  -Test             Run the unit/headless test suite (excludes Appium integration tests)"
-    Write-Host "  -IntegrationTest  Publish the Desktop app and run the Windows Appium/NovaWindows integration tests (Windows only)"
+    Write-Host "  -IntegrationTest  Publish the Desktop app and run the Appium/AT-SPI integration tests (Windows/macOS/Linux)"
     Write-Host "  -All              Equivalent to -Build -Test -IntegrationTest"
     Write-Host "Multiple switches may be combined, e.g.: ./build.ps1 -Build -Test"
 }
@@ -75,74 +75,40 @@ if ($Test) {
 }
 
 if ($IntegrationTest) {
-    if (-not $IsWindows) {
-        Write-Error "IntegrationTests' Appium/NovaWindows session is Windows-only today; skipping -IntegrationTest on this OS. See docs/design/ots/appium.md."
-        $buildError = $true
-    } elseif (-not (Invoke-SolutionBuild)) {
+    if (-not (Invoke-SolutionBuild)) {
         $buildError = $true
     } else {
-        Write-Host "Installing Appium and the NovaWindows driver..."
-        npm install -g appium
-        if ($LASTEXITCODE -ne 0) { $buildError = $true }
+        if ($IsWindows -or $IsMacOS) {
+            Write-Host "Installing Appium..."
+            npm install -g appium
+            if ($LASTEXITCODE -ne 0) { $buildError = $true }
 
-        $driverInstallOutput = appium driver install --source=npm appium-novawindows-driver 2>&1 | Out-String
-        Write-Host $driverInstallOutput
-        if ($LASTEXITCODE -ne 0 -and $driverInstallOutput -notmatch "(?i)already installed") {
-            $buildError = $true
-        }
-
-        Write-Host "Publishing self-contained Desktop build (win-x64)..."
-        dotnet publish src/DemaConsulting.SysML2Workbench.Desktop/DemaConsulting.SysML2Workbench.Desktop.csproj --configuration Release --runtime win-x64 --self-contained true --property:PublishSingleFile=true --output publish/win-x64
-        if ($LASTEXITCODE -ne 0) { $buildError = $true }
-
-        # Resolve the Appium JS entry point and launch it via node.exe directly,
-        # bypassing the appium.cmd/cmd.exe wrapper. This avoids the bare-binary-name
-        # "%1 is not a valid Win32 application" crash (Start-Process cannot execute a
-        # .cmd file without going through cmd.exe) and ensures -PassThru returns the
-        # real Appium server process (not a wrapper), so Stop-Process below reliably
-        # terminates the actual server with no orphaned processes.
-        $appiumProcess = $null
-        try {
-            $appiumCmd = Get-Command appium.cmd -ErrorAction Stop
-            $appiumEntry = Join-Path (Split-Path $appiumCmd.Source -Parent) "node_modules\appium\index.js"
-            if (-not (Test-Path $appiumEntry)) {
-                throw "Could not locate the Appium entry point at '$appiumEntry'."
+            $driverName = $IsWindows ? "appium-novawindows-driver" : "mac2"
+            $driverArgs = $IsWindows ? @("--source=npm", $driverName) : @($driverName)
+            Write-Host "Installing the $driverName driver..."
+            $driverInstallOutput = appium driver install @driverArgs 2>&1 | Out-String
+            Write-Host $driverInstallOutput
+            if ($LASTEXITCODE -ne 0 -and $driverInstallOutput -notmatch "(?i)already installed") {
+                $buildError = $true
             }
-
-            Write-Host "Starting Appium server..."
-            $appiumProcess = Start-Process -FilePath "node" -ArgumentList $appiumEntry, "--base-path", "/", "--allow-insecure", "*:chromedriver_autodownload" -WindowStyle Hidden -PassThru
-        } catch {
-            Write-Error "Failed to start the Appium server: $_"
-            $buildError = $true
+        } else {
+            Write-Host "Linux: not installing Appium/a driver - selenium-webdriver-at-spi must already be built and installed (see docs/design/ots/appium.md)."
         }
 
-        if ($appiumProcess) {
-            try {
-                $ready = $false
-                for ($i = 0; $i -lt 30; $i++) {
-                    try {
-                        $response = Invoke-WebRequest -Uri "http://127.0.0.1:4723/status" -UseBasicParsing -TimeoutSec 2
-                        if ($response.StatusCode -eq 200) { $ready = $true; break }
-                    } catch {
-                        Start-Sleep -Seconds 2
-                    }
-                }
+        if (-not $buildError) {
+            $rid = $IsWindows ? "win-x64" : ($IsMacOS ? ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64 ? "osx-arm64" : "osx-x64") : "linux-x64")
+            $exeName = $IsWindows ? "DemaConsulting.SysML2Workbench.Desktop.exe" : "DemaConsulting.SysML2Workbench.Desktop"
 
-                if (-not $ready) {
-                    Write-Error "Appium server did not become ready within the expected time."
-                    $buildError = $true
-                } else {
-                    Write-Host "Running Appium IntegrationTests..."
-                    $env:SYSML2WORKBENCH_APP_PATH = Join-Path (Get-Location) "publish/win-x64/DemaConsulting.SysML2Workbench.Desktop.exe"
-                    dotnet test test/DemaConsulting.SysML2Workbench.IntegrationTests/DemaConsulting.SysML2Workbench.IntegrationTests.csproj --configuration Release --logger "trx;LogFilePrefix=appium-windows" --results-directory artifacts/tests
-                    if ($LASTEXITCODE -ne 0) { $buildError = $true }
-                    Remove-Item Env:\SYSML2WORKBENCH_APP_PATH -ErrorAction SilentlyContinue
-                }
-            } finally {
-                Write-Host "Stopping Appium server..."
-                if (-not $appiumProcess.HasExited) {
-                    Stop-Process -Id $appiumProcess.Id -Force -ErrorAction SilentlyContinue
-                }
+            Write-Host "Publishing self-contained Desktop build ($rid)..."
+            dotnet publish src/DemaConsulting.SysML2Workbench.Desktop/DemaConsulting.SysML2Workbench.Desktop.csproj --configuration Release --runtime $rid --self-contained true --property:PublishSingleFile=true --output publish/$rid
+            if ($LASTEXITCODE -ne 0) { $buildError = $true }
+
+            if (-not $buildError) {
+                Write-Host "Running Appium IntegrationTests..."
+                $env:SYSML2WORKBENCH_APP_PATH = Join-Path (Get-Location) "publish/$rid/$exeName"
+                ./run-under-appium.ps1 -- dotnet test test/DemaConsulting.SysML2Workbench.IntegrationTests/DemaConsulting.SysML2Workbench.IntegrationTests.csproj --configuration Release --logger "trx;LogFilePrefix=appium-integration" --results-directory artifacts/tests
+                if ($LASTEXITCODE -ne 0) { $buildError = $true }
+                Remove-Item Env:\SYSML2WORKBENCH_APP_PATH -ErrorAction SilentlyContinue
             }
         }
     }

@@ -1,8 +1,9 @@
 ## Appium
 
 SysML2Workbench uses Appium's WebDriver client, together with Appium's
-NovaWindows driver, to drive the compiled desktop application end-to-end
-through its real accessibility tree as a system-level UI automation test tier.
+NovaWindows and Mac2 drivers (and KDE's `selenium-webdriver-at-spi` on Linux),
+to drive the compiled desktop application end-to-end through its real
+accessibility tree as a system-level UI automation test tier.
 
 ### Purpose
 
@@ -19,10 +20,14 @@ drive the same application on all three desktop platforms through a common
 
 ### Features Used
 
-- **`Appium.WebDriver`'s `WindowsDriver`** — connects to a local Appium server
-  running the NovaWindows driver (the maintained successor to the deprecated
-  WinAppDriver) and launches the published Desktop executable as the driven
-  application.
+- **`Appium.WebDriver`'s `WindowsDriver`/`MacDriver`** — connect to a local
+  Appium server running the NovaWindows driver (the maintained successor to
+  the deprecated WinAppDriver) or the Mac2 driver, and launch the published
+  Desktop executable as the driven application. Linux has no dedicated
+  first-party Appium .NET client type (KDE's `selenium-webdriver-at-spi` is
+  not one of Appium's officially-known platforms), so `AppFixture` defines a
+  minimal `LinuxDriver : AppiumDriver` subclass purely to reach an
+  otherwise-inaccessible base constructor.
 - **`AutomationProperties.AutomationId`** — added to `MainWindowView.axaml`'s
   menu items and dock control, and to the interactive controls of the About
   dialog, Workspace panel, and Predefined Views panel, giving
@@ -37,30 +42,62 @@ drive the same application on all three desktop platforms through a common
 to the local UI project: it drives the compiled application externally as a
 black-box system-level tier, per `testing-principles.md`'s hierarchy-boundary
 rule. `AppFixture` follows Avalonia's documented Appium `AppFixture` pattern,
-branching by `OperatingSystem.IsWindows()`/`IsMacOS()`/`IsLinux()`. Only the
-Windows/NovaWindows branch is fully implemented and exercised by real tests
-today; the macOS/Mac2 and Linux/AT-SPI2 branches are structurally correct
-(matching the same shape) but intentionally throw rather than attempt an
-session with no driver provisioned, since no macOS or Linux CI runner installs the
-corresponding Appium driver yet. `.github/workflows/build.yaml`'s
-`appium-windows-integration-tests` job is the only CI job that runs this
-tier: it publishes the Desktop application, installs Appium and the
-NovaWindows driver via npm, starts the Appium server, and runs
-`dotnet test` against `IntegrationTests`. The cross-platform `build` job's
-`Test` step and `build.ps1 -Test` both exclude this tier with
+branching by `OperatingSystem.IsWindows()`/`IsMacOS()`/`IsLinux()` to select
+the right driver/capabilities, but it never starts, stops, or otherwise
+manages an Appium/AT-SPI server process itself - it always just connects a
+WebDriver client to `http://127.0.0.1:4723`, trusting that something already
+made a server available there before the test process launched. Only the
+Windows/NovaWindows branch is exercised by CI today and validated against a
+real Appium server; the macOS/Mac2 and Linux/AT-SPI2 branches are implemented
+from documentation so a developer can run this tier locally, but neither has
+a provisioned CI runner nor has been exercised against real hardware - treat
+both as best-effort and unvalidated until proven otherwise.
+
+That server's lifecycle is owned entirely by **`run-under-appium.ps1`**
+(repository root), invoked by `build.ps1 -IntegrationTest` and by
+`.github/workflows/build.yaml`'s `appium-windows-integration-tests` job. It
+wraps an arbitrary command (typically `dotnet test ... IntegrationTests.csproj`)
+differently per OS:
+
+- **Windows/macOS**: starts a local Appium server itself (resolving `node`/
+  `appium` directly - on Windows via `node.exe <appium's index.js>` to avoid
+  `Start-Process`'s inability to exec a `.cmd` wrapper without breaking PID
+  tracking; on macOS `appium` is a real shebang script, so no such workaround
+  is needed), polls `/status` until ready, runs the wrapped command, then
+  stops the server in a `finally` block regardless of outcome.
+- **Linux**: this is architecturally inverted rather than merely
+  unimplemented. KDE's `selenium-webdriver-at-spi` has no standalone,
+  directly-startable server binary or `--port` flag - its only supported
+  entry point is `selenium-webdriver-at-spi-run <command>`, a wrapper that
+  itself boots a nested Wayland compositor session plus its own Flask/AT-SPI2
+  server, runs the wrapped command as its *child*, and tears everything down
+  together once that child exits. So on Linux, `run-under-appium.ps1` simply
+  delegates the entire wrapped command to that external tool instead of
+  managing anything itself; `build.ps1 -IntegrationTest` does not install or
+  build it - a Linux user is expected to have already built and installed it
+  themselves (see KDE's docs at <https://community.kde.org/Selenium>) before
+  running `-IntegrationTest` there.
+
+`build.ps1 -IntegrationTest` is cross-platform (Windows/macOS/Linux): on
+Windows/macOS it installs Appium and the appropriate driver (NovaWindows via
+`--source=npm`, or Mac2) via `npm`/`appium driver install`, skipping that step
+entirely on Linux; then it publishes the Desktop application for the current
+OS/architecture's RID and runs `./run-under-appium.ps1 -- dotnet test ...`.
+Only the Windows path is exercised in CI and treated as validated; macOS and
+Linux are provided for developers who want to run this tier locally on those
+platforms.
+
+`.github/workflows/build.yaml`'s `appium-windows-integration-tests` job is the
+only CI job that runs this tier, and remains Windows-only (`windows-latest`)
+even though `build.ps1 -IntegrationTest` itself is now cross-platform - no
+macOS/Linux CI runner is provisioned. It installs Appium and the NovaWindows
+driver via npm, restores/builds/publishes the Desktop application as its own
+separate steps (so each reports its own pass/fail status independently in the
+GitHub Actions UI), then delegates to the same `run-under-appium.ps1` script
+`build.ps1 -IntegrationTest` uses locally to start Appium, run
+`IntegrationTests`, and stop Appium - sharing one tested code path for that
+part of the sequence instead of duplicating it inline. The cross-platform
+`build` job's `Test` step and `build.ps1 -Test` both exclude this tier with
 `--filter "Category!=Integration"`, since `IntegrationTests`' tests carry
 `[Trait("Category", "Integration")]` and require a running Appium server
-that those invocations do not start. `build.ps1 -IntegrationTest` mirrors
-this CI job's steps locally (Windows only): it installs Appium and the
-NovaWindows driver, publishes the Desktop application, starts and polls a
-local Appium server, runs `IntegrationTests`, and always stops the server
-afterward.
-
-`build.yaml` was deliberately **not** refactored to call `build.ps1` for this
-job. Each CI step (install Appium, restore/build, publish, start Appium,
-run tests, upload artifacts) reports its own pass/fail status independently
-in the GitHub Actions UI; collapsing them behind a single
-`pwsh ./build.ps1 -IntegrationTest` step would hide which sub-step failed.
-Both `build.yaml` and `build.ps1 -IntegrationTest` independently mirror the
-same sequence documented here, so this file is the shared source of truth
-for keeping them in sync.
+that those invocations do not start.

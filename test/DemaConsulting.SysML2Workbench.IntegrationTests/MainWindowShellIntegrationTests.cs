@@ -3,13 +3,13 @@ using OpenQA.Selenium.Appium;
 namespace DemaConsulting.SysML2Workbench.IntegrationTests;
 
 /// <summary>
-///     Real, Windows-path Appium tests driving the compiled <c>DemaConsulting.SysML2Workbench.Desktop</c>
-///     application through the <see cref="AppFixture" />-launched NovaWindows session, using the
-///     <c>AutomationProperties.AutomationId</c> values added to <c>MainWindowView.axaml</c>. Marked
+///     Real Appium tests driving the compiled <c>DemaConsulting.SysML2Workbench.Desktop</c> application through
+///     the <see cref="AppFixture" />-launched session (NovaWindows on Windows, Mac2 on macOS, AT-SPI2 on Linux),
+///     using the <c>AutomationProperties.AutomationId</c> values added to <c>MainWindowView.axaml</c>. Marked
 ///     <c>[Trait("Category", "Integration")]</c> so <c>.github/workflows/build.yaml</c>'s cross-platform
 ///     <c>build</c> job (which has no Appium server running) can exclude this tier via
 ///     <c>--filter "Category!=Integration"</c>, while the dedicated <c>appium-windows-integration-tests</c> job
-///     runs it for real on <c>windows-latest</c>.
+///     (and a developer running <c>build.ps1 -IntegrationTest</c> locally on any OS) runs it for real.
 /// </summary>
 [Collection("AppFixture")]
 [Trait("Category", "Integration")]
@@ -33,7 +33,7 @@ public sealed class MainWindowShellIntegrationTests
     ///     <c>MainWindowView_Startup_HasSysML2WorkbenchTitle</c> test asserts in-process also holds true when the
     ///     real windowed application is launched end-to-end.
     /// </summary>
-    [SkippableOnNonWindowsFact]
+    [Fact]
     public void DesktopApp_Launch_ShowsMainWindowWithExpectedTitle()
     {
         // Arrange / Act
@@ -48,7 +48,7 @@ public sealed class MainWindowShellIntegrationTests
     ///     <c>AddFileSourceMenuItem</c> automation id added to <c>MainWindowView.axaml</c>, is discoverable and
     ///     clickable through the real accessibility tree exposed by Avalonia's UIA automation peer.
     /// </summary>
-    [SkippableOnNonWindowsFact]
+    [Fact]
     public void DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndClickable()
     {
         // Arrange
@@ -70,7 +70,7 @@ public sealed class MainWindowShellIntegrationTests
     ///     id, opens the modal About dialog, discoverable by its own <c>AboutDialogOkButton</c> automation id,
     ///     and that dismissing it via that button closes the dialog again.
     /// </summary>
-    [SkippableOnNonWindowsFact]
+    [Fact]
     public void DesktopApp_HelpMenu_AboutMenuItem_OpensAndClosesAboutDialog()
     {
         // Arrange

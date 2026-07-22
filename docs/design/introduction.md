@@ -34,7 +34,8 @@ OTS items:
 - **AvaloniaEdit**: integration and usage design (read-only syntax-highlighted text editor control).
 - **xUnit**: integration and usage design (test framework).
 - **Appium**: integration and usage design (end-to-end desktop UI automation
-  driver for the compiled application, Windows-only in CI today).
+  driver for the compiled application; cross-platform in `build.ps1`, but
+  Windows-only in CI today).
 
 Out of scope: no Shared Packages exist in this repository. Design documents
 are not produced for test projects or build pipeline CI configuration (this
@@ -110,18 +111,21 @@ dependency boundary:
 Only the Windows/NovaWindows path of `IntegrationTests` runs automatically in
 CI today (`.github/workflows/build.yaml`'s `appium-windows-integration-tests`
 job, `windows-latest`). Avalonia 12.1.0 also exposes controls to macOS's
-NSAccessibility (Appium's Mac2 driver) and Linux's AT-SPI2 (X11 backend only;
-Wayland is unconfirmed), and `AppFixture`'s OS-branching code for both is
-structurally present and correct, but neither has a provisioned CI runner or
-driver install yet - see `docs/design/ots/appium.md` for the integration
-pattern and `.agent-logs/planning-appium-integration-tests-7f3a1c2e.md` for
-the scope decision. `build.ps1 -Test` and the cross-platform `build` job's
-`Test` step both exclude `IntegrationTests`' tests carrying the `Integration`
-trait via `--filter "Category!=Integration"`, so adding `IntegrationTests` to
+NSAccessibility (Appium's Mac2 driver) and Linux's AT-SPI2 (via KDE's
+`selenium-webdriver-at-spi`), and `AppFixture`/`run-under-appium.ps1` contain
+correct OS-branching code for all three platforms, so a developer can run
+this tier locally on macOS or Linux too - but neither has a provisioned CI
+runner today, so only Windows is validated in CI - see
+`docs/design/ots/appium.md` for the integration pattern. `build.ps1 -Test`
+and the cross-platform `build` job's `Test` step both exclude
+`IntegrationTests`' tests carrying the `Integration` trait via
+`--filter "Category!=Integration"`, so adding `IntegrationTests` to
 `SysML2Workbench.slnx` does not break those runs. `build.ps1 -IntegrationTest`
-provides a Windows-only local equivalent of CI's
+provides a cross-platform (Windows/macOS/Linux) local equivalent of CI's
 `appium-windows-integration-tests` job, running this tier for real on demand
-outside CI.
+outside CI via `run-under-appium.ps1`, which owns the Appium/AT-SPI server's
+lifecycle so `AppFixture` itself only ever connects to an already-running
+server.
 
 ## Folder Layout
 
