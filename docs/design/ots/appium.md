@@ -11,8 +11,8 @@ Appium was chosen because it exercises the actual compiled
 `DemaConsulting.SysML2Workbench.Desktop` application in a real window, driven
 the same way a user would interact with it, complementing the in-process
 `test/DemaConsulting.SysML2Workbench.UiTests` headless tier and the
-`test/DemaConsulting.SysML2Workbench.Tests` unit/subsystem tier. Avalonia
-12.1.0's `AutomationPeer` exposes controls to UIA (Windows), NSAccessibility
+`test/DemaConsulting.SysML2Workbench.Tests` unit/subsystem tier. Avalonia's
+`AutomationPeer` exposes controls to UIA (Windows), NSAccessibility
 (macOS, via Appium's Mac2 driver), and AT-SPI2 (Linux, via Avalonia's X11
 backend only - Wayland support is unconfirmed), so Appium can, in principle,
 drive the same application on all three desktop platforms through a common

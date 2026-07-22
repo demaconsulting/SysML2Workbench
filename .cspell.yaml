@@ -89,6 +89,9 @@ words:
   - webdriver
   - novawindows
   - atspi
+  - automatable
+  - startable
+  - unvalidated
 ignorePaths:
   - '**/.git/**'
   - '**/node_modules/**'

@@ -44,12 +44,15 @@ public sealed class MainWindowShellIntegrationTests
     }
 
     /// <summary>
-    ///     Validates that clicking the File menu's "Open File..." item, found by the
-    ///     <c>AddFileSourceMenuItem</c> automation id added to <c>MainWindowView.axaml</c>, is discoverable and
-    ///     clickable through the real accessibility tree exposed by Avalonia's UIA automation peer.
+    ///     Validates that the File menu's "Open File..." item, found by the <c>AddFileSourceMenuItem</c>
+    ///     automation id added to <c>MainWindowView.axaml</c>, is discoverable and enabled through the real
+    ///     accessibility tree exposed by Avalonia's UIA automation peer. The menu item is deliberately not
+    ///     clicked here: doing so would open the OS-native "Open File" dialog, which lives outside Avalonia's
+    ///     own accessibility tree and is not reliably automatable through the same driver session across
+    ///     Windows/macOS/Linux.
     /// </summary>
     [Fact]
-    public void DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndClickable()
+    public void DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndEnabled()
     {
         // Arrange
         var fileMenu = _session.FindElement(MobileBy.Name("File"));
@@ -60,6 +63,7 @@ public sealed class MainWindowShellIntegrationTests
 
         // Assert
         Assert.True(addFileMenuItem.Displayed);
+        Assert.True(addFileMenuItem.Enabled);
 
         // Close the menu without picking a file so this test leaves no dialog open behind it.
         addFileMenuItem.SendKeys(OpenQA.Selenium.Keys.Escape);

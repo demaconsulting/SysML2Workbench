@@ -39,7 +39,7 @@ if (-not $Command -or $Command.Count -eq 0) {
 }
 
 $commandExe = $Command[0]
-$commandArgs = $Command[1..($Command.Count - 1)]
+$commandArgs = if ($Command.Count -gt 1) { $Command[1..($Command.Count - 1)] } else { @() }
 
 if ($IsLinux) {
     $atSpiRun = Get-Command selenium-webdriver-at-spi-run -ErrorAction SilentlyContinue
