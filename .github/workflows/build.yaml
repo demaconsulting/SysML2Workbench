@@ -430,7 +430,7 @@ jobs:
       - name: Start Appium server
         shell: pwsh
         run: |
-          Start-Process -FilePath "appium" -ArgumentList "--base-path / --allow-insecure chromedriver_autodownload" -WindowStyle Hidden
+          Start-Process -FilePath "appium.cmd" -ArgumentList "--base-path / --allow-insecure `"*:chromedriver_autodownload`"" -WindowStyle Hidden
           $ready = $false
           for ($i = 0; $i -lt 30; $i++) {
             try {

@@ -44,10 +44,10 @@ After installing the toolchain, validate the environment with these commands:
 
 dotnet --info
 
-pwsh ./build.ps1
+pwsh ./build.ps1 -Build -Test
 
 ```
 
-If `build.ps1` completes successfully, the local machine has the minimum toolchain
+If `build.ps1 -Build -Test` completes successfully, the local machine has the minimum toolchain
 
 needed for the current repository state.

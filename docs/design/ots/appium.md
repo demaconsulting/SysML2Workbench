@@ -46,8 +46,21 @@ corresponding Appium driver yet. `.github/workflows/build.yaml`'s
 `appium-windows-integration-tests` job is the only CI job that runs this
 tier: it publishes the Desktop application, installs Appium and the
 NovaWindows driver via npm, starts the Appium server, and runs
-`dotnet test` against `IntegrationTests`. Every other `dotnet test` invocation
-in this repository (the cross-platform `build` job's `Test` step and
-`build.ps1`) excludes this tier with `--filter "Category!=Integration"`,
-since `IntegrationTests`' tests carry `[Trait("Category", "Integration")]`
-and require a running Appium server that those invocations do not start.
+`dotnet test` against `IntegrationTests`. The cross-platform `build` job's
+`Test` step and `build.ps1 -Test` both exclude this tier with
+`--filter "Category!=Integration"`, since `IntegrationTests`' tests carry
+`[Trait("Category", "Integration")]` and require a running Appium server
+that those invocations do not start. `build.ps1 -IntegrationTest` mirrors
+this CI job's steps locally (Windows only): it installs Appium and the
+NovaWindows driver, publishes the Desktop application, starts and polls a
+local Appium server, runs `IntegrationTests`, and always stops the server
+afterward.
+
+`build.yaml` was deliberately **not** refactored to call `build.ps1` for this
+job. Each CI step (install Appium, restore/build, publish, start Appium,
+run tests, upload artifacts) reports its own pass/fail status independently
+in the GitHub Actions UI; collapsing them behind a single
+`pwsh ./build.ps1 -IntegrationTest` step would hide which sub-step failed.
+Both `build.yaml` and `build.ps1 -IntegrationTest` independently mirror the
+same sequence documented here, so this file is the shared source of truth
+for keeping them in sync.

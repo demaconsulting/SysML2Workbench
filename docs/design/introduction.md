@@ -115,10 +115,13 @@ Wayland is unconfirmed), and `AppFixture`'s OS-branching code for both is
 structurally present and correct, but neither has a provisioned CI runner or
 driver install yet - see `docs/design/ots/appium.md` for the integration
 pattern and `.agent-logs/planning-appium-integration-tests-7f3a1c2e.md` for
-the scope decision. Every other `dotnet test` invocation in this repository
-(`build.ps1` and the cross-platform `build` job) excludes `IntegrationTests`'
-tests carrying the `Integration` trait via `--filter "Category!=Integration"`, so adding
-`IntegrationTests` to `SysML2Workbench.slnx` does not break those runs.
+the scope decision. `build.ps1 -Test` and the cross-platform `build` job's
+`Test` step both exclude `IntegrationTests`' tests carrying the `Integration`
+trait via `--filter "Category!=Integration"`, so adding `IntegrationTests` to
+`SysML2Workbench.slnx` does not break those runs. `build.ps1 -IntegrationTest`
+provides a Windows-only local equivalent of CI's
+`appium-windows-integration-tests` job, running this tier for real on demand
+outside CI.
 
 ## Folder Layout
 

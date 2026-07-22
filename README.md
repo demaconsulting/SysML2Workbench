@@ -58,17 +58,21 @@ building a custom view.
 ## Building and Testing
 
 ```powershell
-pwsh ./build.ps1   # restore, build, and run all tests
-pwsh ./fix.ps1      # auto-fix formatting
-pwsh ./lint.ps1     # lint and compliance checks
+pwsh ./build.ps1 -Build -Test   # restore, build, and run the unit/headless test suite
+pwsh ./build.ps1                # no switches: prints usage and exits non-zero
+pwsh ./fix.ps1                  # auto-fix formatting
+pwsh ./lint.ps1                 # lint and compliance checks
 ```
 
-`build.ps1` and CI's cross-platform build job both run `dotnet test --filter
-"Category!=Integration"`, so `test/DemaConsulting.SysML2Workbench.IntegrationTests`'
-Appium-driven tests are excluded from the default local/CI test run. That
-tier only runs for real in CI's dedicated `appium-windows-integration-tests`
-job (`windows-latest`), which publishes the Desktop application, starts a
-local Appium server with the NovaWindows driver, and runs
-`dotnet test test/DemaConsulting.SysML2Workbench.IntegrationTests/...`
-against it. Running it locally requires a published Desktop build, a
-running Appium server, and the NovaWindows driver installed.
+`build.ps1` accepts combinable switches: `-Build` (restore + build),
+`-Test` (build if needed, then run the unit/headless suite), `-IntegrationTest`
+(build if needed, then run the Appium/NovaWindows suite), and `-All`
+(equivalent to all three). `build.ps1 -Test` and CI's cross-platform build
+job both run `dotnet test --filter "Category!=Integration"`, so
+`test/DemaConsulting.SysML2Workbench.IntegrationTests`' Appium-driven tests
+are excluded from that default test run. That tier runs for real in CI's
+dedicated `appium-windows-integration-tests` job (`windows-latest`), and can
+now also be run locally on Windows via `pwsh ./build.ps1 -IntegrationTest`,
+which installs Appium and the NovaWindows driver, publishes the Desktop
+application, starts and polls a local Appium server, runs the tests, and
+always stops the server afterward.
