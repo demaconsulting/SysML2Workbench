@@ -16,5 +16,5 @@ sections:
             justification: |
               Appium's accessibility-tree-based lookups need a stable identifier that does not depend on a control''s displayed Name/x:Name, so tests remain reliable as UI text changes.
             tests:
-              - 'DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndClickable'
+              - 'DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndEnabled'
               - 'DesktopApp_HelpMenu_AboutMenuItem_OpensAndClosesAboutDialog'

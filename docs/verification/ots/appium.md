@@ -23,12 +23,14 @@ session's `Title` reports "SysML2Workbench" immediately after launch, proving
 the session is genuinely driving the compiled application's real main
 window rather than a stub.
 
-**DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndClickable**:
+**DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndEnabled**:
 Opens the File menu (`MobileBy.Name("File")`) and locates the "Open File..."
 item by its `AddFileSourceMenuItem` automation id
 (`MobileBy.AccessibilityId`), proving Avalonia's UIA automation peer exposes
 the `AutomationProperties.AutomationId` values added to `MainWindowView.axaml`
 through the real accessibility tree that Appium's NovaWindows driver reads.
+The item is not actually clicked, since doing so would open the OS-native
+"Open File" dialog, which lives outside Avalonia's own accessibility tree.
 
 **DesktopApp_HelpMenu_AboutMenuItem_OpensAndClosesAboutDialog**: Opens the
 Help menu, clicks "About" (`AboutMenuItem`), confirms the modal About
