@@ -77,8 +77,8 @@ public sealed class AppFixture : IDisposable
         {
             AutomationName = "NovaWindows",
             PlatformName = "Windows",
+            App = Path.GetFullPath(ResolveWindowsAppPath()),
         };
-        options.AddAdditionalAppiumOption("app", Path.GetFullPath(ResolveWindowsAppPath()));
 
         return new WindowsDriver(new Uri("http://127.0.0.1:4723"), options);
     }
