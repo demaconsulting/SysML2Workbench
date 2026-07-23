@@ -87,7 +87,11 @@ public static class InspectionScreenshot
 
         using var data = cropped.Encode(SKEncodedImageFormat.Png, quality: 100);
         Directory.CreateDirectory(OutputDirectory);
-        using var file = File.OpenWrite(Path.Combine(OutputDirectory, $"{fileName}.png"));
+
+        // File.Create (unlike File.OpenWrite) truncates an existing file: without this, re-running the
+        // test after a prior capture wrote a larger PNG would leave that PNG's trailing bytes appended
+        // past the new (shorter) image data, corrupting the file.
+        using var file = File.Create(Path.Combine(OutputDirectory, $"{fileName}.png"));
         data.SaveTo(file);
     }
 

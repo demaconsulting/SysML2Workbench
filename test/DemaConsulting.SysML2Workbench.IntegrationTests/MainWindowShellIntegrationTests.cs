@@ -305,8 +305,12 @@ public sealed class MainWindowShellIntegrationTests
             // The chip is added asynchronously (the key press returns to Appium before Avalonia's
             // dispatcher has re-rendered the bound ItemsControl), so poll briefly for the "attribute"
             // chip's own text element to actually appear before capturing - otherwise the screenshot
-            // can race ahead of the render and show only the empty chip row.
-            var chipRendered = WaitUntil(() => _session.FindElements(MobileBy.Name("attribute")).Count > 0);
+            // can race ahead of the render and show only the empty chip row. Scope the search to
+            // elementFilterRoot's own subtree (rather than the whole session) so this cannot be
+            // satisfied by a same-named element that isn't the chip: the search TextBox still holds the
+            // typed "attribute" text, and the flyout's candidate ListBoxItem may still be visible for a
+            // moment after Enter is pressed - both would otherwise produce a false-positive match.
+            var chipRendered = WaitUntil(() => elementFilterRoot.FindElements(MobileBy.Name("attribute")).Count > 0);
             Assert.True(chipRendered, "The 'attribute' chip did not render in time for the screenshot.");
 
             InspectionScreenshot.CaptureElement(_session, elementFilterRoot, "query-dialog-populated-with-chip");
@@ -323,8 +327,19 @@ public sealed class MainWindowShellIntegrationTests
         }
         finally
         {
-            // See this test's remarks for why cleanup is owned only by this one mutating test.
-            _fixture.CloseAllSources();
+            // See this test's remarks for why cleanup is owned only by this one mutating test. Swallow any
+            // exception here (mirroring TryCloseAnyOpenDialogWithEscape's own self-protecting catch): if the
+            // test already failed with a stray modal left open, CloseAllSources() itself can throw (e.g. its
+            // File-menu click fails), and per CLR semantics an exception raised in a finally block replaces
+            // whatever exception is already propagating from try/catch, silently discarding the real failure.
+            try
+            {
+                _fixture.CloseAllSources();
+            }
+            catch
+            {
+                // Best-effort only - never let cleanup mask a real assertion/exception from the test body.
+            }
         }
     }
 
