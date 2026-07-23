@@ -56,6 +56,22 @@ public sealed class AppFixture : IDisposable
     ///     started before this test process launched, and using the driver appropriate for the current
     ///     operating system.
     /// </summary>
+    /// <remarks>
+    ///     This fixture deliberately does not attempt to reposition/resize the launched window (for example
+    ///     to guarantee it is fully on-screen for <see cref="InspectionScreenshot" />). Both
+    ///     <c>Window.Position</c> and <c>Window.Size</c> map to the W3C <c>SetWindowRect</c> command, and
+    ///     <c>appium-novawindows-driver</c> 1.4.1's implementation of that command has a confirmed bug: it
+    ///     checks the unsupplied half of the rect (e.g. <c>width</c>/<c>height</c> when only
+    ///     <c>Position</c> is set) against <c>null</c>, but the client actually omits those fields entirely,
+    ///     so they arrive as <c>undefined</c> - which is <c>!== null</c> - and the driver tries to run the
+    ///     other operation anyway with empty arguments, producing a PowerShell parse error. This was
+    ///     confirmed by capturing the driver's literal generated script (containing <c>.Resize(, )</c> /
+    ///     <c>.Move(, )</c>) and by patching the installed driver's null-checks locally, which fixed the
+    ///     issue - see the upstream report for the full repro and verified fix. Until a fixed NovaWindows
+    ///     release is available, <c>MainWindowView</c> instead ships a small default startup size that
+    ///     comfortably fits on-screen (including under a typical taskbar) without needing any runtime
+    ///     repositioning.
+    /// </remarks>
     public AppFixture()
     {
         Driver = OperatingSystem.IsWindows()
@@ -66,6 +82,13 @@ public sealed class AppFixture : IDisposable
                     ? CreateLinuxDriver()
                     : throw new PlatformNotSupportedException(
                         "SysML2Workbench's Appium AppFixture only recognizes Windows, macOS, and Linux.");
+
+        // Some UI transitions (notably a Flyout closing after a selection, which briefly disrupts the
+        // automation tree while its popup window tears down) are not instantaneous from the automation
+        // backend's point of view, even though they are instantaneous on-screen. A short implicit wait
+        // lets FindElement retry for a bit instead of failing immediately with NoSuchElementException,
+        // without slowing down the common case where the element is already present.
+        Driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
     }
 
     /// <summary>
@@ -78,6 +101,19 @@ public sealed class AppFixture : IDisposable
     {
         Driver.Quit();
         Driver.Dispose();
+    }
+
+    /// <summary>
+    ///     Clicks File &gt; Close All (<c>CloseAllMenuItem</c>) to reset the shared session's workspace back to
+    ///     its empty starting state. Reusable cleanup seam for any test that adds a real file/folder source
+    ///     (directly, or via the <c>SYSML2WORKBENCH_STARTUP_FILE</c> preload) and must not leave that state
+    ///     behind for whichever test in this <c>[Collection("AppFixture")]</c>-shared session runs next - see
+    ///     <c>MainWindowShellIntegrationTests</c>'s own remarks for which tests call this and why.
+    /// </summary>
+    public void CloseAllSources()
+    {
+        Driver.FindElement(MobileBy.Name("File")).Click();
+        Driver.FindElement(MobileBy.AccessibilityId("CloseAllMenuItem")).Click();
     }
 
     /// <summary>

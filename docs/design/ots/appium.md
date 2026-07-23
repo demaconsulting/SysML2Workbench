@@ -101,3 +101,32 @@ part of the sequence instead of duplicating it inline. The cross-platform
 `--filter "Category!=Integration"`, since `IntegrationTests`' tests carry
 `[Trait("Category", "Integration")]` and require a running Appium server
 that those invocations do not start.
+
+### Troubleshooting: "Failed to locate window of the app." on Windows
+
+If every NovaWindows test in `IntegrationTests` fails identically with
+`WindowsDriver` throwing `UnknownError: Failed to locate window of the app.`
+(surfaced via NovaWindowsDriver's `changeRootElement`), enable the Appium
+server's own log output and look for an underlying error such as:
+
+```text
+Exception calling "SetFocus" with "0" argument(s): "Target element cannot receive focus."
+```
+
+This signature means NovaWindowsDriver *did* find the launched process and
+its window, but Windows refused `SetForegroundWindow`/UI Automation
+`SetFocus` for it. The most common root cause is that **the interactive
+console session driving the test run is locked** - Windows switches to the
+secure Winlogon/`LockApp` desktop while locked, which is isolated from
+automation and blocks focus/foreground operations for *any* process, not
+just the one under test. This is an environment precondition, not a code
+regression: it reproduces identically even with no application code from the
+current change involved.
+
+`run-under-appium.ps1` includes a Windows-only preflight check that detects
+this condition (via `GetForegroundWindow`/`GetWindowThreadProcessId`
+resolving to `LockApp`/`LogonUI`) before running the wrapped test command,
+and fails fast with an actionable error instead of letting all tests fail
+slowly, one at a time, with this cryptic stack trace. The remediation is
+simply to **unlock the interactive console/RDP session** and re-run
+`-IntegrationTest`; no code change can substitute for this.

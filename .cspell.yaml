@@ -55,8 +55,10 @@ words:
   - sysml
   - timeslice
   - TOCTOU
+  - unautomatable
   - uncontended
   - unioned
+  - unsupplied
   - Unwatch
   - unwatch
   - Unwatches
@@ -64,7 +66,9 @@ words:
   - Unwatching
   - unwatching
   - versionmark
+  - vstest
   - Weasyprint
+  - Winlogon
   - xunit
   - Xunit
   - yamlfix

@@ -70,6 +70,13 @@ sections:
                   - 'RenderCustomViewPreview_DoesNotMutateOpenTabsOrActiveTab'
                   - 'RenderCustomViewPreview_NoWorkspaceOpened_ThrowsInvalidOperationException'
 
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-CloseAllSources'
+                title: 'The MainWindowShell shall close every workspace source at once, returning to the same valid empty state used at construction, and raise SourcesChanged.'
+                justification: |
+                  The File menu's "Close All" command lets a user reset the entire workspace in one action rather than removing every source individually, and must reach exactly the same fresh-launch empty state (no tabs, no diagnostics, no watched sources) as removing sources one at a time.
+                tests:
+                  - 'CloseAllSourcesAsync_WithMultipleSources_ProducesEmptySnapshotAndUnwatchesEverything'
+
               - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-OpenSourceTextTab'
                 title: 'The MainWindowShell shall open a read-only source-text tab for a given file path, reusing an already-open tab for the same path instead of duplicating it, and shall resolve an open source-text tab''s file path on request.'
                 justification: |

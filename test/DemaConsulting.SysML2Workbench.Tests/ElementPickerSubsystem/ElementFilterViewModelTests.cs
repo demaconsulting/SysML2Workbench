@@ -271,6 +271,94 @@ public sealed class ElementFilterViewModelTests
     }
 
     /// <summary>
+    ///     Validates <see cref="ElementFilterViewModel.BeginAddableTypeFilterSearch" /> resets the
+    ///     search text to empty and populates <see cref="ElementFilterViewModel.AddableTypeFilterCandidates" />
+    ///     with the full addable set (mirroring <see cref="ElementFilterViewModel.GetAddableTypeLabels" />)
+    ///     each time the add-filter flyout opens, discarding any leftover search text from a previous
+    ///     opening.
+    /// </summary>
+    [Fact]
+    public void ElementFilterViewModel_BeginAddableTypeFilterSearch_ResetsSearchAndPopulatesFullSet()
+    {
+        // Arrange
+        var filter = new ElementFilterViewModel();
+        filter.SetCandidates(MixedCandidates, defaultTypeFilterLabel: "part");
+        filter.AddableTypeFilterSearchText = "leftover search text";
+
+        // Act
+        filter.BeginAddableTypeFilterSearch();
+
+        // Assert
+        Assert.Equal("", filter.AddableTypeFilterSearchText);
+        Assert.Equal(new[] { "package", "part def" }, filter.AddableTypeFilterCandidates);
+    }
+
+    /// <summary>
+    ///     Validates that setting <see cref="ElementFilterViewModel.AddableTypeFilterSearchText" />
+    ///     narrows <see cref="ElementFilterViewModel.AddableTypeFilterCandidates" /> with a
+    ///     case-insensitive substring match, mirroring <see cref="ElementFilterViewModel.SearchText" />'s
+    ///     existing substring-match semantics for the main displayed list.
+    /// </summary>
+    [Fact]
+    public void ElementFilterViewModel_AddableTypeFilterSearchText_NarrowsCandidatesCaseInsensitively()
+    {
+        // Arrange
+        var filter = new ElementFilterViewModel();
+        filter.SetCandidates(MixedCandidates);
+        filter.BeginAddableTypeFilterSearch();
+
+        // Act
+        filter.AddableTypeFilterSearchText = "DEF";
+
+        // Assert
+        Assert.Equal(new[] { "part def" }, filter.AddableTypeFilterCandidates);
+    }
+
+    /// <summary>
+    ///     Validates <see cref="ElementFilterViewModel.TryCommitAddableTypeFilterSearch" /> adds the
+    ///     current search's single matching candidate as a new active filter chip and returns
+    ///     <see langword="true" />.
+    /// </summary>
+    [Fact]
+    public void ElementFilterViewModel_TryCommitAddableTypeFilterSearch_MatchFound_AddsChipAndReturnsTrue()
+    {
+        // Arrange
+        var filter = new ElementFilterViewModel();
+        filter.SetCandidates(MixedCandidates);
+        filter.BeginAddableTypeFilterSearch();
+        filter.AddableTypeFilterSearchText = "package";
+
+        // Act
+        var committed = filter.TryCommitAddableTypeFilterSearch();
+
+        // Assert
+        Assert.True(committed);
+        Assert.Contains("package", filter.ActiveTypeFilters);
+    }
+
+    /// <summary>
+    ///     Validates <see cref="ElementFilterViewModel.TryCommitAddableTypeFilterSearch" /> is a no-op
+    ///     that returns <see langword="false" /> when the current search text matches no addable
+    ///     label.
+    /// </summary>
+    [Fact]
+    public void ElementFilterViewModel_TryCommitAddableTypeFilterSearch_NoMatch_ReturnsFalse()
+    {
+        // Arrange
+        var filter = new ElementFilterViewModel();
+        filter.SetCandidates(MixedCandidates);
+        filter.BeginAddableTypeFilterSearch();
+        filter.AddableTypeFilterSearchText = "not-a-real-label";
+
+        // Act
+        var committed = filter.TryCommitAddableTypeFilterSearch();
+
+        // Assert
+        Assert.False(committed);
+        Assert.Empty(filter.ActiveTypeFilters);
+    }
+
+    /// <summary>
     ///     Validates that <see cref="ElementFilterViewModel.SetCandidates" /> can be called
     ///     multiple times, and that the second call fully replaces the filter's state (chips
     ///     reset, displayed list recomputed).

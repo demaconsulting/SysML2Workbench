@@ -2,9 +2,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:DemaConsulting.SysML2Workbench.ElementPickerSubsystem"
              x:Class="DemaConsulting.SysML2Workbench.ElementPickerSubsystem.ElementFilterView"
-             x:DataType="local:ElementFilterViewModel">
+             x:DataType="local:ElementFilterViewModel"
+             AutomationProperties.AutomationId="ElementFilterRoot">
 
-  <StackPanel Spacing="6">
+  <!--
+    The AutomationId lives on this UserControl root, not the inner StackPanel: Avalonia's
+    default automation peer for a plain StackPanel does not report as a UIA control element,
+    so NovaWindows/UI Automation transparently skips it and reparents its children under the
+    nearest ancestor that IS a control element. Placing the id here is what actually makes it
+    discoverable via FindElement(AccessibilityId).
+  -->
+  <StackPanel Name="ElementFilterRoot" Spacing="6">
 
     <!-- Type-filter chip row (OR semantics) + "+" add-chip flyout -->
     <StackPanel Orientation="Horizontal" Spacing="4">
@@ -18,19 +26,27 @@
           <DataTemplate>
             <Border CornerRadius="8" Padding="6,2" Margin="0,0,4,4" Background="#E0E0E0">
               <StackPanel Orientation="Horizontal" Spacing="4">
-                <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding}" VerticalAlignment="Center" Foreground="#212121" />
                 <Button Content="&#x2715;" Tag="{Binding}" Click="OnRemoveTypeFilterClick"
-                        Padding="2,0" MinWidth="0" MinHeight="0" FontSize="10" />
+                        Padding="2,0" MinWidth="0" MinHeight="0" FontSize="10" Foreground="#212121" />
               </StackPanel>
             </Border>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
 
-      <Button Name="AddTypeFilterButton" Content="+" Padding="6,2" MinWidth="0">
+      <Button Name="AddTypeFilterButton" Content="+" Padding="6,2" MinWidth="0"
+              AutomationProperties.AutomationId="AddTypeFilterButton">
         <Button.Flyout>
           <Flyout Placement="Bottom">
-            <ListBox Name="AddableTypeFilterListBox" Width="160" MaxHeight="200" />
+            <StackPanel Spacing="4">
+              <TextBox Name="AddTypeFilterSearchTextBox" Width="160" PlaceholderText="Search types..."
+                       Text="{Binding AddableTypeFilterSearchText, Mode=TwoWay}"
+                       KeyDown="OnAddableTypeFilterSearchKeyDown"
+                       AutomationProperties.AutomationId="AddTypeFilterSearchTextBox" />
+              <ListBox Name="AddableTypeFilterListBox" Width="160" MaxHeight="200"
+                       ItemsSource="{Binding AddableTypeFilterCandidates}" />
+            </StackPanel>
           </Flyout>
         </Button.Flyout>
       </Button>

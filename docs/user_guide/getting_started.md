@@ -45,7 +45,9 @@ for setup prerequisites.
    the **Predefined Views** and **Diagnostics** panels each show a friendly
    "workspace is empty" message instead of rendering against nothing, and
    any open diagram tabs are closed. This is the same state the application
-   starts in before any source is added, not an error condition.
+   starts in before any source is added, not an error condition. Choosing
+   **File > Close All** does the same thing in one step - it clears every
+   added source at once, without needing to remove them one at a time.
 
 While a workspace is open, SysML2Workbench watches every added file and
 folder independently for external changes. If you edit a `.sysml` file in

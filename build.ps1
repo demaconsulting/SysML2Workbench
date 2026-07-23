@@ -106,9 +106,13 @@ if ($IntegrationTest) {
             if (-not $buildError) {
                 Write-Host "Running Appium IntegrationTests..."
                 $env:SYSML2WORKBENCH_APP_PATH = Join-Path (Get-Location) "publish/$rid/$exeName"
+                $env:SYSML2WORKBENCH_ARTIFACTS_DIR = Join-Path (Get-Location) "artifacts"
+                $env:SYSML2WORKBENCH_STARTUP_FILE = Join-Path (Get-Location) "test/DemaConsulting.SysML2Workbench.IntegrationTests/TestData/InspectionSample.sysml"
                 ./run-under-appium.ps1 -- dotnet test test/DemaConsulting.SysML2Workbench.IntegrationTests/DemaConsulting.SysML2Workbench.IntegrationTests.csproj --configuration Release --logger "trx;LogFilePrefix=appium-integration" --results-directory artifacts/tests
                 if ($LASTEXITCODE -ne 0) { $buildError = $true }
                 Remove-Item Env:\SYSML2WORKBENCH_APP_PATH -ErrorAction SilentlyContinue
+                Remove-Item Env:\SYSML2WORKBENCH_ARTIFACTS_DIR -ErrorAction SilentlyContinue
+                Remove-Item Env:\SYSML2WORKBENCH_STARTUP_FILE -ErrorAction SilentlyContinue
             }
         }
     }

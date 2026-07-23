@@ -23,6 +23,13 @@ sections:
                 tests:
                   - 'RemoveSource_RegisteredThenUnknownId_ReturnsTrueThenFalse'
 
+              - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-ClearSources'
+                title: 'The WorkspaceSourceSet shall remove every registered source at once.'
+                justification: |
+                  The File menu's "Close All" command needs a single, no-error way to reset the source set to empty rather than removing each source individually.
+                tests:
+                  - 'ClearSources_WithRegisteredSources_RemovesAllAndResolveReturnsEmpty'
+
               - id: 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-ResolveEmptySet'
                 title: 'The WorkspaceSourceSet shall resolve a zero-source set to an empty, non-error resolution.'
                 justification: |

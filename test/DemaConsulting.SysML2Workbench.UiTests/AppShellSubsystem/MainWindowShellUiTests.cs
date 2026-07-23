@@ -88,4 +88,50 @@ public sealed class MainWindowShellUiTests : IDisposable
         // Assert
         Assert.True(closed);
     }
+
+    /// <summary>
+    ///     Validates that clicking the File menu's "Close All" item reaches
+    ///     <see cref="MainWindowShell.CloseAllSourcesAsync" /> end-to-end - not just that the menu item exists
+    ///     (which is only proved elsewhere by discoverability) - by pre-loading one file source before showing
+    ///     the window, raising the item's <c>Click</c> event, pumping the dispatcher (retried briefly since the
+    ///     handler is <c>async void</c>), and asserting the shell's source set ends up empty.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task MainWindowView_CloseAllMenuItem_Click_ClosesAllSources()
+    {
+        // Arrange
+        var tempRoot = Directory.CreateTempSubdirectory("sysml2workbench-ui-tests-").FullName;
+        try
+        {
+            var filePath = Path.Combine(tempRoot, "Sample.sysml");
+            await File.WriteAllTextAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
+
+            using var shell = CreateShell();
+            await shell.AddFileSourceAsync(filePath);
+            Assert.Single(shell.CurrentWorkspace.Sources);
+
+            var window = new MainWindowView(shell);
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            var closeAllMenuItem = window.FindControl<MenuItem>("CloseAllMenuItem");
+            Assert.NotNull(closeAllMenuItem);
+
+            // Act
+            closeAllMenuItem.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));
+
+            // The click handler is async void; pump the dispatcher briefly until the mutation completes.
+            for (var i = 0; i < 20 && shell.CurrentWorkspace.Sources.Count > 0; i++)
+            {
+                Dispatcher.UIThread.RunJobs();
+                await Task.Delay(10);
+            }
+
+            // Assert
+            Assert.Empty(shell.CurrentWorkspace.Sources);
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
 }
