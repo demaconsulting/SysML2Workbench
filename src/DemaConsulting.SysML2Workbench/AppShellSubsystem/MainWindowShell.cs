@@ -350,6 +350,27 @@ public sealed class MainWindowShell : IDisposable
     }
 
     /// <summary>
+    ///     Closes every source in the workspace's source set at once, returning the shell to the same valid
+    ///     empty state used at construction (no sources, no watched sources, no open tabs/diagnostics).
+    /// </summary>
+    /// <returns>The freshly resolved and loaded (empty) workspace snapshot.</returns>
+    public async Task<WorkspaceSnapshot> CloseAllSourcesAsync()
+    {
+        try
+        {
+            _sourceSet.ClearSources();
+            var snapshot = await ApplySourceSetChangeAsync().ConfigureAwait(false);
+            _logger.Log(LogLevel.Info, "All workspace sources closed");
+            return snapshot;
+        }
+        catch (Exception ex)
+        {
+            _logger.Log(LogLevel.Error, "Failed to close all workspace sources", ex);
+            throw;
+        }
+    }
+
+    /// <summary>
     ///     Resolves the current <see cref="_sourceSet" />, loads the resulting workspace, applies the snapshot,
     ///     diffs the previous and new watch sets to call <see cref="FileWatcher.WatchSource" />/
     ///     <see cref="FileWatcher.UnwatchSource" /> only for sources that actually changed, and raises

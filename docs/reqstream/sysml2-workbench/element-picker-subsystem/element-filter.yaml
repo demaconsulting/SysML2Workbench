@@ -51,3 +51,22 @@ sections:
                   - 'ElementFilterViewModel_AddTypeFilter_DuplicateLabel_KeepsSingleChip'
                   - 'ElementFilterViewModel_RemoveTypeFilter_PresentAndAbsentLabels_BehavesGracefully'
                   - 'ElementFilterViewModel_GetAddableTypeLabels_ExcludesActiveChips'
+
+              - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-SearchAndCommitAddableTypeFilter'
+                title: 'The ElementFilter shall support a type-ahead search over the addable (not yet
+                  active) type labels: BeginAddableTypeFilterSearch resets the search text and populates
+                  the full addable candidate set, AddableTypeFilterSearchText narrows that set to labels
+                  containing the search text case-insensitively, and TryCommitAddableTypeFilterSearch adds
+                  the top matching label as a new chip (returning true) or leaves the chip set unchanged
+                  (returning false) when no candidate matches.'
+                justification: |
+                  A pointer click into the "+" add-flyout''s open list races the flyout''s own light-dismiss
+                  overlay under UI-automation drivers (confirmed by direct observation under NovaWindows),
+                  so a type-ahead search box that commits via Enter gives both end users and UI-automation
+                  tests a reliable, keyboard-only way to add a type-filter chip without relying on pointer
+                  hit-testing into a transient popup.
+                tests:
+                  - 'ElementFilterViewModel_BeginAddableTypeFilterSearch_ResetsSearchAndPopulatesFullSet'
+                  - 'ElementFilterViewModel_AddableTypeFilterSearchText_NarrowsCandidatesCaseInsensitively'
+                  - 'ElementFilterViewModel_TryCommitAddableTypeFilterSearch_MatchFound_AddsChipAndReturnsTrue'
+                  - 'ElementFilterViewModel_TryCommitAddableTypeFilterSearch_NoMatch_ReturnsFalse'

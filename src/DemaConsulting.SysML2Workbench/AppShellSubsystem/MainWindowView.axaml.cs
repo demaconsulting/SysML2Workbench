@@ -68,6 +68,7 @@ public partial class MainWindowView : Window
 
         AddFileSourceMenuItem.Click += OnAddFileSourceClick;
         AddFolderSourceMenuItem.Click += OnAddFolderSourceClick;
+        CloseAllMenuItem.Click += OnCloseAllMenuItemClick;
 
         // Each View-menu item's DataContext is explicitly set to its panel view model (distinct from this
         // window's own DataContext) so the one-way IsChecked binding above resolves against the panel's
@@ -310,6 +311,23 @@ public partial class MainWindowView : Window
         catch (Exception ex)
         {
             _workspacePanelViewModel.StatusMessage = $"Failed to open folder: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    ///     Handles the File menu's "Close All" click by closing every currently loaded workspace source,
+    ///     returning the workspace to the same empty state used at application startup.
+    /// </summary>
+    private async void OnCloseAllMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await _shell.CloseAllSourcesAsync();
+            RefreshPanelsFromWorkspace();
+        }
+        catch (Exception ex)
+        {
+            _workspacePanelViewModel.StatusMessage = $"Failed to close all sources: {ex.Message}";
         }
     }
 

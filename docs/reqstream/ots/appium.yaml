@@ -24,3 +24,4 @@ sections:
               - 'DesktopApp_ViewMenu_ViewBuilderDialogMenuItem_IsDiscoverableAndEnabled'
               - 'DesktopApp_QueryMenu_QueryDialogMenuItem_IsDiscoverableAndEnabled'
               - 'DesktopApp_HelpMenu_AboutMenuItem_OpensAndClosesAboutDialog'
+              - 'DesktopApp_FileMenu_CloseAllMenuItem_IsDiscoverableAndEnabled'

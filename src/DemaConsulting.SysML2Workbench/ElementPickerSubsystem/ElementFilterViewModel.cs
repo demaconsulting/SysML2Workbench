@@ -45,6 +45,12 @@ public sealed partial class ElementFilterViewModel : ObservableObject
     [ObservableProperty]
     private IReadOnlyList<string> _displayedItems = [];
 
+    [ObservableProperty]
+    private string? _addableTypeFilterSearchText = "";
+
+    [ObservableProperty]
+    private IReadOnlyList<string> _addableTypeFilterCandidates = [];
+
     /// <summary>
     ///     Creates the filter view model in its empty initial state: no candidates, no active
     ///     type filters, empty search text, and an empty displayed list. Callers populate it
@@ -130,6 +136,70 @@ public sealed partial class ElementFilterViewModel : ObservableObject
         return AvailableTypeLabels
             .Where(label => !ActiveTypeFilters.Contains(label))
             .ToList();
+    }
+
+    /// <summary>
+    ///     Resets <see cref="AddableTypeFilterSearchText" /> to empty and recomputes
+    ///     <see cref="AddableTypeFilterCandidates" /> from the current addable set. Called each
+    ///     time the "+" add-filter flyout is about to open, so it always starts showing the full
+    ///     addable set rather than stale search text/results left over from a previous opening.
+    /// </summary>
+    public void BeginAddableTypeFilterSearch()
+    {
+        AddableTypeFilterSearchText = "";
+        RecomputeAddableTypeFilterCandidates();
+    }
+
+    /// <summary>
+    ///     Adds the first entry in <see cref="AddableTypeFilterCandidates" /> (the current
+    ///     search's top/only match) as a new active filter chip, the same "type ahead then
+    ///     commit" semantics as a combo box's highlighted match. A no-op that returns
+    ///     <see langword="false" /> when the current search text matches no addable label.
+    /// </summary>
+    /// <returns>
+    ///     <see langword="true" /> when a chip was added; <see langword="false" /> when
+    ///     <see cref="AddableTypeFilterCandidates" /> was empty.
+    /// </returns>
+    public bool TryCommitAddableTypeFilterSearch()
+    {
+        var topMatch = AddableTypeFilterCandidates.FirstOrDefault();
+        if (topMatch is null)
+        {
+            return false;
+        }
+
+        AddTypeFilter(topMatch);
+        return true;
+    }
+
+    /// <summary>
+    ///     Recomputes <see cref="AddableTypeFilterCandidates" /> from <see cref="GetAddableTypeLabels" />,
+    ///     narrowed by a case-insensitive substring match against <see cref="AddableTypeFilterSearchText" />
+    ///     (an empty/null search shows every addable label).
+    /// </summary>
+    private void RecomputeAddableTypeFilterCandidates()
+    {
+        IEnumerable<string> query = GetAddableTypeLabels();
+
+        var searchText = AddableTypeFilterSearchText;
+        if (!string.IsNullOrEmpty(searchText))
+        {
+            query = query.Where(label => label.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        }
+
+        AddableTypeFilterCandidates = query.ToList();
+    }
+
+    /// <summary>
+    ///     CommunityToolkit.Mvvm-generated hook invoked whenever
+    ///     <see cref="AddableTypeFilterSearchText" /> changes (via the add-filter flyout's
+    ///     two-way-bound search <c>TextBox</c>), recomputing <see cref="AddableTypeFilterCandidates" />
+    ///     so the flyout's list narrows live as the user types.
+    /// </summary>
+    /// <param name="value">The new search text value.</param>
+    partial void OnAddableTypeFilterSearchTextChanged(string? value)
+    {
+        RecomputeAddableTypeFilterCandidates();
     }
 
     /// <summary>

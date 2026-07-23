@@ -191,6 +191,19 @@ path.
   resolve which file it displays without `MainWindowShell` needing to
   expose `OpenTabs` internals further.
 
+**CloseAllSourcesAsync**: Closes every workspace source at once.
+
+- *Parameters*: none.
+- *Returns*: `Task<WorkspaceSnapshot>` — the freshly resolved and loaded
+  (empty) workspace snapshot.
+- *Postconditions*: `WorkspaceSourceSet.ClearSources` removes every
+  registered source, then the same watch/unwatch/reload/`SourcesChanged`
+  reconciliation pipeline used by `AddFileSourceAsync`/`AddFolderSourceAsync`/
+  `RemoveSourceAsync` is re-run, unwatching every previously watched source
+  and returning the shell to the exact same valid empty state used at
+  construction (no sources, no open tabs, no diagnostics). Backs the File
+  menu's "Close All" command.
+
 **CanExportTabAsSysml**: Reports whether an open diagram tab has a derivable
 source definition and can export its diagram as a SysML snippet.
 
@@ -259,8 +272,9 @@ the time subscribers observe the notification.
 
 - **WorkspaceSubsystem** — loads and refreshes the workspace state.
 - **WorkspaceSourceSet** — owned by the shell; mutated by
-  `AddFileSourceAsync`/`AddFolderSourceAsync`/`RemoveSourceAsync` and
-  re-resolved before every `WorkspaceModel` load, reload, and watcher diff.
+  `AddFileSourceAsync`/`AddFolderSourceAsync`/`RemoveSourceAsync`/
+  `CloseAllSourcesAsync` and re-resolved before every `WorkspaceModel` load,
+  reload, and watcher diff.
 - **ViewCatalogPresenter** — supplies predefined view choices.
 - **ViewDefinitionModel** — captures custom-view authoring state.
 - **SysmlSnippetGenerator** — exports custom-view definitions as SysML text.

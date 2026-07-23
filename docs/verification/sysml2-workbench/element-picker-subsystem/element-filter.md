@@ -93,3 +93,23 @@ Verified by `ElementFilterViewModelTests.RemoveTypeFilter_PresentAndAbsentLabels
 `AvailableTypeLabels` minus every currently-active chip, so the "+" add-flyout never re-offers a
 label that is already active. Verified by
 `ElementFilterViewModelTests.GetAddableTypeLabels_ExcludesActiveChips`.
+
+**BeginAddableTypeFilterSearch_ResetsSearchAndPopulatesFullSet**: Opening the "+" add-flyout
+resets `AddableTypeFilterSearchText` to empty and populates `AddableTypeFilterCandidates` with the
+full addable (not yet active) label set. Verified by
+`ElementFilterViewModelTests.ElementFilterViewModel_BeginAddableTypeFilterSearch_ResetsSearchAndPopulatesFullSet`.
+
+**AddableTypeFilterSearchText_NarrowsCandidatesCaseInsensitively**: Setting
+`AddableTypeFilterSearchText` narrows `AddableTypeFilterCandidates` to only the addable labels whose
+text contains the search text, case-insensitively. Verified by
+`ElementFilterViewModelTests.ElementFilterViewModel_AddableTypeFilterSearchText_NarrowsCandidatesCaseInsensitively`.
+
+**TryCommitAddableTypeFilterSearch_MatchFound_AddsChipAndReturnsTrue**: When the current search
+narrows to at least one addable candidate, `TryCommitAddableTypeFilterSearch()` adds the top
+matching label as a new chip in `ActiveTypeFilters` and returns `true`. Verified by
+`ElementFilterViewModelTests.ElementFilterViewModel_TryCommitAddableTypeFilterSearch_MatchFound_AddsChipAndReturnsTrue`.
+
+**TryCommitAddableTypeFilterSearch_NoMatch_ReturnsFalse**: When the current search matches no
+addable candidate, `TryCommitAddableTypeFilterSearch()` leaves `ActiveTypeFilters` unchanged and
+returns `false`. Verified by
+`ElementFilterViewModelTests.ElementFilterViewModel_TryCommitAddableTypeFilterSearch_NoMatch_ReturnsFalse`.

@@ -658,6 +658,49 @@ public sealed class MainWindowShellTests : IDisposable
     }
 
     /// <summary>
+    ///     Validates that <see cref="MainWindowShell.CloseAllSourcesAsync" /> closes every registered source at
+    ///     once (a folder plus a file), producing the same valid empty snapshot shape as removing every source
+    ///     one at a time, unwatching every previously watched source, and raising
+    ///     <see cref="MainWindowShell.SourcesChanged" /> for every add plus the close-all.
+    /// </summary>
+    [Fact]
+    public async Task CloseAllSourcesAsync_WithMultipleSources_ProducesEmptySnapshotAndUnwatchesEverything()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        var secondRoot = Directory.CreateTempSubdirectory("sysml2workbench-tests-").FullName;
+        try
+        {
+            var filePath = Path.Combine(secondRoot, "Other.sysml");
+            await File.WriteAllTextAsync(filePath, "package Other {\n    part def Bracket;\n}\n", TestContext.Current.CancellationToken);
+
+            var fileWatcher = new FileWatcher(TimeSpan.FromMilliseconds(1));
+            using var shell = CreateShell(fileWatcher);
+            var sourcesChangedCount = 0;
+            shell.SourcesChanged += (_, _) => sourcesChangedCount++;
+
+            await shell.AddFolderSourceAsync(_tempRoot);
+            await shell.AddFileSourceAsync(filePath);
+            Assert.Equal(2, shell.CurrentWorkspace.Sources.Count);
+
+            // Act
+            var snapshot = await shell.CloseAllSourcesAsync();
+
+            // Assert: a valid, empty snapshot; nothing is watched; and every mutation (2 adds + 1 close-all)
+            // raised the event.
+            Assert.Empty(snapshot.Sources);
+            Assert.Empty(snapshot.Files);
+            Assert.Empty(shell.CurrentWorkspace.Sources);
+            Assert.Empty(fileWatcher.WatchedSourceIds);
+            Assert.Equal(3, sourcesChangedCount);
+        }
+        finally
+        {
+            Directory.Delete(secondRoot, recursive: true);
+        }
+    }
+
+    /// <summary>
     ///     Validates that <see cref="MainWindowShell.SourcesChanged" /> is raised for each add mutation, and that
     ///     it is not raised at construction time (construction only establishes the initial empty snapshot; it
     ///     does not represent a source-set mutation).

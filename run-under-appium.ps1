@@ -99,6 +99,48 @@ try {
         exit 1
     }
 
+    if ($IsWindows) {
+        # Windows/UI Automation refuses SetForegroundWindow/SetFocus for any
+        # process while the interactive console session is locked (the
+        # desktop is switched to the secure Winlogon/LockApp desktop, which
+        # is isolated from automation). When that happens, every NovaWindows
+        # test fails slowly (~10s each) with a cryptic
+        # "Failed to locate window of the app." error that looks like a code
+        # regression but is actually just an environment precondition no
+        # test/code change can fix. Detect it up front and fail fast instead.
+        Add-Type -Namespace RunUnderAppium -Name NativeMethods -MemberDefinition @'
+[DllImport("user32.dll")]
+public static extern System.IntPtr GetForegroundWindow();
+
+[DllImport("user32.dll")]
+public static extern uint GetWindowThreadProcessId(System.IntPtr hWnd, out uint lpdwProcessId);
+'@ -ErrorAction SilentlyContinue
+
+        try {
+            $foregroundWindow = [RunUnderAppium.NativeMethods]::GetForegroundWindow()
+            $foregroundProcessName = $null
+            if ($foregroundWindow -ne [System.IntPtr]::Zero) {
+                $foregroundProcessId = 0
+                [void][RunUnderAppium.NativeMethods]::GetWindowThreadProcessId($foregroundWindow, [ref]$foregroundProcessId)
+                if ($foregroundProcessId -gt 0) {
+                    $foregroundProcess = Get-Process -Id $foregroundProcessId -ErrorAction SilentlyContinue
+                    $foregroundProcessName = $foregroundProcess.ProcessName
+                }
+            }
+
+            if ($foregroundProcessName -in @('LockApp', 'LogonUI')) {
+                Write-Error "The interactive console session is locked (foreground window belongs to '$foregroundProcessName'); Appium/UI Automation cannot attach to application windows while locked (Windows blocks SetForegroundWindow/SetFocus on the locked secure desktop). Unlock the session and retry."
+                exit 1
+            }
+        } catch {
+            # Best-effort diagnostic only: if the probe itself fails for any
+            # reason (e.g. restricted/non-interactive CI service session
+            # with no accessible foreground window), do not block the run -
+            # fall through and let the wrapped tests run/fail normally.
+            Write-Host "Session-lock preflight check could not run ($($_.Exception.Message)); continuing."
+        }
+    }
+
     Write-Host "Running: $commandExe $($commandArgs -join ' ')"
     & $commandExe @commandArgs
     $exitCode = $LASTEXITCODE

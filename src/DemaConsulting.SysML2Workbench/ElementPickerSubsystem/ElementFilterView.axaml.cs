@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 
 namespace DemaConsulting.SysML2Workbench.ElementPickerSubsystem;
@@ -42,10 +43,11 @@ public partial class ElementFilterView : UserControl
     public ElementFilterViewModel? ViewModel => DataContext as ElementFilterViewModel;
 
     /// <summary>
-    ///     Populates <see cref="AddableTypeFilterListBox" /> from the view model's currently
-    ///     addable type labels each time the "+" button's flyout is about to open, so the
-    ///     list always reflects the latest workspace/active-filter state rather than a stale
-    ///     snapshot from construction time.
+    ///     Resets the add-filter flyout's search box and candidate list each time the "+"
+    ///     button's flyout is about to open, so it always starts showing the full addable set
+    ///     (see <see cref="ElementFilterViewModel.BeginAddableTypeFilterSearch" />) rather than
+    ///     stale search text/results from a previous opening. Also moves keyboard focus into the
+    ///     search box so keyboard users can immediately start typing to narrow the list.
     /// </summary>
     private void OnAddTypeFilterFlyoutOpening(object? sender, EventArgs e)
     {
@@ -54,7 +56,30 @@ public partial class ElementFilterView : UserControl
             return;
         }
 
-        AddableTypeFilterListBox.ItemsSource = ViewModel.GetAddableTypeLabels();
+        ViewModel.BeginAddableTypeFilterSearch();
+        AddTypeFilterSearchTextBox.Focus();
+    }
+
+    /// <summary>
+    ///     Commits the add-filter search's top/only match as a new chip when the user presses
+    ///     Enter in <see cref="AddTypeFilterSearchTextBox" /> - the keyboard/automation-friendly
+    ///     counterpart to clicking a row in <see cref="AddableTypeFilterListBox" /> directly.
+    ///     A no-op (beyond marking the key event handled) when the current search matches
+    ///     nothing.
+    /// </summary>
+    private void OnAddableTypeFilterSearchKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || ViewModel is null)
+        {
+            return;
+        }
+
+        if (ViewModel.TryCommitAddableTypeFilterSearch())
+        {
+            AddTypeFilterButton.Flyout?.Hide();
+        }
+
+        e.Handled = true;
     }
 
     /// <summary>

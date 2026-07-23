@@ -44,6 +44,11 @@ regardless of kind. Verified by `WorkspaceSourceSetTests.Sources_PreservesRegist
 drops it from `Sources`; removing that same id again, or any unknown id, returns `false` without throwing.
 Verified by `WorkspaceSourceSetTests.RemoveSource_RegisteredThenUnknownId_ReturnsTrueThenFalse`.
 
+**ClearSources_WithRegisteredSources_RemovesAllAndResolveReturnsEmpty**: Calling `ClearSources` after registering
+both a file and a folder source empties `Sources`, and a subsequent `Resolve()` produces empty `MergedFiles` and
+attribution maps. Verified by
+`WorkspaceSourceSetTests.ClearSources_WithRegisteredSources_RemovesAllAndResolveReturnsEmpty`.
+
 **Resolve_ZeroSources_ReturnsEmptyResolution**: Resolving a `WorkspaceSourceSet` with zero registered sources
 produces an empty `MergedFiles` list and empty attribution maps, with no exception thrown. Verified by
 `WorkspaceSourceSetTests.Resolve_ZeroSources_ReturnsEmptyResolution`.

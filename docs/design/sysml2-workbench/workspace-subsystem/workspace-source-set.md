@@ -70,6 +70,14 @@ itself, a `Folder` source maps to its discovered files).
   Removing an unknown id is a no-op that returns `false` rather than
   throwing.
 
+**ClearSources**: Removes every registered source at once.
+
+- *Parameters*: `None`.
+- *Returns*: `void`.
+- *Postconditions*: `Sources` is empty. A no-op (not an error) when already
+  empty. Backs `MainWindowShell.CloseAllSourcesAsync`, which the File menu's
+  "Close All" command calls.
+
 **Resolve**: Computes the merged, deduplicated file resolution across every
 registered source.
 

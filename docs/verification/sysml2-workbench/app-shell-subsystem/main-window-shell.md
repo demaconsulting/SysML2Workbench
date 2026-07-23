@@ -92,6 +92,12 @@ source produces a valid empty snapshot (zero sources, zero files), clears every 
 source's file watcher. Verified by
 `MainWindowShellTests.RemoveSourceAsync_DownToZeroSources_ProducesEmptySnapshotAndUnwatchesEverything`.
 
+**CloseAllSourcesAsync_WithMultipleSources_ProducesEmptySnapshotAndUnwatchesEverything**: Closing all sources at
+once (starting from a folder plus a file source) produces the same valid empty snapshot shape as removing every
+source one at a time, unwatches every previously watched source, and raises `SourcesChanged` for every add plus
+the close-all. Verified by
+`MainWindowShellTests.CloseAllSourcesAsync_WithMultipleSources_ProducesEmptySnapshotAndUnwatchesEverything`.
+
 **SelectPredefinedView_NoWorkspaceOpened_ThrowsInvalidOperationException**: Selecting a predefined view while zero
 workspace sources are open throws `InvalidOperationException` rather than rendering against an empty workspace.
 Verified by `MainWindowShellTests.SelectPredefinedView_NoWorkspaceOpened_ThrowsInvalidOperationException`.

@@ -6,7 +6,7 @@
         x:Class="DemaConsulting.SysML2Workbench.AppShellSubsystem.MainWindowView"
         Title="SysML2Workbench"
         Icon="avares://DemaConsulting.SysML2Workbench/Assets/Icon.png"
-        Width="1280" Height="800">
+        Width="1024" Height="700">
 
   <DockPanel DragDrop.AllowDrop="True">
 
@@ -20,6 +20,11 @@
         <MenuItem Name="AddFolderSourceMenuItem" Header="Open _Folder..." AutomationProperties.AutomationId="AddFolderSourceMenuItem">
           <MenuItem.Icon>
             <mi:MaterialIcon Kind="FolderOpenOutline" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Name="CloseAllMenuItem" Header="Close _All" Click="OnCloseAllMenuItemClick" AutomationProperties.AutomationId="CloseAllMenuItem">
+          <MenuItem.Icon>
+            <mi:MaterialIcon Kind="CloseBoxMultipleOutline" />
           </MenuItem.Icon>
         </MenuItem>
         <Separator />

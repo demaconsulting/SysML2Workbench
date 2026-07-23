@@ -124,6 +124,32 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     }
 
     /// <summary>
+    ///     Validates that <see cref="WorkspaceSourceSet.ClearSources" /> removes every registered source at
+    ///     once, leaving <see cref="WorkspaceSourceSet.Sources" /> empty and <see cref="WorkspaceSourceSet.Resolve" />
+    ///     resolving to an empty result - a no-error, first-class "close all" operation.
+    /// </summary>
+    [Fact]
+    public async Task ClearSources_WithRegisteredSources_RemovesAllAndResolveReturnsEmpty()
+    {
+        // Arrange
+        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
+        var sourceSet = new WorkspaceSourceSet();
+        sourceSet.AddFile(filePath);
+        sourceSet.AddFolder(_tempRoot);
+
+        // Act
+        sourceSet.ClearSources();
+        var resolution = sourceSet.Resolve();
+
+        // Assert
+        Assert.Empty(sourceSet.Sources);
+        Assert.Empty(resolution.MergedFiles);
+        Assert.Empty(resolution.FileToSourceId);
+        Assert.Empty(resolution.SourceIdToFiles);
+    }
+
+    /// <summary>
     ///     Validates that resolving a folder source discovers every <c>.sysml</c> file under it, recursively.
     /// </summary>
     [Fact]

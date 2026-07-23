@@ -16,6 +16,16 @@ cross-platform `build` job's `Test` step and `build.ps1 -Test`) they are
 excluded via `--filter "Category!=Integration"`, since no Appium/AT-SPI
 server is started in those runs.
 
+Several of these tests mutate shared workspace state (adding a real source, or relying on the
+`SYSML2WORKBENCH_STARTUP_FILE`-preloaded fixture) against the one `AppFixture`-launched application process shared
+across every `[Fact]` in this class (`[Collection("AppFixture")]`). Rather than resetting the workspace before
+every test - which would deterministically wipe the `STARTUP_FILE` preload before the one test that depends on it
+ever ran, since that preload only happens once at process launch and cannot be redone per test without driving the
+very native "Open File" dialog this design avoids - cleanup is owned only by the one state-mutating test itself,
+via `AppFixture.CloseAllSources()` (clicks File > Close All through the real accessibility tree) in a `finally`
+block. Every other test in this class only asserts menu-item discoverability/enablement, which holds regardless of
+whether a source happens to be loaded.
+
 ### Test Scenarios
 
 **DesktopApp_Launch_ShowsMainWindowWithExpectedTitle**: Confirms the Appium
@@ -37,17 +47,37 @@ The item is not actually clicked, since doing so would open the OS-native
 **DesktopApp_ViewMenu_PredefinedViewsMenuItem_IsDiscoverableAndEnabled**,
 **DesktopApp_ViewMenu_DiagnosticsMenuItem_IsDiscoverableAndEnabled**,
 **DesktopApp_ViewMenu_ViewBuilderDialogMenuItem_IsDiscoverableAndEnabled**,
-and **DesktopApp_QueryMenu_QueryDialogMenuItem_IsDiscoverableAndEnabled**:
+**DesktopApp_QueryMenu_QueryDialogMenuItem_IsDiscoverableAndEnabled**, and
+**DesktopApp_FileMenu_CloseAllMenuItem_IsDiscoverableAndEnabled**:
 Each opens its respective top-level menu (`File`/`View`/`Query`) and locates
 one child menu item by automation id, asserting it is both displayed and
 enabled, then closes the menu via Escape without clicking the item. These
 extend automation-id coverage breadth-first across every subsystem's
 top-level entry point (workspace panel, predefined views, diagnostics,
-custom view builder, query dialog) without needing to click through to a
-dialog or native OS surface that this tier cannot yet reliably tear down.
+custom view builder, query dialog, close-all) without needing to click
+through to a dialog or native OS surface that this tier cannot yet reliably
+tear down.
 
 **DesktopApp_HelpMenu_AboutMenuItem_OpensAndClosesAboutDialog**: Opens the
 Help menu, clicks "About" (`AboutMenuItem`), confirms the modal About
 dialog's `AboutDialogOkButton` becomes visible, then dismisses it - proving
 a full menu-click-to-modal-dialog round trip works end-to-end through the
 real windowed application.
+
+**DesktopApp_QueryDialog_AddTypeFilterButton_CapturesInspectionScreenshot**: Opens the Query dialog and captures a
+cropped PNG of the shared `ElementFilterView`'s "+" add-type-filter button (`AddTypeFilterButton`) to
+`artifacts/inspection/query-dialog-add-type-filter-button.png` via `InspectionScreenshot.CaptureElement`, then
+closes the dialog. Not a pass/fail correctness assertion (only that the button is displayed and the capture
+mechanism completes without error) - the actual visual review of the saved image is a human/agent task, since
+automatically detecting styling defects is not a suitable CI gate. Honors `SYSML2WORKBENCH_THEME` for which theme
+the single capture reflects.
+
+**DesktopApp_QueryDialog_PopulatedWithSourceAndChip_CapturesInspectionScreenshot**: Opens the Query dialog against
+a workspace already populated by the `SYSML2WORKBENCH_STARTUP_FILE`-preloaded `TestData/InspectionSample.sysml`
+fixture (avoiding the unautomatable native "Open File" dialog), clicks `AddTypeFilterButton`, selects the
+"attribute" entry from its flyout `ListBox` to add a real filter chip, then captures the whole filter-row region
+(`ElementFilterRoot`) to `artifacts/inspection/query-dialog-populated-with-chip.png` - proving the already-applied
+`ElementFilterView.axaml` chip-foreground contrast fix (`Foreground="#212121"` on the chip text and its "X" remove
+button) is legible with a real populated chip, not just an empty "+" button. Resets the shared session's workspace
+back to empty via `AppFixture.CloseAllSources()` in a `finally` block (see the Verification Approach section
+above for why cleanup is owned only by this one test).

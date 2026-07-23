@@ -196,6 +196,14 @@ public sealed class WorkspaceSourceSet
     }
 
     /// <summary>
+    ///     Removes every registered source, leaving the set empty. A no-op (not an error) when already empty.
+    /// </summary>
+    public void ClearSources()
+    {
+        _sources.Clear();
+    }
+
+    /// <summary>
     ///     Resolves every registered source into a single, deduplicated file list plus per-file and per-source
     ///     attribution.
     /// </summary>
