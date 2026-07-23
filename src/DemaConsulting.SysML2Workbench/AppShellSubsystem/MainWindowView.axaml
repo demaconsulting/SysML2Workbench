@@ -35,17 +35,17 @@
         </MenuItem>
       </MenuItem>
       <MenuItem Header="_View">
-        <MenuItem Name="WorkspacePanelMenuItem" Header="_Workspace" Click="OnWorkspacePanelMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" AutomationProperties.AutomationId="WorkspacePanelMenuItem">
+        <MenuItem Name="WorkspacePanelMenuItem" Header="_Workspace" Click="OnWorkspacePanelMenuItemClick" x:DataType="dockControls:Tool" ToggleType="CheckBox" IsChecked="{Binding IsOpen, Mode=OneWay}" AutomationProperties.AutomationId="WorkspacePanelMenuItem">
           <MenuItem.Icon>
             <mi:MaterialIcon Kind="FileTree" />
           </MenuItem.Icon>
         </MenuItem>
-        <MenuItem Name="PredefinedViewsMenuItem" Header="_Predefined Views" Click="OnPredefinedViewsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" AutomationProperties.AutomationId="PredefinedViewsMenuItem">
+        <MenuItem Name="PredefinedViewsMenuItem" Header="_Predefined Views" Click="OnPredefinedViewsMenuItemClick" x:DataType="dockControls:Tool" ToggleType="CheckBox" IsChecked="{Binding IsOpen, Mode=OneWay}" AutomationProperties.AutomationId="PredefinedViewsMenuItem">
           <MenuItem.Icon>
             <mi:MaterialIcon Kind="ViewList" />
           </MenuItem.Icon>
         </MenuItem>
-        <MenuItem Name="DiagnosticsMenuItem" Header="_Diagnostics" Click="OnDiagnosticsMenuItemClick" x:DataType="dockControls:Tool" IsChecked="{Binding IsOpen, Mode=OneWay}" AutomationProperties.AutomationId="DiagnosticsMenuItem">
+        <MenuItem Name="DiagnosticsMenuItem" Header="_Diagnostics" Click="OnDiagnosticsMenuItemClick" x:DataType="dockControls:Tool" ToggleType="CheckBox" IsChecked="{Binding IsOpen, Mode=OneWay}" AutomationProperties.AutomationId="DiagnosticsMenuItem">
           <MenuItem.Icon>
             <mi:MaterialIcon Kind="AlertCircleOutline" />
           </MenuItem.Icon>

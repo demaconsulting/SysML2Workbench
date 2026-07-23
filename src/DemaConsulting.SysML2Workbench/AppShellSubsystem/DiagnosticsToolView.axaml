@@ -7,7 +7,8 @@
   <DockPanel Margin="4">
     <TextBlock DockPanel.Dock="Top" Text="Diagnostics" FontWeight="Bold" />
     <TextBlock DockPanel.Dock="Top" Name="EmptyStateTextBlock" IsVisible="{Binding HasEmptyStateMessage}" Text="{Binding EmptyStateMessage}" TextWrapping="Wrap" />
-    <ListBox Name="DiagnosticsListBox" ItemsSource="{Binding VisibleDiagnostics}" />
+    <ListBox Name="DiagnosticsListBox" ItemsSource="{Binding VisibleDiagnostics}"
+             AutomationProperties.AutomationId="DiagnosticsListBox" />
   </DockPanel>
 
 </UserControl>
