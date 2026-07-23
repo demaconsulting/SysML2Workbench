@@ -530,7 +530,12 @@ jobs:
   build-docs:
     name: Build Documents
     runs-on: windows-latest
-    needs: [build, codeql]
+    # Must also wait for appium-windows-integration-tests: its trx artifact is the only
+    # evidence for the Appium-DriveDesktopApplicationEndToEnd/Appium-LocateControlsByAutomationId
+    # requirements, and without this dependency the two jobs can run concurrently - if this job's
+    # "Download all job artifacts" step happens to run before that job finishes uploading its
+    # artifact, those two requirements are silently missing evidence and --enforce fails.
+    needs: [build, codeql, appium-windows-integration-tests]
     permissions:
       contents: read
 
