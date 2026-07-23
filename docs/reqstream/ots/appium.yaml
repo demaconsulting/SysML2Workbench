@@ -10,6 +10,9 @@ sections:
               A system-level UI automation tier is needed that exercises the actual compiled application in a real window, complementing the headless and unit test tiers, and Windows is the only platform with a provisioned CI Appium driver today.
             tests:
               - 'DesktopApp_Launch_ShowsMainWindowWithExpectedTitle'
+              - 'DesktopApp_ViewMenu_WorkspacePanelMenuItem_TogglesWorkspacePanel'
+              - 'DesktopApp_ViewMenu_PredefinedViewsMenuItem_TogglesPredefinedViewsPanel'
+              - 'DesktopApp_ViewMenu_DiagnosticsMenuItem_TogglesDiagnosticsPanel'
 
           - id: 'Appium-LocateControlsByAutomationId'
             title: 'The SysML2Workbench repository shall expose interactive controls to Appium via AutomationProperties.AutomationId for reliable, name-independent lookup.'

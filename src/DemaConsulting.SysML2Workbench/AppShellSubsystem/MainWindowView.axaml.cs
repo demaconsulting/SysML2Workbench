@@ -149,14 +149,23 @@ public partial class MainWindowView : Window
     }
 
     /// <summary>
-    ///     Restores <paramref name="tool" /> to its original dock if it was hidden by a prior close (via
-    ///     <see cref="WorkbenchDockFactory" />'s <c>HideToolsOnClose</c> setting, a safe no-op if it is not
-    ///     currently hidden), then makes it the active and focused dockable in its owning dock. This never hides
-    ///     an already-open panel: clicking a View-menu item for a visible panel simply (re)focuses it.
+    ///     Toggles <paramref name="tool" />'s open/closed state, matching its View-menu item's checkable
+    ///     <c>IsChecked</c> binding (bound to <see cref="Tool.IsOpen" />). If the tool is currently closed
+    ///     (hidden by a prior close via <see cref="WorkbenchDockFactory" />'s <c>HideToolsOnClose</c> setting, or
+    ///     never opened), this restores it to its original dock and makes it the active and focused dockable
+    ///     there. If the tool is already open - regardless of whether it is the currently visible/front tab in a
+    ///     shared <see cref="ToolDock" /> (Workspace and Predefined Views share one) - this closes it instead,
+    ///     so the menu item behaves as a plain open/close toggle rather than requiring it to already be focused.
     /// </summary>
-    /// <param name="tool">The panel to show or bring into focus, reusing its existing long-lived instance.</param>
+    /// <param name="tool">The panel to show or hide, reusing its existing long-lived instance either way.</param>
     private void ShowOrFocusPanel(Tool tool)
     {
+        if (tool.IsOpen)
+        {
+            _dockFactory.CloseDockable(tool);
+            return;
+        }
+
         _dockFactory.RestoreDockable(tool);
         _dockFactory.SetActiveDockable(tool);
 

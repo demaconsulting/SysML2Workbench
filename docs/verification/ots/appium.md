@@ -64,6 +64,31 @@ dialog's `AboutDialogOkButton` becomes visible, then dismisses it - proving
 a full menu-click-to-modal-dialog round trip works end-to-end through the
 real windowed application.
 
+**DesktopApp_ViewMenu_WorkspacePanelMenuItem_TogglesWorkspacePanel**,
+**DesktopApp_ViewMenu_PredefinedViewsMenuItem_TogglesPredefinedViewsPanel**, and
+**DesktopApp_ViewMenu_DiagnosticsMenuItem_TogglesDiagnosticsPanel**: Unlike the
+`IsDiscoverableAndEnabled` scenarios above, these drive a full close/reopen
+round trip through `MainWindowView`'s `ShowOrFocusPanel`, which implements
+checkbox-style toggle semantics: a panel that is open (`Tool.IsOpen`) is
+destroyed/closed via `WorkbenchDockFactory.CloseDockable` on click, while a
+closed panel is restored, activated, and focused on click. Each test clicks
+its View-menu item once and polls for the corresponding panel's own
+automation id (`WorkspaceAddFileButton`, `PredefinedViewsListBox`,
+`DiagnosticsListBox`) to disappear - proving the panel was actually closed,
+not merely that the menu item is clickable - then clicks it a second time
+and polls for the same control to reappear and be displayed, proving
+reopening also brings the panel into view. All three panels start open per
+`WorkbenchDockFactory.CreateLayout`, so the first click always closes and
+the second always reopens, and each test restores the panel to its
+original open state by the end, leaving no residual effect for later
+tests. Checked state is verified purely through panel content presence
+rather than by reading the menu item's own checked state through UI
+Automation, because Avalonia's Win32 automation bridge does not currently
+expose the UIA Toggle pattern for `MenuItem` to native automation clients
+(confirmed via `System.Windows.Automation` and Inspect.exe, independent of
+this codebase) - a real Avalonia platform limitation, not a defect in this
+test suite.
+
 **DesktopApp_QueryDialog_AddTypeFilterButton_CapturesInspectionScreenshot**: Opens the Query dialog and captures a
 cropped PNG of the shared `ElementFilterView`'s "+" add-type-filter button (`AddTypeFilterButton`) to
 `artifacts/inspection/query-dialog-add-type-filter-button.png` via `InspectionScreenshot.CaptureElement`, then

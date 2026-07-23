@@ -116,6 +116,106 @@ public sealed class MainWindowShellIntegrationTests
     }
 
     /// <summary>
+    ///     Validates that clicking the View menu's "Workspace" item, found by the <c>WorkspacePanelMenuItem</c>
+    ///     automation id, toggles the Workspace panel open/closed - proving <c>MainWindowView</c>'s
+    ///     <c>ShowOrFocusPanel</c> genuinely destroys/recreates the panel's dock presence (checkbox semantics:
+    ///     checked means the panel exists and clicking removes it, unchecked means it does not and clicking
+    ///     creates/shows it), and that opening it also brings it into focus. See
+    ///     <see cref="AssertMenuItemTogglesPanel" /> for the full round-trip this drives.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_ViewMenu_WorkspacePanelMenuItem_TogglesWorkspacePanel()
+    {
+        AssertMenuItemTogglesPanel("View", "WorkspacePanelMenuItem", "WorkspaceAddFileButton");
+    }
+
+    /// <summary>
+    ///     Validates that clicking the View menu's "Predefined Views" item, found by the
+    ///     <c>PredefinedViewsMenuItem</c> automation id, toggles the Predefined Views panel open/closed - see
+    ///     <see cref="DesktopApp_ViewMenu_WorkspacePanelMenuItem_TogglesWorkspacePanel" /> for the shared
+    ///     checkbox-toggle semantics this proves.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_ViewMenu_PredefinedViewsMenuItem_TogglesPredefinedViewsPanel()
+    {
+        AssertMenuItemTogglesPanel("View", "PredefinedViewsMenuItem", "PredefinedViewsListBox");
+    }
+
+    /// <summary>
+    ///     Validates that clicking the View menu's "Diagnostics" item, found by the <c>DiagnosticsMenuItem</c>
+    ///     automation id, toggles the Diagnostics panel open/closed - see
+    ///     <see cref="DesktopApp_ViewMenu_WorkspacePanelMenuItem_TogglesWorkspacePanel" /> for the shared
+    ///     checkbox-toggle semantics this proves.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_ViewMenu_DiagnosticsMenuItem_TogglesDiagnosticsPanel()
+    {
+        AssertMenuItemTogglesPanel("View", "DiagnosticsMenuItem", "DiagnosticsListBox");
+    }
+
+    /// <summary>
+    ///     Drives one full close/reopen round trip through a View-menu panel-toggle item, leaving the panel open
+    ///     again afterward - the state every panel starts in per <c>WorkbenchDockFactory.CreateLayout</c> - so
+    ///     later tests in this shared <see cref="AppFixture" /> session see no residual side effect. Confirms
+    ///     the toggle behavior purely via the panel's own control (<paramref name="panelControlAutomationId" />)
+    ///     becoming absent then present again, rather than reading the menu item's checked state through UI
+    ///     Automation: Avalonia's Win32 automation bridge does not currently surface the UIA Toggle pattern for
+    ///     <c>MenuItem</c> to native automation clients (its cross-platform <c>MenuItemAutomationPeer</c>
+    ///     implements <c>IToggleProvider</c> internally, but that provider is never reachable from a real UI
+    ///     Automation client such as NovaWindows/System.Windows.Automation, which always throws "Unsupported
+    ///     Pattern" attempting to read it) - so content presence is the only reliable ground truth available.
+    /// </summary>
+    /// <param name="topLevelMenuName">The top-level menu's display name (e.g. "View").</param>
+    /// <param name="menuItemAutomationId">The child menu item's <c>AutomationProperties.AutomationId</c> value.</param>
+    /// <param name="panelControlAutomationId">
+    ///     An automation id unique to a control that is always present while the panel is open and the active
+    ///     tab (not conditionally hidden by panel content state, e.g. an always-visible toolbar button), used to
+    ///     confirm the panel is genuinely shown or hidden.
+    /// </param>
+    private void AssertMenuItemTogglesPanel(string topLevelMenuName, string menuItemAutomationId, string panelControlAutomationId)
+    {
+        var reopened = false;
+        try
+        {
+            // Act 1 - click once; the panel starts open, so this closes it.
+            ClickMenuItem(topLevelMenuName, menuItemAutomationId);
+            var closed = WaitUntil(() => _session.FindElements(MobileBy.AccessibilityId(panelControlAutomationId)).Count == 0);
+            Assert.True(closed, $"The panel control '{panelControlAutomationId}' was still present after closing it via '{menuItemAutomationId}'.");
+
+            // Act 2 - click again; the panel is now closed, so this reopens and focuses it, restoring the
+            // originally-open state this test found the panel in.
+            ClickMenuItem(topLevelMenuName, menuItemAutomationId);
+            reopened = WaitUntil(() => _session.FindElements(MobileBy.AccessibilityId(panelControlAutomationId)).Count > 0);
+            Assert.True(reopened, $"The panel control '{panelControlAutomationId}' did not reappear after reopening it via '{menuItemAutomationId}'.");
+            Assert.True(_session.FindElement(MobileBy.AccessibilityId(panelControlAutomationId)).Displayed);
+        }
+        finally
+        {
+            // Guarantee the panel ends up open even if an assertion above failed partway through, so a failure
+            // here never leaks a closed panel into later tests sharing this AppFixture session. This is
+            // idempotent on current content presence rather than a fixed click count: if the close assertion
+            // failed, the panel is presumably still open and no further action is needed; if the reopen
+            // assertion failed, the panel is presumably still closed and one more click restores it.
+            if (!reopened && _session.FindElements(MobileBy.AccessibilityId(panelControlAutomationId)).Count == 0)
+            {
+                ClickMenuItem(topLevelMenuName, menuItemAutomationId);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Opens the named top-level menu, clicks the child item by automation id (which also closes the menu,
+    ///     matching normal menu-click behavior), then returns.
+    /// </summary>
+    /// <param name="topLevelMenuName">The top-level menu's display name (e.g. "View").</param>
+    /// <param name="menuItemAutomationId">The child menu item's <c>AutomationProperties.AutomationId</c> value.</param>
+    private void ClickMenuItem(string topLevelMenuName, string menuItemAutomationId)
+    {
+        _session.FindElement(MobileBy.Name(topLevelMenuName)).Click();
+        _session.FindElement(MobileBy.AccessibilityId(menuItemAutomationId)).Click();
+    }
+
+    /// <summary>
     ///     Validates that the View menu's "Custom View Builder..." item, found by the
     ///     <c>ViewBuilderDialogMenuItem</c> automation id, is discoverable and enabled. Not clicked, since the
     ///     opened dialog's controls do not yet carry automation ids that would let this fixture close it
