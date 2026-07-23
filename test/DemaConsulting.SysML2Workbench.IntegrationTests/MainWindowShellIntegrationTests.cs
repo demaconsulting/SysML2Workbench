@@ -54,19 +54,99 @@ public sealed class MainWindowShellIntegrationTests
     [Fact]
     public void DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndEnabled()
     {
+        AssertMenuItemIsDiscoverableAndEnabled("File", "AddFileSourceMenuItem");
+    }
+
+    /// <summary>
+    ///     Validates that the File menu's "Open Folder..." item, found by the <c>AddFolderSourceMenuItem</c>
+    ///     automation id, is discoverable and enabled. Not clicked for the same reason as
+    ///     <see cref="DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndEnabled" />: it opens the
+    ///     OS-native "Open Folder" dialog.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_FileMenu_AddFolderSourceMenuItem_IsDiscoverableAndEnabled()
+    {
+        AssertMenuItemIsDiscoverableAndEnabled("File", "AddFolderSourceMenuItem");
+    }
+
+    /// <summary>
+    ///     Validates that the View menu's "Workspace" panel-toggle item, found by the
+    ///     <c>WorkspacePanelMenuItem</c> automation id, is discoverable and enabled. Not clicked, since toggling
+    ///     the docked panel closed would leave the shared <see cref="AppFixture" /> session in a different
+    ///     layout state for whichever test runs next.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_ViewMenu_WorkspacePanelMenuItem_IsDiscoverableAndEnabled()
+    {
+        AssertMenuItemIsDiscoverableAndEnabled("View", "WorkspacePanelMenuItem");
+    }
+
+    /// <summary>
+    ///     Validates that the View menu's "Predefined Views" panel-toggle item, found by the
+    ///     <c>PredefinedViewsMenuItem</c> automation id, is discoverable and enabled.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_ViewMenu_PredefinedViewsMenuItem_IsDiscoverableAndEnabled()
+    {
+        AssertMenuItemIsDiscoverableAndEnabled("View", "PredefinedViewsMenuItem");
+    }
+
+    /// <summary>
+    ///     Validates that the View menu's "Diagnostics" panel-toggle item, found by the
+    ///     <c>DiagnosticsMenuItem</c> automation id, is discoverable and enabled.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_ViewMenu_DiagnosticsMenuItem_IsDiscoverableAndEnabled()
+    {
+        AssertMenuItemIsDiscoverableAndEnabled("View", "DiagnosticsMenuItem");
+    }
+
+    /// <summary>
+    ///     Validates that the View menu's "Custom View Builder..." item, found by the
+    ///     <c>ViewBuilderDialogMenuItem</c> automation id, is discoverable and enabled. Not clicked, since the
+    ///     opened dialog's controls do not yet carry automation ids that would let this fixture close it
+    ///     deterministically.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_ViewMenu_ViewBuilderDialogMenuItem_IsDiscoverableAndEnabled()
+    {
+        AssertMenuItemIsDiscoverableAndEnabled("View", "ViewBuilderDialogMenuItem");
+    }
+
+    /// <summary>
+    ///     Validates that the Query menu's "Run Query..." item, found by the <c>QueryDialogMenuItem</c>
+    ///     automation id, is discoverable and enabled. Not clicked, for the same reason as
+    ///     <see cref="DesktopApp_ViewMenu_ViewBuilderDialogMenuItem_IsDiscoverableAndEnabled" />.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_QueryMenu_QueryDialogMenuItem_IsDiscoverableAndEnabled()
+    {
+        AssertMenuItemIsDiscoverableAndEnabled("Query", "QueryDialogMenuItem");
+    }
+
+    /// <summary>
+    ///     Opens the named top-level menu, locates the child item by automation id, asserts it is displayed and
+    ///     enabled, then closes the menu via Escape without clicking the item itself - proving the item is
+    ///     reachable through the real accessibility tree without triggering whatever side effect (dialog, panel
+    ///     toggle) clicking it would cause.
+    /// </summary>
+    /// <param name="topLevelMenuName">The top-level menu's display name (e.g. "File", "View", "Query").</param>
+    /// <param name="automationId">The child menu item's <c>AutomationProperties.AutomationId</c> value.</param>
+    private void AssertMenuItemIsDiscoverableAndEnabled(string topLevelMenuName, string automationId)
+    {
         // Arrange
-        var fileMenu = _session.FindElement(MobileBy.Name("File"));
-        fileMenu.Click();
+        var topLevelMenu = _session.FindElement(MobileBy.Name(topLevelMenuName));
+        topLevelMenu.Click();
 
         // Act
-        var addFileMenuItem = _session.FindElement(MobileBy.AccessibilityId("AddFileSourceMenuItem"));
+        var menuItem = _session.FindElement(MobileBy.AccessibilityId(automationId));
 
         // Assert
-        Assert.True(addFileMenuItem.Displayed);
-        Assert.True(addFileMenuItem.Enabled);
+        Assert.True(menuItem.Displayed);
+        Assert.True(menuItem.Enabled);
 
-        // Close the menu without picking a file so this test leaves no dialog open behind it.
-        addFileMenuItem.SendKeys(OpenQA.Selenium.Keys.Escape);
+        // Close the menu without picking the item so this test leaves no side effect behind it.
+        menuItem.SendKeys(OpenQA.Selenium.Keys.Escape);
     }
 
     /// <summary>

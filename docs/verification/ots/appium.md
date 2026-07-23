@@ -32,6 +32,20 @@ through the real accessibility tree that Appium's NovaWindows driver reads.
 The item is not actually clicked, since doing so would open the OS-native
 "Open File" dialog, which lives outside Avalonia's own accessibility tree.
 
+**DesktopApp_FileMenu_AddFolderSourceMenuItem_IsDiscoverableAndEnabled**,
+**DesktopApp_ViewMenu_WorkspacePanelMenuItem_IsDiscoverableAndEnabled**,
+**DesktopApp_ViewMenu_PredefinedViewsMenuItem_IsDiscoverableAndEnabled**,
+**DesktopApp_ViewMenu_DiagnosticsMenuItem_IsDiscoverableAndEnabled**,
+**DesktopApp_ViewMenu_ViewBuilderDialogMenuItem_IsDiscoverableAndEnabled**,
+and **DesktopApp_QueryMenu_QueryDialogMenuItem_IsDiscoverableAndEnabled**:
+Each opens its respective top-level menu (`File`/`View`/`Query`) and locates
+one child menu item by automation id, asserting it is both displayed and
+enabled, then closes the menu via Escape without clicking the item. These
+extend automation-id coverage breadth-first across every subsystem's
+top-level entry point (workspace panel, predefined views, diagnostics,
+custom view builder, query dialog) without needing to click through to a
+dialog or native OS surface that this tier cannot yet reliably tear down.
+
 **DesktopApp_HelpMenu_AboutMenuItem_OpensAndClosesAboutDialog**: Opens the
 Help menu, clicks "About" (`AboutMenuItem`), confirms the modal About
 dialog's `AboutDialogOkButton` becomes visible, then dismisses it - proving
