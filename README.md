@@ -43,6 +43,12 @@ building a custom view.
   (Windows/Linux/macOS entry point).
 - `test/DemaConsulting.SysML2Workbench.Tests/` - unit and subsystem-level
   tests mirroring `src/`.
+- `test/DemaConsulting.SysML2Workbench.UiTests/` - headless, in-process
+  Avalonia UI tests (view/view-model interaction, no real window).
+- `test/DemaConsulting.SysML2Workbench.IntegrationTests/` - Appium/AT-SPI-driven
+  end-to-end tests against the compiled Desktop application (Windows, macOS,
+  and Linux; CI runs the Windows job today; requires a running automation
+  server - see "Building and Testing" below).
 - `test/OtsSoftwareTests/` - integration tests for the off-the-shelf (OTS)
   dependencies (SysML2Tools, Rendering, Avalonia, xUnit).
 - `docs/` - requirements (`docs/reqstream/`), design (`docs/design/`),
@@ -52,7 +58,24 @@ building a custom view.
 ## Building and Testing
 
 ```powershell
-pwsh ./build.ps1   # restore, build, and run all tests
-pwsh ./fix.ps1      # auto-fix formatting
-pwsh ./lint.ps1     # lint and compliance checks
+pwsh ./build.ps1 -Build -Test   # restore, build, and run the unit/headless test suite
+pwsh ./build.ps1                # no switches: prints usage and exits non-zero
+pwsh ./fix.ps1                  # auto-fix formatting
+pwsh ./lint.ps1                 # lint and compliance checks
 ```
+
+`build.ps1` accepts combinable switches: `-Build` (restore + build),
+`-Test` (build if needed, then run the unit/headless suite), `-IntegrationTest`
+(build if needed, then run the Appium/AT-SPI suite), and `-All`
+(equivalent to all three). `build.ps1 -Test` and CI's cross-platform build
+job both run `dotnet test --filter "Category!=Integration"`, so
+`test/DemaConsulting.SysML2Workbench.IntegrationTests`' Appium-driven tests
+are excluded from that default test run. That tier runs for real in CI's
+dedicated `appium-windows-integration-tests` job (`windows-latest`), and can
+now also be run locally on Windows, macOS, or Linux via
+`pwsh ./build.ps1 -IntegrationTest`, which delegates to `run-under-appium.ps1`:
+on Windows/macOS it installs Appium and the NovaWindows/Mac2 driver, publishes
+the Desktop application, starts and polls a local Appium server, runs the
+tests, and always stops the server afterward; on Linux it publishes the
+Desktop application and delegates the whole test run to the pre-installed
+`selenium-webdriver-at-spi-run` wrapper (see `docs/design/ots/appium.md`).

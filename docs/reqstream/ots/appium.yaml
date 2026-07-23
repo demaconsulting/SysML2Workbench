@@ -1,0 +1,20 @@
+---
+sections:
+  - title: 'OTS Software Requirements'
+    sections:
+      - title: 'Appium Requirements'
+        requirements:
+          - id: 'Appium-DriveDesktopApplicationEndToEnd'
+            title: 'The SysML2Workbench repository shall use Appium to drive the compiled Desktop application end-to-end through its real accessibility tree on Windows.'
+            justification: |
+              A system-level UI automation tier is needed that exercises the actual compiled application in a real window, complementing the headless and unit test tiers, and Windows is the only platform with a provisioned CI Appium driver today.
+            tests:
+              - 'DesktopApp_Launch_ShowsMainWindowWithExpectedTitle'
+
+          - id: 'Appium-LocateControlsByAutomationId'
+            title: 'The SysML2Workbench repository shall expose interactive controls to Appium via AutomationProperties.AutomationId for reliable, name-independent lookup.'
+            justification: |
+              Appium's accessibility-tree-based lookups need a stable identifier that does not depend on a control''s displayed Name/x:Name, so tests remain reliable as UI text changes.
+            tests:
+              - 'DesktopApp_FileMenu_AddFileSourceMenuItem_IsDiscoverableAndEnabled'
+              - 'DesktopApp_HelpMenu_AboutMenuItem_OpensAndClosesAboutDialog'

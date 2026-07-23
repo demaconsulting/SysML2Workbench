@@ -11,7 +11,8 @@
     <ListBox Name="PredefinedViewsListBox"
              ItemsSource="{Binding AvailableViews}"
              SelectedItem="{Binding SelectedView, Mode=TwoWay}"
-             DisplayMemberBinding="{Binding DisplayName}" />
+             DisplayMemberBinding="{Binding DisplayName}"
+             AutomationProperties.AutomationId="PredefinedViewsListBox" />
   </DockPanel>
 
 </UserControl>

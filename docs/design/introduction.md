@@ -33,11 +33,17 @@ OTS items:
 - **Avalonia**: integration and usage design (UI framework).
 - **AvaloniaEdit**: integration and usage design (read-only syntax-highlighted text editor control).
 - **xUnit**: integration and usage design (test framework).
+- **Appium**: integration and usage design (end-to-end desktop UI automation
+  driver for the compiled application; cross-platform in `build.ps1`, but
+  Windows-only in CI today).
 
 Out of scope: no Shared Packages exist in this repository. Design documents
-are not produced for test projects or build pipeline CI configuration, and
-the internal design of OTS items is excluded — only their integration and
-usage within SysML2Workbench is documented.
+are not produced for test projects or build pipeline CI configuration (this
+means no per-project design doc for `test/DemaConsulting.SysML2Workbench.Tests`,
+`UiTests`, `IntegrationTests`, or `OtsSoftwareTests` themselves - the test
+*strategy* they implement is still described below), and the internal design
+of OTS items is excluded — only their integration and usage within
+SysML2Workbench is documented.
 
 ## Software Structure
 
@@ -81,6 +87,46 @@ thin bootstrap/entry-point project with no independent design of its own.
     - **QueryDialog** (Unit) — modal query dialog (Browse + Element Query tabs)
     - Desktop (platform head / entry point project; not a separately documented unit)
 
+## Test Strategy
+
+The repository runs four distinct test tiers, each with a different scope and
+dependency boundary:
+
+- **`test/DemaConsulting.SysML2Workbench.Tests`** — unit and subsystem-level
+  xUnit v3 tests mirroring `src/`, with no UI framework dependency.
+- **`test/DemaConsulting.SysML2Workbench.UiTests`** — headless, in-process
+  Avalonia tests (`Avalonia.Headless.XUnit`) exercising this repository's own
+  view/view-model interaction logic (menu command wiring, dialog open/close,
+  panel state) without a visible window.
+- **`test/DemaConsulting.SysML2Workbench.IntegrationTests`** — Appium-driven,
+  black-box, system-level tests that launch the real, compiled
+  `DemaConsulting.SysML2Workbench.Desktop` executable and drive it through
+  its actual accessibility tree, the same way a user would. This tier has no
+  `ProjectReference` to the local UI project (see `docs/design/ots/appium.md`).
+- **`test/OtsSoftwareTests`** — a sibling, not a duplicate, of the above: it
+  qualifies the OTS dependencies themselves (Avalonia, Dock, AvaloniaEdit,
+  SysML2Tools, Rendering) against their own OTS requirements, using the same
+  headless-Avalonia mechanism as `UiTests` but for a different purpose.
+
+Only the Windows/NovaWindows path of `IntegrationTests` runs automatically in
+CI today (`.github/workflows/build.yaml`'s `appium-windows-integration-tests`
+job, `windows-latest`). Avalonia 12.1.0 also exposes controls to macOS's
+NSAccessibility (Appium's Mac2 driver) and Linux's AT-SPI2 (via KDE's
+`selenium-webdriver-at-spi`), and `AppFixture`/`run-under-appium.ps1` contain
+correct OS-branching code for all three platforms, so a developer can run
+this tier locally on macOS or Linux too - but neither has a provisioned CI
+runner today, so only Windows is validated in CI - see
+`docs/design/ots/appium.md` for the integration pattern. `build.ps1 -Test`
+and the cross-platform `build` job's `Test` step both exclude
+`IntegrationTests`' tests carrying the `Integration` trait via
+`--filter "Category!=Integration"`, so adding `IntegrationTests` to
+`SysML2Workbench.slnx` does not break those runs. `build.ps1 -IntegrationTest`
+provides a cross-platform (Windows/macOS/Linux) local equivalent of CI's
+`appium-windows-integration-tests` job, running this tier for real on demand
+outside CI via `run-under-appium.ps1`, which owns the Appium/AT-SPI server's
+lifecycle so `AppFixture` itself only ever connects to an already-running
+server.
+
 ## Folder Layout
 
 - **src/** - source files and projects
@@ -88,6 +134,9 @@ thin bootstrap/entry-point project with no independent design of its own.
   - **DemaConsulting.SysML2Workbench.Desktop/** - desktop platform head (Windows/Linux/macOS entry point)
 - **test/** - test projects
   - **DemaConsulting.SysML2Workbench.Tests/** - unit and subsystem-level tests mirroring `src/`
+  - **DemaConsulting.SysML2Workbench.UiTests/** - headless, in-process Avalonia UI tests
+  - **DemaConsulting.SysML2Workbench.IntegrationTests/** - Appium-driven end-to-end tests against the compiled Desktop application
+  - **OtsSoftwareTests/** - integration tests qualifying the OTS dependencies themselves
 
 ## Companion Artifact Structure
 

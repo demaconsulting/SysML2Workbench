@@ -73,7 +73,8 @@ yet cover something.
 - **`pip-requirements.txt`** - Python dependencies for yamllint and yamlfix
 - **`docs/sysml2/`** - SysML2 architecture model; authoritative source for software structure
 - **`fix.ps1`** - Applies all auto-fixers silently (dotnet format, markdown, YAML). Always exits 0.
-- **`build.ps1`** - Builds the solution and runs all tests.
+- **`build.ps1`** - Builds the solution and/or runs its test tiers on demand via
+  switches (`-Build -Test -IntegrationTest -All`); run with no arguments for usage.
 
 # Standards Application (ALL Agents Must Follow)
 

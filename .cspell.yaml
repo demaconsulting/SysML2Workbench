@@ -81,6 +81,17 @@ words:
   - xshd
   - avaloniaedit
   - avares
+  - Appium
+  - appium
+  - NovaWindows
+  - WinAppDriver
+  - WebDriver
+  - webdriver
+  - novawindows
+  - atspi
+  - automatable
+  - startable
+  - unvalidated
 ignorePaths:
   - '**/.git/**'
   - '**/node_modules/**'
