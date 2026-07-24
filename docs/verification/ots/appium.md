@@ -54,15 +54,28 @@ one child menu item by automation id, asserting it is both displayed and
 enabled, then closes the menu via Escape without clicking the item. These
 extend automation-id coverage breadth-first across every subsystem's
 top-level entry point (workspace panel, predefined views, diagnostics,
-custom view builder, query dialog, close-all) without needing to click
-through to a dialog or native OS surface that this tier cannot yet reliably
-tear down.
+custom view builder, query dialog, close-all). The View menu's toggle items
+and the Query dialog now also have dedicated click-through round-trip
+tests (see below); the others are not yet clicked because they open a
+dialog whose controls don't carry automation ids yet
+(`ViewBuilderDialogMenuItem`) or a native OS surface outside Avalonia's own
+accessibility tree (`AddFileSourceMenuItem`/`AddFolderSourceMenuItem`), or
+because a menu item click here would leave the shared `AppFixture` session
+in a different state for whichever test runs next (`CloseAllMenuItem`).
 
 **DesktopApp_HelpMenu_AboutMenuItem_OpensAndClosesAboutDialog**: Opens the
 Help menu, clicks "About" (`AboutMenuItem`), confirms the modal About
 dialog's `AboutDialogOkButton` becomes visible, then dismisses it - proving
 a full menu-click-to-modal-dialog round trip works end-to-end through the
 real windowed application.
+
+**DesktopApp_QueryMenu_QueryDialogMenuItem_OpensAndClosesQueryDialog**: The
+same open/click/assert/close round-trip shape as the About dialog test
+above, applied to the Query dialog - opens the Query menu, clicks "Run
+Query..." (`QueryDialogMenuItem`), confirms the dialog's own
+`AddTypeFilterButton` (part of the shared `ElementFilterView`) becomes
+visible, then dismisses it via `QueryDialogCloseButton`, reusing the same
+close button already exercised by the inspection-screenshot tests below.
 
 **DesktopApp_ViewMenu_WorkspacePanelMenuItem_TogglesWorkspacePanel**,
 **DesktopApp_ViewMenu_PredefinedViewsMenuItem_TogglesPredefinedViewsPanel**, and
