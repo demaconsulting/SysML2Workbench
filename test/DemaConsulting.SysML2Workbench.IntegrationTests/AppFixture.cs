@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Runtime.InteropServices;
 using OpenQA.Selenium.Appium;
 using OpenQA.Selenium.Appium.Mac;
@@ -56,6 +57,14 @@ public sealed class AppFixture : IDisposable
     ///     started before this test process launched, and using the driver appropriate for the current
     ///     operating system.
     /// </summary>
+    /// <param name="startupArguments">
+    ///     Optional command-line arguments passed to the launched application process, applied via the
+    ///     per-session <c>appArguments</c>/<c>arguments</c> capability (see <see cref="ApplyStartupArguments" />).
+    ///     Unlike an environment variable (fixed for the whole lifetime of the already-running Appium/AT-SPI
+    ///     server process), this is supplied fresh with every session-creation call, so it can vary from test to
+    ///     test. See <c>App.axaml.cs</c>'s <c>ApplyStartupSourceArgumentsForTesting</c> for the
+    ///     <c>--startup-source &lt;path&gt;</c> format this application recognizes.
+    /// </param>
     /// <remarks>
     ///     This fixture deliberately does not attempt to reposition/resize the launched window (for example
     ///     to guarantee it is fully on-screen for <see cref="InspectionScreenshot" />). Both
@@ -72,14 +81,14 @@ public sealed class AppFixture : IDisposable
     ///     comfortably fits on-screen (including under a typical taskbar) without needing any runtime
     ///     repositioning.
     /// </remarks>
-    public AppFixture()
+    public AppFixture(string startupArguments = "")
     {
         Driver = OperatingSystem.IsWindows()
-            ? CreateWindowsDriver()
+            ? CreateWindowsDriver(startupArguments)
             : OperatingSystem.IsMacOS()
-                ? CreateMacDriver()
+                ? CreateMacDriver(startupArguments)
                 : OperatingSystem.IsLinux()
-                    ? CreateLinuxDriver()
+                    ? CreateLinuxDriver(startupArguments)
                     : throw new PlatformNotSupportedException(
                         "SysML2Workbench's Appium AppFixture only recognizes Windows, macOS, and Linux.");
 
@@ -101,19 +110,6 @@ public sealed class AppFixture : IDisposable
     {
         Driver.Quit();
         Driver.Dispose();
-    }
-
-    /// <summary>
-    ///     Clicks File &gt; Close All (<c>CloseAllMenuItem</c>) to reset the shared session's workspace back to
-    ///     its empty starting state. Reusable cleanup seam for any test that adds a real file/folder source
-    ///     (directly, or via the <c>SYSML2WORKBENCH_STARTUP_FILE</c> preload) and must not leave that state
-    ///     behind for whichever test in this <c>[Collection("AppFixture")]</c>-shared session runs next - see
-    ///     <c>MainWindowShellIntegrationTests</c>'s own remarks for which tests call this and why.
-    /// </summary>
-    public void CloseAllSources()
-    {
-        Driver.FindElement(MobileBy.Name("File")).Click();
-        Driver.FindElement(MobileBy.AccessibilityId("CloseAllMenuItem")).Click();
     }
 
     /// <summary>
@@ -149,7 +145,7 @@ public sealed class AppFixture : IDisposable
     ///     Creates the fully implemented, CI-validated Windows session: Appium's NovaWindows driver (the
     ///     maintained successor to the deprecated WinAppDriver) pointed at the published Desktop executable.
     /// </summary>
-    private static WindowsDriver CreateWindowsDriver()
+    private static WindowsDriver CreateWindowsDriver(string startupArguments)
     {
         var options = new AppiumOptions
         {
@@ -157,6 +153,7 @@ public sealed class AppFixture : IDisposable
             PlatformName = "Windows",
             App = Path.GetFullPath(ResolveAppPath()),
         };
+        ApplyStartupArguments(options, startupArguments);
 
         return new WindowsDriver(ServerUri, options);
     }
@@ -170,7 +167,7 @@ public sealed class AppFixture : IDisposable
     ///     macOS hardware. Not exercised by CI and not validated against a real macOS machine - see
     ///     <see cref="AppFixture" />'s remarks.
     /// </summary>
-    private static MacDriver CreateMacDriver()
+    private static MacDriver CreateMacDriver(string startupArguments)
     {
         var options = new AppiumOptions
         {
@@ -178,6 +175,7 @@ public sealed class AppFixture : IDisposable
             PlatformName = "Mac",
             App = Path.GetFullPath(ResolveAppPath()),
         };
+        ApplyStartupArguments(options, startupArguments);
 
         return new MacDriver(ServerUri, options);
     }
@@ -193,15 +191,50 @@ public sealed class AppFixture : IDisposable
     ///     binary's path. Not exercised by CI and not validated against a real Linux machine - see
     ///     <see cref="AppFixture" />'s remarks.
     /// </summary>
-    private static AppiumDriver CreateLinuxDriver()
+    private static AppiumDriver CreateLinuxDriver(string startupArguments)
     {
         var options = new AppiumOptions
         {
             PlatformName = "Linux",
             App = Path.GetFullPath(ResolveAppPath()),
         };
+        ApplyStartupArguments(options, startupArguments);
 
         return new LinuxDriver(ServerUri, options);
+    }
+
+    /// <summary>
+    ///     Applies <paramref name="startupArguments" /> to <paramref name="options" /> via whichever per-session
+    ///     capability the eventual driver recognizes, written generically (one shared code path for all three
+    ///     platforms) even though only the Windows/NovaWindows branch is validated by CI today.
+    /// </summary>
+    /// <remarks>
+    ///     NovaWindows (mirroring WinAppDriver) and the Linux AT-SPI wrapper both document a single
+    ///     shell-style command-line string via <c>appium:appArguments</c>; Mac2 instead documents an array of
+    ///     already-split argument strings via <c>appium:arguments</c>. Setting both additional capabilities is
+    ///     harmless - a driver that does not recognize a given capability name simply ignores it - so this one
+    ///     helper covers every platform without branching by <see cref="OperatingSystem" /> itself. The naive
+    ///     whitespace split used for the array form does not understand quoting; a single layer of matching
+    ///     surrounding double quotes is stripped from each split token (so a defensively-quoted, space-free
+    ///     path like <c>"C:\path\file.sysml"</c> still resolves correctly), but an argument whose value itself
+    ///     contains a space (quoted or not) is still split into multiple array entries and not correctly
+    ///     supported on Mac2 today; this is an acceptable limitation given Mac2 is already unvalidated
+    ///     best-effort support.
+    /// </remarks>
+    private static void ApplyStartupArguments(AppiumOptions options, string startupArguments)
+    {
+        if (string.IsNullOrWhiteSpace(startupArguments))
+        {
+            return;
+        }
+
+        options.AddAdditionalAppiumOption("appium:appArguments", startupArguments);
+        options.AddAdditionalAppiumOption(
+            "appium:arguments",
+            startupArguments
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(token => token.Length >= 2 && token[0] == '"' && token[^1] == '"' ? token[1..^1] : token)
+                .ToArray());
     }
 
     /// <summary>

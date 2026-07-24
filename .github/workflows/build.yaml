@@ -434,7 +434,6 @@ jobs:
         env:
           SYSML2WORKBENCH_APP_PATH: ${{ github.workspace }}\publish\win-x64\DemaConsulting.SysML2Workbench.Desktop.exe
           SYSML2WORKBENCH_ARTIFACTS_DIR: ${{ github.workspace }}\artifacts
-          SYSML2WORKBENCH_STARTUP_FILE: ${{ github.workspace }}\test\DemaConsulting.SysML2Workbench.IntegrationTests\TestData\InspectionSample.sysml
         run: >
           ./run-under-appium.ps1 --
           dotnet test

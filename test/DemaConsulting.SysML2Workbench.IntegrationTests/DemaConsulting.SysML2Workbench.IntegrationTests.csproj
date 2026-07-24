@@ -14,6 +14,12 @@
     <PackageReference Include="Appium.WebDriver" Version="8.3.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Copied alongside the test binaries so a test can resolve an absolute, cwd-independent path via
+         AppContext.BaseDirectory when passing it as a "startup-source" argument to AppFixture/StartApp. -->
+    <None Include="TestData\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!--
     Deliberately no ProjectReference to src/DemaConsulting.SysML2Workbench: this tier drives the compiled
     Desktop application externally through Appium's WebDriver client rather than in-process, matching

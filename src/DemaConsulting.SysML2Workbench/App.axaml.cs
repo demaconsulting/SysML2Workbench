@@ -56,37 +56,57 @@ public sealed class App : Application
             desktop.MainWindow = new MainWindowView(shell);
             desktop.ShutdownRequested += (_, _) => shell.Dispose();
 
-            ApplyStartupFileForTesting(shell);
+            ApplyStartupSourceArgumentsForTesting(shell, desktop.Args ?? []);
         }
 
         base.OnFrameworkInitializationCompleted();
     }
 
     /// <summary>
-    ///     Preloads a single workspace file source from the <c>SYSML2WORKBENCH_STARTUP_FILE</c> environment
-    ///     variable, when set, so an Appium/AT-SPI integration-test session can start with a real, populated
-    ///     workspace without driving an unautomatable native OS "Open File" dialog.
+    ///     Preloads zero or more workspace file/folder sources from repeated <c>--startup-source &lt;path&gt;</c>
+    ///     command-line arguments, so an Appium/AT-SPI integration-test session launched with per-session
+    ///     <c>appArguments</c>/<c>arguments</c> capabilities (see <c>AppiumTestBase.StartApp</c>) can start with
+    ///     a real, populated workspace tailored to that one test, without driving an unautomatable native OS
+    ///     "Open File"/"Open Folder" dialog.
     /// </summary>
     /// <remarks>
-    ///     This is a test-only hook mirroring <see cref="ApplyThemeOverrideForTesting" />'s precedent: it has no
-    ///     effect on normal end-user usage of the application, which never has this variable set. It is invoked
-    ///     right after <paramref name="shell" /> and its <see cref="MainWindowView" /> are constructed, before the
-    ///     Avalonia message loop starts pumping. Blocking synchronously here with
-    ///     <c>GetAwaiter().GetResult()</c> is safe: <see cref="MainWindowShell.AddFileSourceAsync" />'s awaited
-    ///     call chain (source-set add, file-watcher registration, workspace load, snapshot apply,
+    ///     Unlike a fixed environment variable (which would only be inherited once, for the whole lifetime of
+    ///     the Appium/AT-SPI server process that launches this application - see
+    ///     <see cref="ApplyThemeOverrideForTesting" />'s remarks for why <c>SYSML2WORKBENCH_THEME</c> uses that
+    ///     approach instead), command-line arguments are supplied fresh with every individual WebDriver
+    ///     session-creation call, so they can vary per test. Each occurrence of
+    ///     <c>--startup-source</c> is followed by exactly one path; a path is added as a folder source if
+    ///     <see cref="Directory.Exists(string)" /> returns true, otherwise as a file source. This is a test-only
+    ///     hook with no effect on normal end-user usage, which never launches the application with these
+    ///     arguments. Blocking synchronously here with <c>GetAwaiter().GetResult()</c> is safe: it is invoked
+    ///     right after <paramref name="shell" /> and its <see cref="MainWindowView" /> are constructed, before
+    ///     the Avalonia message loop starts pumping, and <see cref="MainWindowShell.AddFileSourceAsync" />'s/
+    ///     <see cref="MainWindowShell.AddFolderSourceAsync" />'s awaited call chains (source-set add,
+    ///     file-watcher registration, workspace load, snapshot apply,
     ///     <see cref="MainWindowShell.SourcesChanged" /> raised via a fire-and-forget dispatcher post) never
-    ///     awaits a continuation that itself requires the not-yet-started message loop to be pumping.
+    ///     await a continuation that itself requires the not-yet-started message loop to be pumping.
     /// </remarks>
-    /// <param name="shell">The freshly composed shell to preload a source into.</param>
-    private static void ApplyStartupFileForTesting(MainWindowShell shell)
+    /// <param name="shell">The freshly composed shell to preload sources into.</param>
+    /// <param name="args">The raw command-line arguments the process was launched with.</param>
+    private static void ApplyStartupSourceArgumentsForTesting(MainWindowShell shell, IReadOnlyList<string> args)
     {
-        var startupFile = Environment.GetEnvironmentVariable("SYSML2WORKBENCH_STARTUP_FILE");
-        if (string.IsNullOrWhiteSpace(startupFile))
+        for (var i = 0; i < args.Count - 1; i++)
         {
-            return;
-        }
+            if (args[i] != "--startup-source")
+            {
+                continue;
+            }
 
-        shell.AddFileSourceAsync(startupFile).GetAwaiter().GetResult();
+            var path = args[i + 1];
+            if (Directory.Exists(path))
+            {
+                shell.AddFolderSourceAsync(path).GetAwaiter().GetResult();
+            }
+            else if (File.Exists(path))
+            {
+                shell.AddFileSourceAsync(path).GetAwaiter().GetResult();
+            }
+        }
     }
 
     /// <summary>
