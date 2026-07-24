@@ -39,10 +39,10 @@ public sealed partial class ViewBuilderDialogViewModel : ObservableObject
     private const string DefaultTypeFilterLabel = "part";
 
     [ObservableProperty]
-    private string? _statusMessage;
+    public partial string? StatusMessage { get; set; }
 
     [ObservableProperty]
-    private bool _isWorkspaceEmpty;
+    public partial bool IsWorkspaceEmpty { get; set; }
 
     /// <summary>
     ///     Creates the dialog view model, refreshing the available expose-target picker list from the shell's
@@ -214,6 +214,9 @@ public sealed partial class ViewBuilderDialogViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            // Intentionally broad: RenderPreview is documented as "never throws" and runs after every
+            // single control edit, so any exception type from the render pipeline (a mid-edit definition
+            // is routinely incomplete/invalid) must be swallowed and reported via StatusMessage instead.
             PreviewCanvas.Clear();
             StatusMessage = $"Preview unavailable: {ex.Message}";
         }
@@ -254,6 +257,9 @@ public sealed partial class ViewBuilderDialogViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            // Intentionally broad: TryCommit's contract (see its <returns> doc) is to report every render
+            // failure through the out `error`/StatusMessage rather than throw, so the just-opened tab can
+            // always be rolled back regardless of which exception type the render pipeline raised.
             Shell.CloseDiagramTab(tab.Id);
             error = $"Commit failed: {ex.Message}";
             StatusMessage = error;

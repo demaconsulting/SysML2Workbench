@@ -37,19 +37,19 @@ public sealed partial class ElementFilterViewModel : ObservableObject
     private IReadOnlyList<(string QualifiedName, string TypeLabel)> _candidates = [];
 
     [ObservableProperty]
-    private IReadOnlyList<string> _availableTypeLabels = [];
+    public partial IReadOnlyList<string> AvailableTypeLabels { get; set; } = [];
 
     [ObservableProperty]
-    private string? _searchText = "";
+    public partial string? SearchText { get; set; } = "";
 
     [ObservableProperty]
-    private IReadOnlyList<string> _displayedItems = [];
+    public partial IReadOnlyList<string> DisplayedItems { get; set; } = [];
 
     [ObservableProperty]
-    private string? _addableTypeFilterSearchText = "";
+    public partial string? AddableTypeFilterSearchText { get; set; } = "";
 
     [ObservableProperty]
-    private IReadOnlyList<string> _addableTypeFilterCandidates = [];
+    public partial IReadOnlyList<string> AddableTypeFilterCandidates { get; set; } = [];
 
     /// <summary>
     ///     Creates the filter view model in its empty initial state: no candidates, no active
@@ -162,11 +162,12 @@ public sealed partial class ElementFilterViewModel : ObservableObject
     /// </returns>
     public bool TryCommitAddableTypeFilterSearch()
     {
-        var topMatch = AddableTypeFilterCandidates.FirstOrDefault();
-        if (topMatch is null)
+        if (AddableTypeFilterCandidates.Count == 0)
         {
             return false;
         }
+
+        var topMatch = AddableTypeFilterCandidates[0];
 
         AddTypeFilter(topMatch);
         return true;

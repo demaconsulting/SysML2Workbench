@@ -103,7 +103,7 @@ public sealed class MainWindowShellUiTests : IDisposable
         var tempRoot = Directory.CreateTempSubdirectory("sysml2workbench-ui-tests-").FullName;
         try
         {
-            var filePath = Path.Combine(tempRoot, "Sample.sysml");
+            var filePath = PathHelpers.SafePathCombine(tempRoot, "Sample.sysml");
             await File.WriteAllTextAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
 
             using var shell = CreateShell();

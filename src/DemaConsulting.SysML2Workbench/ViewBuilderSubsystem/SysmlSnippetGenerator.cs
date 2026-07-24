@@ -149,7 +149,7 @@ public sealed class SysmlSnippetGenerator
     /// <param name="rawName">Candidate name from the UI.</param>
     /// <returns>Safe identifier or single-quoted representation.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="rawName" /> is empty.</exception>
-    public string SanitizeIdentifier(string rawName)
+    public static string SanitizeIdentifier(string rawName)
     {
         ArgumentException.ThrowIfNullOrEmpty(rawName);
 

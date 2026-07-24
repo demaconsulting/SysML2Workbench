@@ -31,7 +31,7 @@ public sealed class ViewBuilderSubsystemTests : IDisposable
     {
         // Arrange
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n    part def Engine;\n    part def Wheel;\n}\n",
             TestContext.Current.CancellationToken);
         var model = new WorkspaceModel();

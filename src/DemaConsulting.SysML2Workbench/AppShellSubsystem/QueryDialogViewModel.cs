@@ -75,28 +75,28 @@ public sealed partial class QueryDialogViewModel : ObservableObject
         new Dictionary<string, SysmlNode>(StringComparer.Ordinal);
 
     [ObservableProperty]
-    private bool _includeStdlib;
+    public partial bool IncludeStdlib { get; set; }
 
     [ObservableProperty]
-    private bool _isWorkspaceEmpty;
+    public partial bool IsWorkspaceEmpty { get; set; }
 
     [ObservableProperty]
-    private QueryVerb _selectedQueryType = QueryVerb.List;
+    public partial QueryVerb SelectedQueryType { get; set; } = QueryVerb.List;
 
     [ObservableProperty]
-    private string? _hierarchyDirection = "both";
+    public partial string? HierarchyDirection { get; set; } = "both";
 
     [ObservableProperty]
-    private string? _walkDepthText;
+    public partial string? WalkDepthText { get; set; }
 
     [ObservableProperty]
-    private QueryResult? _currentResult;
+    public partial QueryResult? CurrentResult { get; set; }
 
     [ObservableProperty]
-    private IReadOnlyList<QueryResultRow> _currentResultRows = [];
+    public partial IReadOnlyList<QueryResultRow> CurrentResultRows { get; set; } = [];
 
     [ObservableProperty]
-    private string? _statusMessage;
+    public partial string? StatusMessage { get; set; }
 
     /// <summary>
     ///     Creates the dialog view model over <paramref name="shell" /> and immediately populates the

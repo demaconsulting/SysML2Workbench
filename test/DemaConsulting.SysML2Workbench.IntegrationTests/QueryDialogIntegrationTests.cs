@@ -20,7 +20,7 @@ public sealed class QueryDialogIntegrationTests : AppiumTestBase
     ///     unautomatable native OS "Open File" dialog.
     /// </summary>
     private static readonly string InspectionSampleFilePath =
-        Path.Combine(AppContext.BaseDirectory, "TestData", "InspectionSample.sysml");
+        PathHelpers.SafePathCombine(AppContext.BaseDirectory, "TestData", "InspectionSample.sysml");
 
     /// <summary>
     ///     Validates that the Query menu's "Run Query..." item, found by the <c>QueryDialogMenuItem</c>

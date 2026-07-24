@@ -5,6 +5,7 @@ using DemaConsulting.SysML2Tools.Parser;
 using DemaConsulting.SysML2Tools.Rendering;
 using DemaConsulting.SysML2Tools.Semantic;
 using DemaConsulting.SysML2Tools.Stdlib;
+using DemaConsulting.SysML2Workbench;
 
 namespace OtsSoftwareTests;
 
@@ -29,7 +30,7 @@ public sealed class RenderingTests : IDisposable
     private async Task<string> RenderSampleViewAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    view PredefinedView {\n"

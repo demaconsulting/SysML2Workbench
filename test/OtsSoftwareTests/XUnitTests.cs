@@ -1,3 +1,5 @@
+using DemaConsulting.SysML2Workbench;
+
 namespace OtsSoftwareTests;
 
 /// <summary>
@@ -62,7 +64,7 @@ public sealed class XUnitTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var candidate = Path.Combine(directory.FullName, fileName);
+            var candidate = PathHelpers.SafePathCombine(directory.FullName, fileName);
             if (File.Exists(candidate))
             {
                 return candidate;

@@ -38,7 +38,7 @@ public static class InspectionScreenshot
     ///     <see cref="AppFixture" />) before invoking the wrapped <c>dotnet test</c>, so this lands in the same
     ///     place regardless of the test host's own working directory.
     /// </remarks>
-    private static readonly string OutputDirectory = Path.Combine(
+    private static readonly string OutputDirectory = PathHelpers.SafePathCombine(
         Environment.GetEnvironmentVariable("SYSML2WORKBENCH_ARTIFACTS_DIR") ?? "artifacts",
         "inspection");
 
@@ -91,7 +91,7 @@ public static class InspectionScreenshot
         // File.Create (unlike File.OpenWrite) truncates an existing file: without this, re-running the
         // test after a prior capture wrote a larger PNG would leave that PNG's trailing bytes appended
         // past the new (shorter) image data, corrupting the file.
-        using var file = File.Create(Path.Combine(OutputDirectory, $"{fileName}.png"));
+        using var file = File.Create(PathHelpers.SafePathCombine(OutputDirectory, $"{fileName}.png"));
         data.SaveTo(file);
     }
 
@@ -101,6 +101,6 @@ public static class InspectionScreenshot
     private static void Save(byte[] pngBytes, string fileName)
     {
         Directory.CreateDirectory(OutputDirectory);
-        File.WriteAllBytes(Path.Combine(OutputDirectory, $"{fileName}.png"), pngBytes);
+        File.WriteAllBytes(PathHelpers.SafePathCombine(OutputDirectory, $"{fileName}.png"), pngBytes);
     }
 }

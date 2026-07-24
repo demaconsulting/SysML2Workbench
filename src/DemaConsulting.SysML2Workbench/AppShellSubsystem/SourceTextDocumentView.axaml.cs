@@ -75,7 +75,9 @@ public partial class SourceTextDocumentView : UserControl
         var keywordPattern = $@"\b(?:{string.Join("|", GetKeywords())})\b";
         definition.MainRuleSet.Rules.Add(new HighlightingRule
         {
-            Regex = new Regex(keywordPattern),
+            // A bounded timeout guards against catastrophic backtracking on pathological input,
+            // since the keyword pattern is applied to arbitrary user-supplied source text.
+            Regex = new Regex(keywordPattern, RegexOptions.None, TimeSpan.FromSeconds(2)),
             Color = keywordColor,
         });
 
@@ -95,12 +97,17 @@ public partial class SourceTextDocumentView : UserControl
     {
         try
         {
+            // Reflecting a private, static, generated field is intentional and safe here: it is
+            // read-only (never written via reflection), scoped to a single well-known third-party
+            // type (SysMLv2Lexer), and wrapped in a try/catch with a hard-coded fallback list below,
+            // so if the field is ever renamed or removed by a future SysML2Tools release, this
+            // degrades gracefully instead of crashing.
             var field = typeof(SysMLv2Lexer).GetField("_LiteralNames", BindingFlags.NonPublic | BindingFlags.Static);
             if (field?.GetValue(null) is string[] literalNames)
             {
                 var keywords = literalNames
                     .Where(name => name is not null)
-                    .Select(name => name!.Trim('\''))
+                    .Select(name => name.Trim('\''))
                     .Where(name => name.Length > 0 && char.IsLetter(name[0]))
                     .Distinct()
                     .ToList();

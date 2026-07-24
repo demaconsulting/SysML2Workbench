@@ -95,11 +95,8 @@ public sealed class SysmlSnippetGeneratorTests
     [Fact]
     public void SanitizeIdentifier_PlainIdentifier_ReturnsUnchanged()
     {
-        // Arrange
-        var generator = new SysmlSnippetGenerator();
-
         // Act
-        var result = generator.SanitizeIdentifier("EngineOverview");
+        var result = SysmlSnippetGenerator.SanitizeIdentifier("EngineOverview");
 
         // Assert
         Assert.Equal("EngineOverview", result);
@@ -111,12 +108,9 @@ public sealed class SysmlSnippetGeneratorTests
     [Fact]
     public void SanitizeIdentifier_ReservedWordOrInvalidCharacters_QuotesTheName()
     {
-        // Arrange
-        var generator = new SysmlSnippetGenerator();
-
         // Act
-        var quotedKeyword = generator.SanitizeIdentifier("view");
-        var quotedSpaced = generator.SanitizeIdentifier("Engine Overview");
+        var quotedKeyword = SysmlSnippetGenerator.SanitizeIdentifier("view");
+        var quotedSpaced = SysmlSnippetGenerator.SanitizeIdentifier("Engine Overview");
 
         // Assert
         Assert.Equal("'view'", quotedKeyword);

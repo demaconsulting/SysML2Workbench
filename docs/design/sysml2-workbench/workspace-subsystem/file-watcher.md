@@ -23,10 +23,18 @@ observed.
 **DebounceWindow**: `TimeSpan` — minimum delay used to merge rapid change
 bursts, across all active watchers, into a single reload batch.
 
-**PendingChanges**: `IReadOnlySet<string>` — normalized paths queued for the
+#### Key Methods
+
+**GetPendingChanges**: Returns the normalized paths currently queued for the
 next incremental refresh cycle, merged across every currently watched source.
 
-#### Key Methods
+- *Parameters*: `None` — reads the accumulated pending-change state.
+- *Returns*: `IReadOnlySet<string>` — a defensive copy of the currently
+  pending, normalized paths. Implemented as a method rather than a property
+  because it allocates a new set on every call.
+- *Preconditions*: None.
+- *Postconditions*: The internal pending-change state is left unchanged;
+  callers must not assume subsequent calls return the same set instance.
 
 **WatchSource**: Begins monitoring the given source, retargeting an
 already-watched source with the same id if one exists.
@@ -50,7 +58,7 @@ already-watched source with the same id if one exists.
 - *Returns*: `bool` — whether a matching watcher was found and disposed.
 - *Postconditions*: The matching watcher, if any, is disposed and removed from
   `WatchedSourceIds`. Unlike the old single-watcher `StartWatching` retarget
-  behavior, this does **not** clear `PendingChanges` - pending changes queued
+  behavior, this does **not** clear the pending-change set - pending changes queued
   by other still-watched sources must survive an unrelated source being
   removed.
 
@@ -64,7 +72,7 @@ already-watched source with the same id if one exists.
   notifications for the same path collapse into a single pending change
   entry, regardless of which watched source's watcher raised the underlying
   event. When no source is watched, the notification is silently ignored and
-  `PendingChanges` is left unchanged.
+  the pending-change set is left unchanged.
 
 **FlushPendingChanges**: Dispatches the current batch to the workspace reload
 pipeline.
@@ -74,7 +82,7 @@ pipeline.
   merged across every watcher that reported a change since the last flush.
 - *Preconditions*: None - zero watched sources is a valid state and simply
   yields an empty result.
-- *Postconditions*: Returned paths are removed from `PendingChanges` and are
+- *Postconditions*: Returned paths are removed from the pending-change set and are
   ready for `WorkspaceModel.ReloadFiles`.
 
 #### Error Handling
@@ -91,7 +99,7 @@ best-effort and does not replace propagation to the shell.
 
 Every `FileSystemWatcher` raises its `Changed`/`Created`/`Deleted`/`Renamed`
 events on an operating-system callback thread, independent of whatever thread
-calls `WatchSource`/`UnwatchSource`/`FlushPendingChanges`/`PendingChanges`.
+calls `WatchSource`/`UnwatchSource`/`FlushPendingChanges`/`GetPendingChanges`.
 Production usage marshals those callbacks onto the UI thread first, making
 this uncontended in practice, but a caller that supplies (or defaults to) an
 immediate, non-marshaling dispatcher runs them synchronously on the OS

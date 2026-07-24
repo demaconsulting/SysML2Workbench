@@ -80,6 +80,9 @@ public partial class WorkspacePanelToolView : UserControl
         }
         catch (Exception ex)
         {
+            // Intentionally broad: this is a UI event boundary over the file-source pipeline, which can
+            // fail with any exception type (I/O, permission, parser, platform-picker) - all must be
+            // reported via the status message rather than crashing the application.
             viewModel.StatusMessage = $"Failed to add workspace file: {ex.Message}";
         }
     }
@@ -110,11 +113,13 @@ public partial class WorkspacePanelToolView : UserControl
         }
         catch (Exception ex)
         {
+            // Intentionally broad: same UI event-boundary rationale as OnRequestAddFile - the folder-source
+            // pipeline can fail for any reason and must never crash the application.
             viewModel.StatusMessage = $"Failed to add workspace folder: {ex.Message}";
         }
     }
 
-    private void OnDragOver(object? sender, DragEventArgs e)
+    private static void OnDragOver(object? sender, DragEventArgs e)
     {
         e.DragEffects = e.DataTransfer.Formats.Contains(DataFormat.File) ? DragDropEffects.Copy : DragDropEffects.None;
     }
@@ -126,9 +131,8 @@ public partial class WorkspacePanelToolView : UserControl
             return;
         }
 
-        foreach (var item in e.DataTransfer.TryGetFiles() ?? [])
+        foreach (var path in (e.DataTransfer.TryGetFiles() ?? []).Select(item => item.TryGetLocalPath()))
         {
-            var path = item.TryGetLocalPath();
             if (string.IsNullOrEmpty(path))
             {
                 continue;
@@ -147,6 +151,8 @@ public partial class WorkspacePanelToolView : UserControl
             }
             catch (Exception ex)
             {
+                // Intentionally broad: same drag-and-drop event-boundary rationale as MainWindowView's
+                // OnWindowDrop - one bad dropped path must not abort the loop or crash the application.
                 viewModel.StatusMessage = $"Failed to add dropped workspace source '{path}': {ex.Message}";
             }
         }

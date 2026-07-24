@@ -31,7 +31,7 @@ namespace DemaConsulting.SysML2Workbench.ElementPickerSubsystem;
 public sealed partial class ElementPickerViewModel : ObservableObject
 {
     [ObservableProperty]
-    private string? _selectedQualifiedName;
+    public partial string? SelectedQualifiedName { get; set; }
 
     /// <summary>
     ///     Creates the picker view model in its empty initial state: no candidates, no active

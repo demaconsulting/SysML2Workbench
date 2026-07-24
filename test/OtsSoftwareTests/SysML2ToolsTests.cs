@@ -2,6 +2,7 @@ using DemaConsulting.SysML2Tools.Io;
 using DemaConsulting.SysML2Tools.Parser;
 using DemaConsulting.SysML2Tools.Semantic;
 using DemaConsulting.SysML2Tools.Stdlib;
+using DemaConsulting.SysML2Workbench;
 
 namespace OtsSoftwareTests;
 
@@ -33,11 +34,11 @@ public sealed class SysML2ToolsTests : IDisposable
     {
         // Arrange: two files where one imports a definition declared in the other
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Parts.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Parts.sysml"),
             "package Parts {\n    part def Engine;\n}\n",
             TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Vehicle.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Vehicle.sysml"),
             "package Vehicle {\n"
             + "    private import Parts::*;\n"
             + "    part def Car {\n"
@@ -76,7 +77,7 @@ public sealed class SysML2ToolsTests : IDisposable
     {
         // Arrange
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    view PredefinedView {\n"

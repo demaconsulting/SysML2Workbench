@@ -52,7 +52,7 @@ public sealed class RollingFileLogger
     /// <summary>
     ///     Full path of the currently active (append-target) log file.
     /// </summary>
-    public string ActiveFilePath => Path.Combine(LogDirectory, $"{BaseFileName}.log");
+    public string ActiveFilePath => PathHelpers.SafePathCombine(LogDirectory, $"{BaseFileName}.log");
 
     /// <summary>
     ///     Creates a logger that writes into <paramref name="logDirectory" />, creating the directory if needed.
@@ -133,7 +133,7 @@ public sealed class RollingFileLogger
             }
 
             var archiveName = $"{BaseFileName}-{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}.log";
-            var archivePath = Path.Combine(LogDirectory, archiveName);
+            var archivePath = PathHelpers.SafePathCombine(LogDirectory, archiveName);
             File.Move(activeFile.FullName, archivePath, overwrite: true);
 
             PruneOldArchives();

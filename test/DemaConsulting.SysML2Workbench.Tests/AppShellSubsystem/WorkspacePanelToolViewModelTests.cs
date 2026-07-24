@@ -82,8 +82,8 @@ public sealed class WorkspacePanelToolViewModelTests : IDisposable
     public async Task RebuildTree_FolderSource_ProducesSourceNodeWithFileChildren()
     {
         // Arrange
-        await WriteFileAsync(Path.Combine(_tempRoot, "A.sysml"), "package A {\n    part def Widget;\n}\n");
-        await WriteFileAsync(Path.Combine(_tempRoot, "B.sysml"), "package B {\n    part def Gadget;\n}\n");
+        await WriteFileAsync(PathHelpers.SafePathCombine(_tempRoot, "A.sysml"), "package A {\n    part def Widget;\n}\n");
+        await WriteFileAsync(PathHelpers.SafePathCombine(_tempRoot, "B.sysml"), "package B {\n    part def Gadget;\n}\n");
         using var shell = CreateShell();
         var viewModel = new WorkspacePanelToolViewModel(shell);
 
@@ -108,10 +108,10 @@ public sealed class WorkspacePanelToolViewModelTests : IDisposable
     public async Task RebuildTree_FolderSourceWithSubfolders_PreservesOnDiskHierarchy()
     {
         // Arrange: A.sysml directly under the root, B.sysml one level down in "Sub", C.sysml two levels down.
-        Directory.CreateDirectory(Path.Combine(_tempRoot, "Sub", "Nested"));
-        await WriteFileAsync(Path.Combine(_tempRoot, "A.sysml"), "package A {\n    part def Widget;\n}\n");
-        await WriteFileAsync(Path.Combine(_tempRoot, "Sub", "B.sysml"), "package B {\n    part def Gadget;\n}\n");
-        await WriteFileAsync(Path.Combine(_tempRoot, "Sub", "Nested", "C.sysml"), "package C {\n    part def Doohickey;\n}\n");
+        Directory.CreateDirectory(PathHelpers.SafePathCombine(_tempRoot, "Sub", "Nested"));
+        await WriteFileAsync(PathHelpers.SafePathCombine(_tempRoot, "A.sysml"), "package A {\n    part def Widget;\n}\n");
+        await WriteFileAsync(PathHelpers.SafePathCombine(_tempRoot, "Sub", "B.sysml"), "package B {\n    part def Gadget;\n}\n");
+        await WriteFileAsync(PathHelpers.SafePathCombine(_tempRoot, "Sub", "Nested", "C.sysml"), "package C {\n    part def Doohickey;\n}\n");
         using var shell = CreateShell();
         var viewModel = new WorkspacePanelToolViewModel(shell);
 
@@ -146,7 +146,7 @@ public sealed class WorkspacePanelToolViewModelTests : IDisposable
     public async Task RebuildTree_FileSource_ProducesLeafSourceNodeWithNoChildren()
     {
         // Arrange
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
         using var shell = CreateShell();
         var viewModel = new WorkspacePanelToolViewModel(shell);
@@ -170,7 +170,7 @@ public sealed class WorkspacePanelToolViewModelTests : IDisposable
     public async Task RebuildTree_OverlappingFileAndFolder_DedupeReflectedInTreeShape()
     {
         // Arrange: the file source is registered first, then a folder source that also discovers that file
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
         using var shell = CreateShell();
         var viewModel = new WorkspacePanelToolViewModel(shell);
@@ -294,7 +294,7 @@ public sealed class WorkspacePanelToolViewModelTests : IDisposable
     public async Task RemoveSelectedCommand_WithFileNodeSelected_RemovesOwningSource()
     {
         // Arrange
-        await WriteFileAsync(Path.Combine(_tempRoot, "A.sysml"), "package A {\n    part def Widget;\n}\n");
+        await WriteFileAsync(PathHelpers.SafePathCombine(_tempRoot, "A.sysml"), "package A {\n    part def Widget;\n}\n");
         using var shell = CreateShell();
         var viewModel = new WorkspacePanelToolViewModel(shell);
         await shell.AddFolderSourceAsync(_tempRoot);

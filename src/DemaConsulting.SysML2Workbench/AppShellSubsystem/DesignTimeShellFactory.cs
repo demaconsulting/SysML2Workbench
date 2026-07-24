@@ -29,6 +29,6 @@ internal static class DesignTimeShellFactory
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(Path.Combine(Path.GetTempPath(), "SysML2Workbench-DesignTime")));
+            new RollingFileLogger(PathHelpers.SafePathCombine(Path.GetTempPath(), "SysML2Workbench-DesignTime")));
     }
 }

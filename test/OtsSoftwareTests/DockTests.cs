@@ -5,6 +5,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using DemaConsulting.SysML2Workbench;
 using DemaConsulting.SysML2Workbench.AppShellSubsystem;
 using DemaConsulting.SysML2Workbench.DiagnosticsPanelSubsystem;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
@@ -416,11 +417,11 @@ public sealed class DockTests : IDisposable
         try
         {
             await File.WriteAllTextAsync(
-                Path.Combine(firstRoot, "First.sysml"),
+                PathHelpers.SafePathCombine(firstRoot, "First.sysml"),
                 "package First {\n    part def Engine;\n}\n",
                 TestContext.Current.CancellationToken);
             await File.WriteAllTextAsync(
-                Path.Combine(secondRoot, "Second.sysml"),
+                PathHelpers.SafePathCombine(secondRoot, "Second.sysml"),
                 "package Second {\n    part def Wheel;\n}\n",
                 TestContext.Current.CancellationToken);
 

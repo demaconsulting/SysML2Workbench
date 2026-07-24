@@ -29,7 +29,7 @@ public sealed class WorkspaceSubsystemTests : IDisposable
     {
         // Arrange
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n    part def Engine;\n}\n",
             TestContext.Current.CancellationToken);
         var model = new WorkspaceModel();
@@ -55,7 +55,7 @@ public sealed class WorkspaceSubsystemTests : IDisposable
     {
         // Arrange: an initially loaded, watched workspace
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n    part def Engine;\n}\n",
             TestContext.Current.CancellationToken);
         var model = new WorkspaceModel();
@@ -64,11 +64,11 @@ public sealed class WorkspaceSubsystemTests : IDisposable
         await model.LoadWorkspaceAsync(sourceSet.Sources, sourceSet.Resolve());
 
         var now = DateTimeOffset.UtcNow;
-        var watcher = new FileWatcher(TimeSpan.FromMilliseconds(1), () => now);
+        using var watcher = new FileWatcher(TimeSpan.FromMilliseconds(1), () => now);
         watcher.WatchSource(sourceSet.Sources[0]);
 
         // Act: an external process adds a new file, the watcher observes it, and the debounce window elapses
-        var newFilePath = Path.Combine(_tempRoot, "Extra.sysml");
+        var newFilePath = PathHelpers.SafePathCombine(_tempRoot, "Extra.sysml");
         await File.WriteAllTextAsync(newFilePath, "package Extra {\n    part def Bracket;\n}\n", TestContext.Current.CancellationToken);
         watcher.QueueChange(newFilePath);
         now = now.AddSeconds(1);
@@ -78,8 +78,6 @@ public sealed class WorkspaceSubsystemTests : IDisposable
         // Assert: the refreshed workspace state now includes the new file
         Assert.Equal(2, refreshed.Files.Count);
         Assert.True(refreshed.Workspace.Declarations.ContainsKey("Extra::Bracket"));
-
-        watcher.Dispose();
     }
 
     /// <summary>
@@ -92,11 +90,11 @@ public sealed class WorkspaceSubsystemTests : IDisposable
         // Arrange: two files, one containing a deliberate syntax error (unmatched brace) guaranteed to produce
         // a parser diagnostic regardless of semantic resolution specifics
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "A.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "A.sysml"),
             "package A {\n    part def Widget;\n}\n",
             TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "B.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "B.sysml"),
             "package B {\n    part def Gadget\n",
             TestContext.Current.CancellationToken);
         var model = new WorkspaceModel();

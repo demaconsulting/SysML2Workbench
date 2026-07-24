@@ -68,7 +68,7 @@ public sealed class ViewDefinitionModel
     ///     distinct recursion kind (for example both <c>expose PublishingSubsystem;</c> and
     ///     <c>expose PublishingSubsystem::*;</c> for the same package), matching valid SysML v2 semantics.
     /// </summary>
-    private List<ExposeTargetSelection> _exposeTargets = [];
+    private readonly List<ExposeTargetSelection> _exposeTargets = [];
 
     /// <summary>
     ///     Selected custom-view rendering style, constrained to the supported SysML view kinds exposed by the UI.
@@ -309,39 +309,7 @@ public sealed class ViewDefinitionModel
 
         foreach (var selection in _exposeTargets)
         {
-            var target = selection.QualifiedName;
-
-            if (!workspace.Declarations.TryGetValue(target, out var node))
-            {
-                diagnostics.Add(Diagnostic($"Target '{target}' does not resolve in the current workspace."));
-                continue;
-            }
-
-            if (workspace.StdlibNames.Contains(target))
-            {
-                diagnostics.Add(Diagnostic($"Target '{target}' is a standard library element and cannot be exposed."));
-                continue;
-            }
-
-            if (DisallowedTargetNodeTypes.Contains(node.GetType()))
-            {
-                diagnostics.Add(Diagnostic($"Target '{target}' is a {node.GetType().Name} and cannot be exposed."));
-            }
-
-            if (selection.BracketFilterExpression is not null)
-            {
-                if (selection.RecursionKind is ExposeRecursionKind.MembershipExact or ExposeRecursionKind.NamespaceDirectChildren)
-                {
-                    diagnostics.Add(Diagnostic(
-                        $"Target '{target}' has a bracket-filter expression but its recursion kind '{selection.RecursionKind}' does not support one; only the two recursive kinds do."));
-                }
-
-                var targetParseResult = FilterExpressionParser.Parse(selection.BracketFilterExpression);
-                if (targetParseResult.Expression is null)
-                {
-                    diagnostics.AddRange(targetParseResult.Diagnostics);
-                }
-            }
+            diagnostics.AddRange(ValidateExposeTargetSelection(workspace, selection));
         }
 
         if (!string.IsNullOrWhiteSpace(FilterExpression))
@@ -354,6 +322,56 @@ public sealed class ViewDefinitionModel
         }
 
         return diagnostics;
+    }
+
+    /// <summary>
+    ///     Validates a single expose-target selection against the workspace, extracted from
+    ///     <see cref="ValidateAgainstWorkspace" /> to keep that method's cognitive complexity low - this helper
+    ///     handles exactly one target's resolution, stdlib, disallowed-kind, and bracket-filter checks.
+    /// </summary>
+    /// <param name="workspace">Current loaded workspace.</param>
+    /// <param name="selection">The expose-target selection to validate.</param>
+    /// <returns>Validation findings for this single target; empty if it is fully valid.</returns>
+    private static IEnumerable<SysmlDiagnostic> ValidateExposeTargetSelection(SysmlWorkspace workspace, ExposeTargetSelection selection)
+    {
+        var target = selection.QualifiedName;
+
+        if (!workspace.Declarations.TryGetValue(target, out var node))
+        {
+            yield return Diagnostic($"Target '{target}' does not resolve in the current workspace.");
+            yield break;
+        }
+
+        if (workspace.StdlibNames.Contains(target))
+        {
+            yield return Diagnostic($"Target '{target}' is a standard library element and cannot be exposed.");
+            yield break;
+        }
+
+        if (DisallowedTargetNodeTypes.Contains(node.GetType()))
+        {
+            yield return Diagnostic($"Target '{target}' is a {node.GetType().Name} and cannot be exposed.");
+        }
+
+        if (selection.BracketFilterExpression is null)
+        {
+            yield break;
+        }
+
+        if (selection.RecursionKind is ExposeRecursionKind.MembershipExact or ExposeRecursionKind.NamespaceDirectChildren)
+        {
+            yield return Diagnostic(
+                $"Target '{target}' has a bracket-filter expression but its recursion kind '{selection.RecursionKind}' does not support one; only the two recursive kinds do.");
+        }
+
+        var targetParseResult = FilterExpressionParser.Parse(selection.BracketFilterExpression);
+        if (targetParseResult.Expression is null)
+        {
+            foreach (var diagnostic in targetParseResult.Diagnostics)
+            {
+                yield return diagnostic;
+            }
+        }
     }
 
     /// <summary>

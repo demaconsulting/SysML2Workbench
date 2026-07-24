@@ -45,7 +45,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     private async Task WriteSampleWorkspaceAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    part engineInstance : Engine;\n"

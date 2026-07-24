@@ -29,7 +29,7 @@ public sealed class ViewCatalogPresenterTests : IDisposable
     /// </summary>
     private async Task<WorkspaceSnapshot> LoadSingleViewWorkspaceAsync()
     {
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await File.WriteAllTextAsync(
             filePath,
             "package Sample {\n"
@@ -134,9 +134,9 @@ public sealed class ViewCatalogPresenterTests : IDisposable
         presenter.RefreshCatalog(snapshot.Workspace, snapshot.RevisionId);
         presenter.SelectView("Sample::MyView");
 
-        File.Delete(Path.Combine(_tempRoot, "Sample.sysml"));
+        File.Delete(PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"));
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Empty.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Empty.sysml"),
             "package Empty {\n}\n",
             TestContext.Current.CancellationToken);
         var model = new WorkspaceModel();
@@ -159,7 +159,7 @@ public sealed class ViewCatalogPresenterTests : IDisposable
     /// </summary>
     private async Task<WorkspaceSnapshot> LoadRichViewWorkspaceAsync()
     {
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await File.WriteAllTextAsync(
             filePath,
             "package Sample {\n"
@@ -215,12 +215,15 @@ public sealed class ViewCatalogPresenterTests : IDisposable
     [Fact]
     public async Task BuildViewDefinition_UnknownViewId_ReturnsNull()
     {
+        // Arrange
         var snapshot = await LoadSingleViewWorkspaceAsync();
         var presenter = new ViewCatalogPresenter();
         presenter.RefreshCatalog(snapshot.Workspace, snapshot.RevisionId);
 
+        // Act
         var definition = presenter.BuildViewDefinition(snapshot.Workspace, "Sample::DoesNotExist");
 
+        // Assert
         Assert.Null(definition);
     }
 
@@ -231,7 +234,8 @@ public sealed class ViewCatalogPresenterTests : IDisposable
     [Fact]
     public async Task BuildViewDefinition_NoExposeMembers_ReturnsNull()
     {
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        // Arrange
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await File.WriteAllTextAsync(
             filePath,
             "package Sample {\n"
@@ -250,8 +254,10 @@ public sealed class ViewCatalogPresenterTests : IDisposable
         var presenter = new ViewCatalogPresenter();
         presenter.RefreshCatalog(snapshot.Workspace, snapshot.RevisionId);
 
+        // Act
         var definition = presenter.BuildViewDefinition(snapshot.Workspace, "Sample::MyView");
 
+        // Assert
         Assert.Null(definition);
     }
 }

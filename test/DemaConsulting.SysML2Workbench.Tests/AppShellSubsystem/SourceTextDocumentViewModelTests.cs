@@ -61,7 +61,7 @@ public sealed class SourceTextDocumentViewModelTests : IDisposable
     public async Task Text_OpenedFile_MatchesFileContents()
     {
         // Arrange
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         var contents = "package Sample {\n    part def Engine;\n}\n";
         await File.WriteAllTextAsync(filePath, contents, TestContext.Current.CancellationToken);
         using var shell = CreateShell();
@@ -81,7 +81,7 @@ public sealed class SourceTextDocumentViewModelTests : IDisposable
     public async Task Title_OpenedFile_EqualsFileName()
     {
         // Arrange
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await File.WriteAllTextAsync(filePath, "package Sample {}\n", TestContext.Current.CancellationToken);
         using var shell = CreateShell();
         var tab = shell.OpenSourceTextTab(filePath);
@@ -101,7 +101,7 @@ public sealed class SourceTextDocumentViewModelTests : IDisposable
     public async Task Text_DeletedFile_ProducesFriendlyErrorMessage_DoesNotThrow()
     {
         // Arrange
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await File.WriteAllTextAsync(filePath, "package Sample {}\n", TestContext.Current.CancellationToken);
         using var shell = CreateShell();
         var tab = shell.OpenSourceTextTab(filePath);
