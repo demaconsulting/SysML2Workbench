@@ -13,6 +13,7 @@ language: en
 words:
   - APFS
   - Argb
+  - assertable
   - axaml
   - BGRA
   - Blockquotes
