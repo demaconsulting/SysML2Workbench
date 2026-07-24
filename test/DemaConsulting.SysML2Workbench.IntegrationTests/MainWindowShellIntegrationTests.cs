@@ -229,13 +229,53 @@ public sealed class MainWindowShellIntegrationTests
 
     /// <summary>
     ///     Validates that the Query menu's "Run Query..." item, found by the <c>QueryDialogMenuItem</c>
-    ///     automation id, is discoverable and enabled. Not clicked, for the same reason as
-    ///     <see cref="DesktopApp_ViewMenu_ViewBuilderDialogMenuItem_IsDiscoverableAndEnabled" />.
+    ///     automation id, is discoverable and enabled. Not clicked here (see
+    ///     <see cref="DesktopApp_QueryMenu_QueryDialogMenuItem_OpensAndClosesQueryDialog" /> for the full
+    ///     open/close round trip through the real dialog).
     /// </summary>
     [Fact]
     public void DesktopApp_QueryMenu_QueryDialogMenuItem_IsDiscoverableAndEnabled()
     {
         AssertMenuItemIsDiscoverableAndEnabled("Query", "QueryDialogMenuItem");
+    }
+
+    /// <summary>
+    ///     Validates that clicking the Query menu's "Run Query..." item, found by the
+    ///     <c>QueryDialogMenuItem</c> automation id, opens the modal Query dialog, discoverable by its own
+    ///     <c>AddTypeFilterButton</c> automation id (part of the shared <c>ElementFilterView</c>), and that
+    ///     dismissing it via its <c>QueryDialogCloseButton</c> actually closes the dialog again (confirmed by
+    ///     waiting for <c>AddTypeFilterButton</c> to disappear from the accessibility tree) - the same
+    ///     open/click/assert/close round-trip shape as
+    ///     <see cref="DesktopApp_HelpMenu_AboutMenuItem_OpensAndClosesAboutDialog" />, using the close button
+    ///     already exercised by <see cref="DesktopApp_QueryDialog_AddTypeFilterButton_CapturesInspectionScreenshot" />.
+    /// </summary>
+    [Fact]
+    public void DesktopApp_QueryMenu_QueryDialogMenuItem_OpensAndClosesQueryDialog()
+    {
+        // Arrange
+        var queryMenu = _session.FindElement(MobileBy.Name("Query"));
+        queryMenu.Click();
+        var queryDialogMenuItem = _session.FindElement(MobileBy.AccessibilityId("QueryDialogMenuItem"));
+        queryDialogMenuItem.Click();
+
+        try
+        {
+            // Act
+            var addTypeFilterButton = _session.FindElement(MobileBy.AccessibilityId("AddTypeFilterButton"));
+
+            // Assert
+            Assert.True(addTypeFilterButton.Displayed);
+
+            _session.FindElement(MobileBy.AccessibilityId("QueryDialogCloseButton")).Click();
+
+            var closed = WaitUntil(() => _session.FindElements(MobileBy.AccessibilityId("AddTypeFilterButton")).Count == 0);
+            Assert.True(closed, "The Query dialog's 'AddTypeFilterButton' was still present after closing it via 'QueryDialogCloseButton'.");
+        }
+        catch
+        {
+            TryCloseAnyOpenDialogWithEscape();
+            throw;
+        }
     }
 
     /// <summary>

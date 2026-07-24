@@ -30,8 +30,9 @@ drive the same application on all three desktop platforms through a common
   otherwise-inaccessible base constructor.
 - **`AutomationProperties.AutomationId`** — added to `MainWindowView.axaml`'s
   menu items and dock control, and to the interactive controls of the About
-  dialog, Workspace panel, and Predefined Views panel, giving
-  `MobileBy.AccessibilityId` lookups a stable, Appium-reliable target
+  dialog, Query dialog (shared `ElementFilterView`'s type-filter controls plus
+  the dialog's own close button), Workspace panel, and Predefined Views panel,
+  giving `MobileBy.AccessibilityId` lookups a stable, Appium-reliable target
   independent of `Name`/`x:Name`.
 - **`MobileBy.Name`/`MobileBy.AccessibilityId`** — locate top-level menus and
   automation-id-tagged controls in the real accessibility tree.
