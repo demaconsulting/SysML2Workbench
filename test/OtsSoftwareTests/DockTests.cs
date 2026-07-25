@@ -138,7 +138,7 @@ public sealed class DockTests : IDisposable
         };
         window.Show();
 
-        var originalOwner = Assert.IsAssignableFrom<IToolDock>(predefinedViewsViewModel.Owner);
+        var originalOwner = Assert.IsType<IToolDock>(predefinedViewsViewModel.Owner, exactMatch: false);
         Assert.Contains(predefinedViewsViewModel, originalOwner.VisibleDockables!);
 
         // Act - close the panel through the same public API Dock's own chrome invokes.
