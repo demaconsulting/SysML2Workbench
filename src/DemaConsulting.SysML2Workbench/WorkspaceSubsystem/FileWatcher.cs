@@ -45,7 +45,7 @@ public sealed class FileWatcher : IDisposable
     /// <summary>
     ///     Guards <see cref="_pending" /> and <see cref="_watchersBySourceId" />, both of which are read and
     ///     written from the calling thread (via <see cref="WatchSource" />/<see cref="UnwatchSource" />/
-    ///     <see cref="FlushPendingChanges" />/<see cref="PendingChanges" />) as well as from whatever background
+    ///     <see cref="FlushPendingChanges" />/<see cref="GetPendingChanges" />) as well as from whatever background
     ///     thread the operating system delivers a <see cref="FileSystemWatcher" /> callback on. Production usage
     ///     marshals those callbacks onto the UI thread via <see cref="_dispatcher" />, making this uncontended in
     ///     practice, but <see cref="ImmediateUiDispatcher" /> (used by default outside a live UI, including in
@@ -111,16 +111,16 @@ public sealed class FileWatcher : IDisposable
     public TimeSpan DebounceWindow { get; }
 
     /// <summary>
-    ///     Normalized paths queued for the next incremental refresh cycle.
+    ///     Returns the normalized paths currently queued for the next incremental refresh cycle. Implemented as
+    ///     a method rather than a property because it allocates and returns a defensive copy of internal state
+    ///     on every call (to keep the returned set safe to enumerate without holding <see cref="_gate" />), which
+    ///     is a cost callers should be able to see at the call site rather than one hidden behind property syntax.
     /// </summary>
-    public IReadOnlySet<string> PendingChanges
+    public IReadOnlySet<string> GetPendingChanges()
     {
-        get
+        lock (_gate)
         {
-            lock (_gate)
-            {
-                return new HashSet<string>(_pending.Keys, StringComparer.OrdinalIgnoreCase);
-            }
+            return new HashSet<string>(_pending.Keys, StringComparer.OrdinalIgnoreCase);
         }
     }
 

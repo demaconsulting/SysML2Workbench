@@ -12,13 +12,13 @@ public partial class DiagnosticsToolViewModel : Dock.Model.Mvvm.Controls.Tool
     private readonly MainWindowShell _shell;
 
     [ObservableProperty]
-    private IReadOnlyList<SysmlDiagnostic> _visibleDiagnostics = [];
+    public partial IReadOnlyList<SysmlDiagnostic> VisibleDiagnostics { get; set; } = [];
 
     [ObservableProperty]
-    private string? _emptyStateMessage;
+    public partial string? EmptyStateMessage { get; set; }
 
     [ObservableProperty]
-    private bool _hasEmptyStateMessage;
+    public partial bool HasEmptyStateMessage { get; set; }
 
     /// <summary>
     ///     Creates the diagnostics tool view model.

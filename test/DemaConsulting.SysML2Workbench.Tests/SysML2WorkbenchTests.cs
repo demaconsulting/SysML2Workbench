@@ -34,7 +34,7 @@ public sealed class SysML2WorkbenchTests : IDisposable
     private async Task WriteSampleWorkspaceAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    part def Wheel;\n"
@@ -77,7 +77,7 @@ public sealed class SysML2WorkbenchTests : IDisposable
 
         // Act: an external change followed by a refresh
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Extra.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Extra.sysml"),
             "package Extra {\n    part def Bracket;\n}\n",
             TestContext.Current.CancellationToken);
         await Task.Delay(5, TestContext.Current.CancellationToken);
@@ -146,7 +146,7 @@ public sealed class SysML2WorkbenchTests : IDisposable
     {
         // Arrange: a file with a deliberate syntax error
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Broken.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Broken.sysml"),
             "package Broken {\n    part def Widget\n",
             TestContext.Current.CancellationToken);
         using var shell = CreateShell();

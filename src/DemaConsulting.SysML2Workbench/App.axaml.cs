@@ -37,7 +37,7 @@ public sealed class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var logDirectory = Path.Combine(
+            var logDirectory = PathHelpers.SafePathCombine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "SysML2Workbench",
                 "logs");

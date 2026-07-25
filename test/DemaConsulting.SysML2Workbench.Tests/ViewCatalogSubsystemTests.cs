@@ -24,7 +24,7 @@ public sealed class ViewCatalogSubsystemTests : IDisposable
     private async Task<SysML2Tools.Semantic.SysmlWorkspace> LoadWorkspaceWithTwoViewsAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    part def Wheel;\n"

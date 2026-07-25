@@ -59,7 +59,7 @@ public sealed class DiagramDocumentViewModelTests : IDisposable
     private async Task<MainWindowShell> CreateShellWithSampleWorkspaceAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    view PredefinedView {\n"
@@ -151,7 +151,10 @@ public sealed class DiagramDocumentViewModelTests : IDisposable
 
         var viewModel = new DiagramDocumentViewModel(shell, tabId);
 
-        // Act / Assert
-        await viewModel.CopyAsSysmlAsync();
+        // Act
+        var exception = await Record.ExceptionAsync(() => viewModel.CopyAsSysmlAsync());
+
+        // Assert
+        Assert.Null(exception);
     }
 }

@@ -51,7 +51,7 @@ public sealed class WorkspaceModelTests : IDisposable
     public async Task LoadWorkspaceAsync_BuildsTrackedFileTree()
     {
         // Arrange: a workspace folder containing a single valid SysML file
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
         var model = new WorkspaceModel();
         var (sources, resolution) = ResolveFolder(_tempRoot);
@@ -76,10 +76,10 @@ public sealed class WorkspaceModelTests : IDisposable
     {
         // Arrange: two files where the second imports a definition declared in the first
         await WriteFileAsync(
-            Path.Combine(_tempRoot, "A.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "A.sysml"),
             "package PackageA {\n    part def Widget;\n}\n");
         await WriteFileAsync(
-            Path.Combine(_tempRoot, "B.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "B.sysml"),
             "package PackageB {\n    import PackageA::*;\n    part myWidget : Widget;\n}\n");
         var model = new WorkspaceModel();
         var (sources, resolution) = ResolveFolder(_tempRoot);
@@ -102,8 +102,8 @@ public sealed class WorkspaceModelTests : IDisposable
     public async Task ReloadFile_UpdatesOnlyAffectedFileState()
     {
         // Arrange: load a workspace with one always-valid file and one file that will be broken later
-        var unaffectedPath = Path.Combine(_tempRoot, "Unaffected.sysml");
-        var affectedPath = Path.Combine(_tempRoot, "Affected.sysml");
+        var unaffectedPath = PathHelpers.SafePathCombine(_tempRoot, "Unaffected.sysml");
+        var affectedPath = PathHelpers.SafePathCombine(_tempRoot, "Affected.sysml");
         await WriteFileAsync(unaffectedPath, "package Unaffected {\n    part def Widget;\n}\n");
         await WriteFileAsync(affectedPath, "package Affected {\n    part def Gadget;\n}\n");
         var model = new WorkspaceModel();
@@ -154,7 +154,7 @@ public sealed class WorkspaceModelTests : IDisposable
     {
         // Arrange: load a non-empty workspace, then reset it to an empty resolution (mirrors what
         // MainWindowShell does after removing the last source).
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
         var model = new WorkspaceModel();
         var (sources, resolution) = ResolveFolder(_tempRoot);

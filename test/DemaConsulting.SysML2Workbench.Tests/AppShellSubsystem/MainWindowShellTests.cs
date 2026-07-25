@@ -43,7 +43,7 @@ public sealed class MainWindowShellTests : IDisposable
     private async Task WriteSampleWorkspaceAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    part def Wheel;\n"
@@ -149,7 +149,7 @@ public sealed class MainWindowShellTests : IDisposable
 
         // Act: simulate an external edit and a debounce-window flush, then refresh
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Extra.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Extra.sysml"),
             "package Extra {\n    part def Bracket;\n}\n",
             TestContext.Current.CancellationToken);
         await Task.Delay(5, TestContext.Current.CancellationToken);
@@ -271,7 +271,7 @@ public sealed class MainWindowShellTests : IDisposable
     {
         // Arrange: a workspace whose predefined view declares no expose members at all
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    view UnscopedView {\n"
@@ -323,7 +323,7 @@ public sealed class MainWindowShellTests : IDisposable
     {
         using var shell = CreateShell();
 
-        await Assert.ThrowsAsync<DirectoryNotFoundException>(() => shell.AddFolderSourceAsync(Path.Combine(_tempRoot, "missing")));
+        await Assert.ThrowsAsync<DirectoryNotFoundException>(() => shell.AddFolderSourceAsync(PathHelpers.SafePathCombine(_tempRoot, "missing")));
         Assert.Throws<InvalidOperationException>(() => shell.SelectPredefinedView("anything"));
     }
 
@@ -599,7 +599,7 @@ public sealed class MainWindowShellTests : IDisposable
         {
             await WriteSampleWorkspaceAsync();
             await File.WriteAllTextAsync(
-                Path.Combine(secondRoot, "Other.sysml"),
+                PathHelpers.SafePathCombine(secondRoot, "Other.sysml"),
                 "package Other {\n    part def Bracket;\n}\n",
                 TestContext.Current.CancellationToken);
 
@@ -610,9 +610,9 @@ public sealed class MainWindowShellTests : IDisposable
             // folder source B.
             await shell.AddFolderSourceAsync(_tempRoot);
             Assert.Single(fileWatcher.WatchedSourceIds);
-            var stalePathUnderA = Path.Combine(_tempRoot, "Stale.sysml");
+            var stalePathUnderA = PathHelpers.SafePathCombine(_tempRoot, "Stale.sysml");
             fileWatcher.QueueChange(stalePathUnderA);
-            Assert.Contains(stalePathUnderA, fileWatcher.PendingChanges);
+            Assert.Contains(stalePathUnderA, fileWatcher.GetPendingChanges());
 
             var snapshot = await shell.AddFolderSourceAsync(secondRoot);
 
@@ -621,7 +621,7 @@ public sealed class MainWindowShellTests : IDisposable
             Assert.Equal(2, shell.CurrentWorkspace.Sources.Count);
             Assert.Equal(2, fileWatcher.WatchedSourceIds.Count);
             Assert.Equal(2, snapshot.Files.Count);
-            Assert.Contains(stalePathUnderA, fileWatcher.PendingChanges);
+            Assert.Contains(stalePathUnderA, fileWatcher.GetPendingChanges());
         }
         finally
         {
@@ -671,7 +671,7 @@ public sealed class MainWindowShellTests : IDisposable
         var secondRoot = Directory.CreateTempSubdirectory("sysml2workbench-tests-").FullName;
         try
         {
-            var filePath = Path.Combine(secondRoot, "Other.sysml");
+            var filePath = PathHelpers.SafePathCombine(secondRoot, "Other.sysml");
             await File.WriteAllTextAsync(filePath, "package Other {\n    part def Bracket;\n}\n", TestContext.Current.CancellationToken);
 
             var fileWatcher = new FileWatcher(TimeSpan.FromMilliseconds(1));
@@ -748,7 +748,7 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         var raisedCount = 0;
         shell.TabsChanged += (_, _) => raisedCount++;
 
@@ -773,11 +773,11 @@ public sealed class MainWindowShellTests : IDisposable
         // Arrange
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         var firstTab = shell.OpenSourceTextTab(filePath);
 
         // Open an unrelated tab so the source-text tab is no longer active, then re-open the same path.
-        var otherFilePath = Path.Combine(_tempRoot, "Other.sysml");
+        var otherFilePath = PathHelpers.SafePathCombine(_tempRoot, "Other.sysml");
         await File.WriteAllTextAsync(otherFilePath, "package Other {}\n", TestContext.Current.CancellationToken);
         shell.OpenSourceTextTab(otherFilePath);
 
@@ -805,7 +805,7 @@ public sealed class MainWindowShellTests : IDisposable
         await WriteSampleWorkspaceAsync();
         using var shell = CreateShell();
         await shell.AddFolderSourceAsync(_tempRoot);
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         var sourceTextTab = shell.OpenSourceTextTab(filePath);
         var view = shell.ViewCatalog.AvailableViews[0];
         shell.SelectPredefinedView(view.QualifiedName);

@@ -35,7 +35,7 @@ public sealed class AppShellSubsystemTests : IDisposable
     private async Task WriteSampleWorkspaceAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    part def Wheel;\n"
@@ -96,7 +96,7 @@ public sealed class AppShellSubsystemTests : IDisposable
 
         // Act: an external edit adds a second view
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Extra.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Extra.sysml"),
             "package Extra {\n    part def Bracket;\n    view ExtraView {\n        expose Bracket;\n        render asGridDiagram;\n    }\n}\n",
             TestContext.Current.CancellationToken);
         await Task.Delay(5, TestContext.Current.CancellationToken);

@@ -57,7 +57,7 @@ public partial class MainWindowView : Window
         var factory = new WorkbenchDockFactory(_predefinedViewsViewModel, _diagnosticsViewModel, _workspacePanelViewModel);
         var layout = factory.CreateLayout();
         factory.InitLayout(layout);
-        WorkbenchDockControl.Layout = (IDock)layout;
+        WorkbenchDockControl.Layout = layout;
         _dockFactory = factory;
 
         _dockFactory.FocusedDockableChanged += OnFocusedDockableChanged;
@@ -288,6 +288,10 @@ public partial class MainWindowView : Window
         }
         catch (Exception ex)
         {
+            // Intentionally broad: the storage-provider/file-source pipeline can surface a wide range of
+            // exception types (I/O, permission, parser, platform-picker) and this handler is a UI event
+            // boundary that must not let any of them escape and crash the application - reporting the
+            // failure to the user via the status message is the correct outcome for every cause.
             _workspacePanelViewModel.StatusMessage = $"Failed to open file: {ex.Message}";
         }
     }
@@ -319,6 +323,8 @@ public partial class MainWindowView : Window
         }
         catch (Exception ex)
         {
+            // Intentionally broad: see OnAddFileSourceClick - this is the same kind of UI event boundary
+            // over the same folder-source pipeline, so any exception type must be reported, not propagated.
             _workspacePanelViewModel.StatusMessage = $"Failed to open folder: {ex.Message}";
         }
     }
@@ -336,6 +342,8 @@ public partial class MainWindowView : Window
         }
         catch (Exception ex)
         {
+            // Intentionally broad: same UI event-boundary rationale as OnAddFileSourceClick - closing
+            // every source can fail for any number of reasons and must never crash the application.
             _workspacePanelViewModel.StatusMessage = $"Failed to close all sources: {ex.Message}";
         }
     }
@@ -352,9 +360,8 @@ public partial class MainWindowView : Window
             return;
         }
 
-        foreach (var item in e.DataTransfer.TryGetFiles() ?? [])
+        foreach (var path in (e.DataTransfer.TryGetFiles() ?? []).Select(item => item.TryGetLocalPath()))
         {
-            var path = item.TryGetLocalPath();
             if (string.IsNullOrEmpty(path))
             {
                 continue;
@@ -373,6 +380,9 @@ public partial class MainWindowView : Window
             }
             catch (Exception ex)
             {
+                // Intentionally broad: this loop drives a drag-and-drop event boundary over a per-item
+                // add-source call that can fail for any reason - one bad dropped path must not abort the
+                // loop or crash the application, only be reported and skipped.
                 _workspacePanelViewModel.StatusMessage = $"Failed to open dropped path '{path}': {ex.Message}";
             }
         }
@@ -380,7 +390,7 @@ public partial class MainWindowView : Window
         RefreshPanelsFromWorkspace();
     }
 
-    private void OnWindowDragOver(object? sender, DragEventArgs e)
+    private static void OnWindowDragOver(object? sender, DragEventArgs e)
     {
         e.DragEffects = e.DataTransfer.Formats.Contains(DataFormat.File) ? DragDropEffects.Copy : DragDropEffects.None;
     }

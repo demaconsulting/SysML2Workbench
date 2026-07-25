@@ -42,17 +42,17 @@ public sealed class FileWatcherTests : IDisposable
         var now = DateTimeOffset.UtcNow;
         var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50), () => now);
         watcher.WatchSource(FolderSource(_tempRoot));
-        var changedPath = Path.Combine(_tempRoot, "Model.sysml");
+        var changedPath = PathHelpers.SafePathCombine(_tempRoot, "Model.sysml");
 
         // Act: simulate an external change notification, then advance the clock past the debounce window
         watcher.QueueChange(changedPath);
-        Assert.Contains(changedPath, watcher.PendingChanges);
+        Assert.Contains(changedPath, watcher.GetPendingChanges());
         now = now.AddMilliseconds(100);
         var flushed = watcher.FlushPendingChanges();
 
         // Assert: the changed path is surfaced by the flush and removed from the pending set
         Assert.Contains(changedPath, flushed);
-        Assert.DoesNotContain(changedPath, watcher.PendingChanges);
+        Assert.DoesNotContain(changedPath, watcher.GetPendingChanges());
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public sealed class FileWatcherTests : IDisposable
         var now = DateTimeOffset.UtcNow;
         var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50), () => now);
         watcher.WatchSource(FolderSource(_tempRoot));
-        var changedPath = Path.Combine(_tempRoot, "Model.sysml");
+        var changedPath = PathHelpers.SafePathCombine(_tempRoot, "Model.sysml");
 
         // Act: raise a burst of notifications for the same path in quick succession
         watcher.QueueChange(changedPath);
@@ -95,7 +95,7 @@ public sealed class FileWatcherTests : IDisposable
         var now = DateTimeOffset.UtcNow;
         var watcher = new FileWatcher(TimeSpan.FromSeconds(1), () => now);
         watcher.WatchSource(FolderSource(_tempRoot));
-        var changedPath = Path.Combine(_tempRoot, "Model.sysml");
+        var changedPath = PathHelpers.SafePathCombine(_tempRoot, "Model.sysml");
         watcher.QueueChange(changedPath);
 
         // Act: flush immediately, well before the debounce window elapses
@@ -103,7 +103,7 @@ public sealed class FileWatcherTests : IDisposable
 
         // Assert: nothing is surfaced yet, and the path remains pending
         Assert.Empty(flushed);
-        Assert.Contains(changedPath, watcher.PendingChanges);
+        Assert.Contains(changedPath, watcher.GetPendingChanges());
     }
 
     /// <summary>
@@ -118,10 +118,10 @@ public sealed class FileWatcherTests : IDisposable
         var watcher = new FileWatcher(TimeSpan.FromMilliseconds(50));
 
         // Act: queuing does not throw
-        watcher.QueueChange(Path.Combine(_tempRoot, "Model.sysml"));
+        watcher.QueueChange(PathHelpers.SafePathCombine(_tempRoot, "Model.sysml"));
 
         // Assert: nothing was recorded, and flushing is likewise a harmless no-op
-        Assert.Empty(watcher.PendingChanges);
+        Assert.Empty(watcher.GetPendingChanges());
         Assert.Empty(watcher.FlushPendingChanges());
     }
 
@@ -142,11 +142,11 @@ public sealed class FileWatcherTests : IDisposable
         watcher.UnwatchSource(source.Id);
 
         // Act: a stale change notification for the now-unwatched source arrives
-        var exception = Record.Exception(() => watcher.QueueChange(Path.Combine(_tempRoot, "Model.sysml")));
+        var exception = Record.Exception(() => watcher.QueueChange(PathHelpers.SafePathCombine(_tempRoot, "Model.sysml")));
 
         // Assert: no exception, and the stale notification was not recorded
         Assert.Null(exception);
-        Assert.Empty(watcher.PendingChanges);
+        Assert.Empty(watcher.GetPendingChanges());
         Assert.Empty(watcher.FlushPendingChanges());
     }
 
@@ -200,8 +200,8 @@ public sealed class FileWatcherTests : IDisposable
             watcher.WatchSource(folderA);
             watcher.WatchSource(folderB);
 
-            var pathUnderA = Path.Combine(folderA.Path, "A.sysml");
-            var pathUnderB = Path.Combine(folderB.Path, "B.sysml");
+            var pathUnderA = PathHelpers.SafePathCombine(folderA.Path, "A.sysml");
+            var pathUnderB = PathHelpers.SafePathCombine(folderB.Path, "B.sysml");
             watcher.QueueChange(pathUnderA);
             watcher.QueueChange(pathUnderB);
 
@@ -212,8 +212,8 @@ public sealed class FileWatcherTests : IDisposable
             Assert.True(removed);
             Assert.DoesNotContain(folderA.Id, watcher.WatchedSourceIds);
             Assert.Contains(folderB.Id, watcher.WatchedSourceIds);
-            Assert.Contains(pathUnderA, watcher.PendingChanges);
-            Assert.Contains(pathUnderB, watcher.PendingChanges);
+            Assert.Contains(pathUnderA, watcher.GetPendingChanges());
+            Assert.Contains(pathUnderB, watcher.GetPendingChanges());
         }
         finally
         {
@@ -294,7 +294,7 @@ public sealed class FileWatcherTests : IDisposable
             watcher.WatchSource(FolderSource(rootB));
 
             // Act: write a real file under root B only
-            var changedPathUnderB = Path.Combine(rootB, "Model.sysml");
+            var changedPathUnderB = PathHelpers.SafePathCombine(rootB, "Model.sysml");
             await File.WriteAllTextAsync(changedPathUnderB, "part def Vehicle;", TestContext.Current.CancellationToken);
 
             // Poll with a bounded timeout: real FileSystemWatcher notifications are delivered on an OS callback
@@ -303,7 +303,7 @@ public sealed class FileWatcherTests : IDisposable
             var detected = false;
             while (DateTime.UtcNow < deadline && !detected)
             {
-                detected = watcher.PendingChanges.Any(path =>
+                detected = watcher.GetPendingChanges().Any(path =>
                     string.Equals(path, changedPathUnderB, StringComparison.OrdinalIgnoreCase));
 
                 if (!detected)
@@ -315,7 +315,7 @@ public sealed class FileWatcherTests : IDisposable
             // Assert: the real OS-level change under B was detected, and nothing under root A was ever written,
             // so no path under A can appear as a false-positive pending change.
             Assert.True(detected, $"Expected '{changedPathUnderB}' to be reported as a pending change under root B.");
-            Assert.DoesNotContain(watcher.PendingChanges, path => path.StartsWith(rootA, StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(watcher.GetPendingChanges(), path => path.StartsWith(rootA, StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
@@ -327,7 +327,7 @@ public sealed class FileWatcherTests : IDisposable
     ///     Regression test: reproduces many real, concurrently-arriving <see cref="System.IO.FileSystemWatcher" />
     ///     callbacks (via <see cref="ImmediateUiDispatcher" />, which runs them synchronously on their own OS
     ///     callback thread rather than marshaling onto a UI thread) racing repeated reads via
-    ///     <see cref="FileWatcher.PendingChanges" /> and <see cref="FileWatcher.FlushPendingChanges" /> from the
+    ///     <see cref="FileWatcher.GetPendingChanges()" /> and <see cref="FileWatcher.FlushPendingChanges" /> from the
     ///     test thread. Previously, concurrent unsynchronized access to the internal pending-changes dictionary
     ///     could corrupt its state and crash the whole process rather than merely throwing a recoverable
     ///     exception; this must now complete cleanly under sustained concurrent load.
@@ -347,7 +347,7 @@ public sealed class FileWatcherTests : IDisposable
             var counter = 0;
             while (!cts.IsCancellationRequested)
             {
-                var path = Path.Combine(_tempRoot, $"File{counter++ % 20}.sysml");
+                var path = PathHelpers.SafePathCombine(_tempRoot, $"File{counter++ % 20}.sysml");
                 try
                 {
                     await File.WriteAllTextAsync(path, "part def Widget;", CancellationToken.None);
@@ -363,7 +363,7 @@ public sealed class FileWatcherTests : IDisposable
         {
             while (!cts.IsCancellationRequested)
             {
-                _ = watcher.PendingChanges.Count;
+                _ = watcher.GetPendingChanges().Count;
                 _ = watcher.FlushPendingChanges();
                 await Task.Delay(5, CancellationToken.None);
             }

@@ -200,7 +200,7 @@ public sealed class AppFixture : IDisposable
         };
         ApplyStartupArguments(options, startupArguments);
 
-        return new LinuxDriver(ServerUri, options);
+        return LinuxDriver.Create(ServerUri, options);
     }
 
     /// <summary>
@@ -249,8 +249,31 @@ public sealed class AppFixture : IDisposable
     /// </summary>
     private sealed class LinuxDriver : AppiumDriver
     {
-        public LinuxDriver(Uri remoteAddress, AppiumOptions options)
-            : base(new OpenQA.Selenium.Remote.HttpCommandExecutor(remoteAddress, TimeSpan.FromSeconds(60)), options.ToCapabilities())
+        /// <summary>
+        ///     Creates a <see cref="LinuxDriver" />, ensuring the <see cref="OpenQA.Selenium.Remote.HttpCommandExecutor" />
+        ///     it constructs is disposed if base-class session initialization throws before ownership of the
+        ///     executor is fully transferred to the returned driver (whose own <see cref="Dispose()" />
+        ///     otherwise disposes it as part of the normal WebDriver lifecycle).
+        /// </summary>
+        /// <param name="remoteAddress">The Appium server's endpoint URI.</param>
+        /// <param name="options">The capabilities to request for the new session.</param>
+        /// <returns>A driver bound to a new Appium session at <paramref name="remoteAddress" />.</returns>
+        public static LinuxDriver Create(Uri remoteAddress, AppiumOptions options)
+        {
+            var executor = new OpenQA.Selenium.Remote.HttpCommandExecutor(remoteAddress, TimeSpan.FromSeconds(60));
+            try
+            {
+                return new LinuxDriver(executor, options.ToCapabilities());
+            }
+            catch
+            {
+                executor.Dispose();
+                throw;
+            }
+        }
+
+        private LinuxDriver(OpenQA.Selenium.Remote.HttpCommandExecutor executor, OpenQA.Selenium.ICapabilities capabilities)
+            : base(executor, capabilities)
         {
         }
     }

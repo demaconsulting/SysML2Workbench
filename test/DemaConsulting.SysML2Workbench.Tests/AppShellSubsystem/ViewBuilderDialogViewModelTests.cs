@@ -44,7 +44,7 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
     private async Task WriteSampleWorkspaceAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    part def Wheel;\n"
@@ -60,7 +60,7 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
     private async Task WriteMultiKindSampleWorkspaceAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "MultiKind.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "MultiKind.sysml"),
             "package MultiKind {\n"
             + "    part def Engine;\n"
             + "    part engineInstance : Engine;\n"
@@ -77,7 +77,7 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
     private async Task WriteNoPartUsageSampleWorkspaceAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "NoPartUsage.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "NoPartUsage.sysml"),
             "package NoPartUsage {\n"
             + "    part def Engine;\n"
             + "}\n",

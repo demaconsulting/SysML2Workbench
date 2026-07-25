@@ -6,6 +6,7 @@ using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using DemaConsulting.SysML2Workbench;
 using DemaConsulting.SysML2Workbench.AppShellSubsystem;
 using DemaConsulting.SysML2Workbench.DiagnosticsPanelSubsystem;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
@@ -89,7 +90,7 @@ public sealed class AvaloniaTests : IDisposable
     {
         // Arrange
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    view PredefinedView {\n"
@@ -138,7 +139,7 @@ public sealed class AvaloniaTests : IDisposable
     {
         // Arrange
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    view PredefinedView {\n"
@@ -198,7 +199,7 @@ public sealed class AvaloniaTests : IDisposable
     {
         // Arrange
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    part def Gearbox;\n"
@@ -362,7 +363,7 @@ public sealed class AvaloniaTests : IDisposable
     {
         // Arrange: a real workspace with one part def, so Describe has something meaningful to say
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "}\n");

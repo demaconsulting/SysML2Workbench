@@ -16,16 +16,16 @@ public partial class PredefinedViewsToolViewModel : Dock.Model.Mvvm.Controls.Too
     private readonly MainWindowShell _shell;
 
     [ObservableProperty]
-    private IReadOnlyList<ViewDescriptor> _availableViews = [];
+    public partial IReadOnlyList<ViewDescriptor> AvailableViews { get; set; } = [];
 
     [ObservableProperty]
-    private ViewDescriptor? _selectedView;
+    public partial ViewDescriptor? SelectedView { get; set; }
 
     [ObservableProperty]
-    private string? _statusMessage;
+    public partial string? StatusMessage { get; set; }
 
     [ObservableProperty]
-    private bool _isWorkspaceEmpty;
+    public partial bool IsWorkspaceEmpty { get; set; }
 
     /// <summary>
     ///     Creates the predefined-views tool view model.
@@ -63,6 +63,9 @@ public partial class PredefinedViewsToolViewModel : Dock.Model.Mvvm.Controls.Too
         }
         catch (Exception ex)
         {
+            // Intentionally broad: this is a UI selection-changed event boundary over the predefined-view
+            // rendering pipeline, which can fail for any reason (missing element, layout error, renderer
+            // fault) - every cause must be reported via StatusMessage, never crash the application.
             StatusMessage = $"Failed to render '{value.DisplayName}': {ex.Message}";
         }
     }

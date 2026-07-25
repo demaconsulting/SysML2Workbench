@@ -1,5 +1,14 @@
 # SysML2Workbench
 
+[![GitHub forks][badge-forks]][link-forks]
+[![GitHub stars][badge-stars]][link-stars]
+[![GitHub contributors][badge-contributors]][link-contributors]
+[![License][badge-license]][link-license]
+[![Build][badge-build]][link-build]
+[![Quality Gate][badge-quality]][link-quality]
+[![Security][badge-security]][link-security]
+[![Release][badge-release]][link-release]
+
 A cross-platform desktop viewer and GUI custom-view builder for SysML v2
 models, built on the SysML2Tools rendering engine.
 
@@ -79,3 +88,21 @@ the Desktop application, starts and polls a local Appium server, runs the
 tests, and always stops the server afterward; on Linux it publishes the
 Desktop application and delegates the whole test run to the pre-installed
 `selenium-webdriver-at-spi-run` wrapper (see `docs/design/ots/appium.md`).
+
+[badge-forks]: https://img.shields.io/github/forks/demaconsulting/SysML2Workbench?style=plastic
+[badge-stars]: https://img.shields.io/github/stars/demaconsulting/SysML2Workbench?style=plastic
+[badge-contributors]: https://img.shields.io/github/contributors/demaconsulting/SysML2Workbench?style=plastic
+[badge-license]: https://img.shields.io/github/license/demaconsulting/SysML2Workbench?style=plastic
+[badge-build]: https://img.shields.io/github/actions/workflow/status/demaconsulting/SysML2Workbench/build_on_push.yaml?style=plastic
+[badge-quality]: https://sonarcloud.io/api/project_badges/measure?project=demaconsulting_SysML2Workbench&metric=alert_status
+[badge-security]: https://sonarcloud.io/api/project_badges/measure?project=demaconsulting_SysML2Workbench&metric=security_rating
+[badge-release]: https://img.shields.io/github/v/release/demaconsulting/SysML2Workbench?style=plastic
+
+[link-forks]: https://github.com/demaconsulting/SysML2Workbench/network/members
+[link-stars]: https://github.com/demaconsulting/SysML2Workbench/stargazers
+[link-contributors]: https://github.com/demaconsulting/SysML2Workbench/graphs/contributors
+[link-license]: https://github.com/demaconsulting/SysML2Workbench/blob/main/LICENSE
+[link-build]: https://github.com/demaconsulting/SysML2Workbench/actions/workflows/build_on_push.yaml
+[link-quality]: https://sonarcloud.io/dashboard?id=demaconsulting_SysML2Workbench
+[link-security]: https://sonarcloud.io/dashboard?id=demaconsulting_SysML2Workbench
+[link-release]: https://github.com/demaconsulting/SysML2Workbench/releases/latest

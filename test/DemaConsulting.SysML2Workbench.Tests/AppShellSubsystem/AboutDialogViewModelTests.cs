@@ -15,12 +15,9 @@ public sealed class AboutDialogViewModelTests
     [Fact]
     public void Construction_ExposesApplicationNameAndTagline()
     {
-        // Arrange / Act
-        var viewModel = new AboutDialogViewModel();
-
-        // Assert
-        Assert.Equal("SysML2Workbench", viewModel.ApplicationName);
-        Assert.Equal("Cross-platform desktop viewer and IDE for SysML v2 models", viewModel.Tagline);
+        // Arrange / Act / Assert (ApplicationName and Tagline are static, so no instance is needed to assert)
+        Assert.Equal("SysML2Workbench", AboutDialogViewModel.ApplicationName);
+        Assert.Equal("Cross-platform desktop viewer and IDE for SysML v2 models", AboutDialogViewModel.Tagline);
     }
 
     /// <summary>
@@ -57,11 +54,8 @@ public sealed class AboutDialogViewModelTests
     [Fact]
     public void Construction_ExposesCopyrightText()
     {
-        // Arrange / Act
-        var viewModel = new AboutDialogViewModel();
-
-        // Assert
-        Assert.Equal("Copyright (c) 2026 DEMA Consulting", viewModel.Copyright);
+        // Arrange / Act / Assert (Copyright is static, so no instance is needed to assert)
+        Assert.Equal("Copyright (c) 2026 DEMA Consulting", AboutDialogViewModel.Copyright);
     }
 
     /// <summary>

@@ -21,19 +21,25 @@ public sealed class AboutDialogViewModel
     private const string UnknownVersion = "Unknown";
 
     /// <summary>
+    ///     License name shared by every entry in <see cref="Dependencies" />; every key OSS dependency this
+    ///     application bundles happens to use the same license, so this avoids repeating the literal string.
+    /// </summary>
+    private const string MitLicense = "MIT License";
+
+    /// <summary>
     ///     The application's display name.
     /// </summary>
-    public string ApplicationName => "SysML2Workbench";
+    public static string ApplicationName => "SysML2Workbench";
 
     /// <summary>
     ///     Short description of what the application does.
     /// </summary>
-    public string Tagline => "Cross-platform desktop viewer and IDE for SysML v2 models";
+    public static string Tagline => "Cross-platform desktop viewer and IDE for SysML v2 models";
 
     /// <summary>
     ///     Application copyright text, matching the format used by the repository's own <c>LICENSE</c> file.
     /// </summary>
-    public string Copyright => "Copyright (c) 2026 DEMA Consulting";
+    public static string Copyright => "Copyright (c) 2026 DEMA Consulting";
 
     /// <summary>
     ///     The running assembly's build-stamped version, read at runtime so it always reflects the actual build
@@ -51,12 +57,12 @@ public sealed class AboutDialogViewModel
     /// </summary>
     public IReadOnlyList<DependencyInfo> Dependencies { get; } =
     [
-        new DependencyInfo("Avalonia", "MIT License"),
-        new DependencyInfo("Dock.Avalonia", "MIT License"),
-        new DependencyInfo("Material.Icons.Avalonia", "MIT License"),
-        new DependencyInfo("CommunityToolkit.Mvvm", "MIT License"),
-        new DependencyInfo("DemaConsulting.SysML2Tools", "MIT License"),
-        new DependencyInfo("DemaConsulting.Rendering", "MIT License"),
+        new DependencyInfo("Avalonia", MitLicense),
+        new DependencyInfo("Dock.Avalonia", MitLicense),
+        new DependencyInfo("Material.Icons.Avalonia", MitLicense),
+        new DependencyInfo("CommunityToolkit.Mvvm", MitLicense),
+        new DependencyInfo("DemaConsulting.SysML2Tools", MitLicense),
+        new DependencyInfo("DemaConsulting.Rendering", MitLicense),
     ];
 
     /// <summary>

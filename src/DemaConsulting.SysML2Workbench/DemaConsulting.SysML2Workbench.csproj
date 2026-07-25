@@ -34,4 +34,15 @@
     <AvaloniaResource Include="Assets\SysML.xshd" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Expose internal members (e.g. PathHelpers) to the test projects that exercise them
+         directly, so tests can reuse the same reviewed helpers as production code.
+         DemaConsulting.SysML2Workbench.IntegrationTests is deliberately excluded: it has no
+         ProjectReference to this project (it drives the compiled app externally via Appium), so it
+         carries its own copy of PathHelpers instead - see that project's PathHelpers.cs. -->
+    <InternalsVisibleTo Include="DemaConsulting.SysML2Workbench.Tests" />
+    <InternalsVisibleTo Include="DemaConsulting.SysML2Workbench.UiTests" />
+    <InternalsVisibleTo Include="OtsSoftwareTests" />
+  </ItemGroup>
+
 </Project>

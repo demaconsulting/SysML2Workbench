@@ -110,16 +110,16 @@ public partial class WorkspacePanelToolViewModel : Dock.Model.Mvvm.Controls.Tool
     private readonly MainWindowShell _shell;
 
     [ObservableProperty]
-    private IReadOnlyList<WorkspaceTreeNode> _rootNodes = [];
+    public partial IReadOnlyList<WorkspaceTreeNode> RootNodes { get; set; } = [];
 
     [ObservableProperty]
-    private WorkspaceTreeNode? _selectedNode;
+    public partial WorkspaceTreeNode? SelectedNode { get; set; }
 
     [ObservableProperty]
-    private string? _statusMessage;
+    public partial string? StatusMessage { get; set; }
 
     [ObservableProperty]
-    private bool _isEmpty = true;
+    public new partial bool IsEmpty { get; set; } = true;
 
     /// <summary>
     ///     Raised when the user invokes the "Add File..." command, so the Avalonia-aware view can fulfill it with
@@ -303,6 +303,9 @@ public partial class WorkspacePanelToolViewModel : Dock.Model.Mvvm.Controls.Tool
         }
         catch (Exception ex)
         {
+            // Intentionally broad: this is a UI command boundary over source removal, which can fail for
+            // any reason (I/O, workspace-state) - every cause must be reported via StatusMessage rather
+            // than crash the application or leave the command faulted.
             StatusMessage = $"Failed to remove workspace source: {ex.Message}";
         }
     }

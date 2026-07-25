@@ -32,7 +32,7 @@ public sealed class ViewDefinitionModelTests : IDisposable
     private async Task<SysmlWorkspace> LoadSampleWorkspaceAsync()
     {
         await File.WriteAllTextAsync(
-            Path.Combine(_tempRoot, "Sample.sysml"),
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
             "package Sample {\n"
             + "    part def Engine;\n"
             + "    part def Wheel;\n"

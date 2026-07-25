@@ -170,11 +170,11 @@ public sealed class WorkspaceSourceSet
                 .Select(Path.GetFileName)
                 .FirstOrDefault(entry => string.Equals(entry, name, StringComparison.OrdinalIgnoreCase));
 
-            return Path.Combine(normalizedParent, actualName ?? name);
+            return PathHelpers.SafePathCombine(normalizedParent, actualName ?? name);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return Path.Combine(normalizedParent, name);
+            return PathHelpers.SafePathCombine(normalizedParent, name);
         }
     }
 

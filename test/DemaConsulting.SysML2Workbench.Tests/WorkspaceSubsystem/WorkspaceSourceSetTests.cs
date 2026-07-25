@@ -54,7 +54,7 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     public async Task AddFile_SamePathTwice_ReturnsSameSourceAndDoesNotDuplicate()
     {
         // Arrange
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
         var sourceSet = new WorkspaceSourceSet();
 
@@ -95,7 +95,7 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     public void AddFolder_MissingFolder_ThrowsDirectoryNotFoundException()
     {
         // Arrange
-        var missingPath = Path.Combine(_tempRoot, "does-not-exist");
+        var missingPath = PathHelpers.SafePathCombine(_tempRoot, "does-not-exist");
         var sourceSet = new WorkspaceSourceSet();
 
         // Act / Assert
@@ -132,7 +132,7 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     public async Task ClearSources_WithRegisteredSources_RemovesAllAndResolveReturnsEmpty()
     {
         // Arrange
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
         var sourceSet = new WorkspaceSourceSet();
         sourceSet.AddFile(filePath);
@@ -156,10 +156,10 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     public async Task Resolve_FolderSource_DiscoversAllSysmlFilesRecursively()
     {
         // Arrange
-        var nestedDir = Path.Combine(_tempRoot, "nested");
+        var nestedDir = PathHelpers.SafePathCombine(_tempRoot, "nested");
         Directory.CreateDirectory(nestedDir);
-        await WriteFileAsync(Path.Combine(_tempRoot, "Top.sysml"), "package Top {\n    part def Widget;\n}\n");
-        await WriteFileAsync(Path.Combine(nestedDir, "Nested.sysml"), "package Nested {\n    part def Gadget;\n}\n");
+        await WriteFileAsync(PathHelpers.SafePathCombine(_tempRoot, "Top.sysml"), "package Top {\n    part def Widget;\n}\n");
+        await WriteFileAsync(PathHelpers.SafePathCombine(nestedDir, "Nested.sysml"), "package Nested {\n    part def Gadget;\n}\n");
         var sourceSet = new WorkspaceSourceSet();
         var folderSource = sourceSet.AddFolder(_tempRoot);
 
@@ -180,7 +180,7 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     public async Task Resolve_FileOverlappingFolder_DedupesAndFirstRegisteredSourceWinsAttribution()
     {
         // Arrange: the file source is registered first, then a folder source that also discovers that file
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
         var sourceSet = new WorkspaceSourceSet();
         var fileSource = sourceSet.AddFile(filePath);
@@ -205,9 +205,9 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     {
         // Arrange: an outer folder registered first, and an inner (nested) folder registered second, both
         // discovering the same nested file.
-        var nestedDir = Path.Combine(_tempRoot, "nested");
+        var nestedDir = PathHelpers.SafePathCombine(_tempRoot, "nested");
         Directory.CreateDirectory(nestedDir);
-        var nestedFile = Path.Combine(nestedDir, "Nested.sysml");
+        var nestedFile = PathHelpers.SafePathCombine(nestedDir, "Nested.sysml");
         await WriteFileAsync(nestedFile, "package Nested {\n    part def Gadget;\n}\n");
         var sourceSet = new WorkspaceSourceSet();
         var outerSource = sourceSet.AddFolder(_tempRoot);
@@ -234,7 +234,7 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     {
         // Arrange
         var actualName = Path.GetFileName(_tempRoot);
-        var upperCasedPath = Path.Combine(Path.GetDirectoryName(_tempRoot)!, actualName.ToUpperInvariant());
+        var upperCasedPath = PathHelpers.SafePathCombine(Path.GetDirectoryName(_tempRoot)!, actualName.ToUpperInvariant());
         if (!Directory.Exists(upperCasedPath))
         {
             // The host filesystem is case-sensitive (for example Linux ext4), so the differently-cased path
@@ -263,7 +263,7 @@ public sealed class WorkspaceSourceSetTests : IDisposable
     public async Task Sources_PreservesRegistrationOrder()
     {
         // Arrange
-        var filePath = Path.Combine(_tempRoot, "Sample.sysml");
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
         await WriteFileAsync(filePath, "package Sample {\n    part def Widget;\n}\n");
         var otherDir = Directory.CreateTempSubdirectory("sysml2workbench-source-set-tests-other-").FullName;
         try
