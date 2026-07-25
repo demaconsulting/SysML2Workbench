@@ -2,3 +2,30 @@
 # CodeQL configuration for SysML2Workbench
 
 name: "SysML2Workbench CodeQL Config"
+# Globally ignore build output and generated files
+paths-ignore:
+  - '**/obj/**'
+  - '**/bin/**'
+# Query filters to disable specific queries for certain paths
+query-filters:
+  # Suppress warnings in xUnit-generated entry-point files under obj/ - these are
+  # generated code that cannot be hand-modified and do not reflect authored design.
+  - exclude:
+      id: cs/missed-ternary-operator
+    paths: ['**/obj/**/*.cs']
+  # Suppress warnings for intentionally-broad catch-of-all-exceptions boundaries.
+  # Each of these is a UI event-handler / drag-drop / best-effort teardown boundary
+  # that must report failure (e.g. via a status message) rather than let any
+  # exception type escape and crash the application - narrowing the catch type
+  # would be behaviorally wrong. Each site carries an explanatory comment; see
+  # .github/standards/coding-principles.md for the broad-catch review policy.
+  - exclude:
+      id: cs/catch-of-all-exceptions
+    paths:
+      - src/DemaConsulting.SysML2Workbench/AppShellSubsystem/PredefinedViewsToolViewModel.cs
+      - src/DemaConsulting.SysML2Workbench/AppShellSubsystem/MainWindowView.axaml.cs
+      - src/DemaConsulting.SysML2Workbench/AppShellSubsystem/SourceTextDocumentView.axaml.cs
+      - src/DemaConsulting.SysML2Workbench/AppShellSubsystem/ViewBuilderDialogViewModel.cs
+      - src/DemaConsulting.SysML2Workbench/AppShellSubsystem/WorkspacePanelToolView.axaml.cs
+      - src/DemaConsulting.SysML2Workbench/AppShellSubsystem/WorkspacePanelToolViewModel.cs
+      - test/DemaConsulting.SysML2Workbench.IntegrationTests/AppiumTestBase.cs
