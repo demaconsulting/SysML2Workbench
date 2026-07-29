@@ -10,9 +10,13 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 ///     Dock layout, approximating the legacy fixed-<c>DockPanel</c> arrangement's default proportions (left
 ///     ~260px, bottom ~180px against the window's default 1280x800 size) as initial
 ///     <see cref="Dock.Model.Core.IDockable" /> proportions, while leaving every panel user-resizable, floatable,
-///     and closable through Dock's own chrome. The Workspace panel shares the Left column with the Predefined
-///     Views panel as a second tab (rather than its own column), keeping the other panes' proportions
-///     unchanged.
+///     and closable through Dock's own chrome. The Workspace panel is the leading tab of the Left column and
+///     the initially active one there, so a freshly launched application shows the workspace tree first, with
+///     the Predefined Views panel as the second tab of that same column (rather than its own column), keeping
+///     the other panes' proportions unchanged. This ordering matches the View menu, which lists Workspace
+///     before Predefined Views. The Left <see cref="ToolDock" />'s <c>Id</c> remains <c>"PredefinedViewsPane"</c>
+///     for continuity - no layout persistence keys off it (the layout is rebuilt from this factory on every
+///     window construction), and it names the column rather than the tab shown first in it.
 ///     <c>HideToolsOnClose</c> is set so that closing a <see cref="Dock.Model.Mvvm.Controls.Tool" /> hides it
 ///     (tracked in <see cref="Dock.Model.Controls.IRootDock.HiddenDockables" /> and restorable via
 ///     <c>RestoreDockable</c>) rather than permanently removing it, so the "View" menu can bring a closed panel
@@ -88,8 +92,8 @@ public sealed class WorkbenchDockFactory : Factory
             Id = "PredefinedViewsPane",
             Alignment = Alignment.Left,
             Proportion = 0.20,
-            VisibleDockables = CreateList<IDockable>(_predefinedViewsViewModel, _workspacePanelViewModel),
-            ActiveDockable = _predefinedViewsViewModel,
+            VisibleDockables = CreateList<IDockable>(_workspacePanelViewModel, _predefinedViewsViewModel),
+            ActiveDockable = _workspacePanelViewModel,
         };
 
         var diagnosticsDock = new ToolDock

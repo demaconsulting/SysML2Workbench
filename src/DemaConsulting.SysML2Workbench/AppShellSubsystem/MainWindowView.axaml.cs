@@ -12,8 +12,9 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 ///     Thin Avalonia code-behind for the main application window. All region-specific orchestration and
 ///     validation logic is delegated to <see cref="MainWindowShell" /> (via the panel view models this class
 ///     composes into a Dock layout); this class only builds that layout, wires the File, View, and Help menus, forwards
-///     Dock's own focus/close signals to <see cref="MainWindowShell" />, and reconciles the shell's
-///     <see cref="MainWindowShell.OpenTabs" /> against the Dock <see cref="WorkbenchDockFactory.DiagramDock" />.
+///     Dock's own focus/close signals to <see cref="MainWindowShell" />, reconciles the shell's
+///     <see cref="MainWindowShell.OpenTabs" /> against the Dock <see cref="WorkbenchDockFactory.DiagramDock" />,
+///     and renders the shell's active-tab summary into the window's bottom status bar.
 ///     The View menu lets a user restore a Tool panel that was closed through Dock's own chrome, reusing the same
 ///     long-lived panel view model instance so any in-progress panel state survives the close/restore cycle.
 /// </summary>
@@ -176,16 +177,39 @@ public partial class MainWindowView : Window
     }
 
     /// <summary>
-    ///     Forwards Dock's own focus-change signal to the shell, but only when focus lands on a diagram document
-    ///     (focus changes onto a Tool panel are deliberately ignored, so switching focus to a tool panel does not
-    ///     clear which diagram tab a subsequent "Preview" click should target).
+    ///     Forwards Dock's own focus-change signal to the shell whenever focus lands on a document - a diagram
+    ///     document or a read-only source-text document - so the shell's active-tab state (and therefore the
+    ///     status bar) tracks whichever tab the user is actually looking at. Focus changes onto a Tool panel are
+    ///     deliberately ignored, so switching focus to a tool panel does not clear which diagram tab a
+    ///     subsequent "Preview" click should target.
     /// </summary>
     private void OnFocusedDockableChanged(object? sender, FocusedDockableChangedEventArgs e)
     {
-        if (e.Dockable is DiagramDocumentViewModel diagram)
+        switch (e.Dockable)
         {
-            _shell.NotifyActiveDiagramTab(diagram.TabId);
+            case DiagramDocumentViewModel diagram:
+                _shell.NotifyActiveDocumentTab(diagram.TabId);
+                break;
+
+            case SourceTextDocumentViewModel sourceText:
+                _shell.NotifyActiveDocumentTab(sourceText.TabId);
+                break;
+
+            default:
+                return;
         }
+
+        UpdateStatusBar();
+    }
+
+    /// <summary>
+    ///     Refreshes the bottom status bar from the shell's own summary of the currently active tab. Called
+    ///     whenever the open-tab set or the focused document changes; the constructor's priming
+    ///     <see cref="OnShellTabsChanged" /> call renders the initial idle summary.
+    /// </summary>
+    private void UpdateStatusBar()
+    {
+        StatusBarText.Text = _shell.GetActiveTabStatusSummary();
     }
 
     /// <summary>
@@ -216,7 +240,7 @@ public partial class MainWindowView : Window
     ///     document for every tab that no longer exists (covers <c>ApplyWorkspaceSnapshot</c>'s tab-clear-on-reload
     ///     path, which bypasses <see cref="MainWindowShell.CloseDiagramTab" />), repaints and retitles the active
     ///     tab's document, and makes it the active/focused dockable so the user sees whatever tab the shell just
-    ///     opened, closed, or updated.
+    ///     opened, closed, or updated, then refreshes the bottom status bar for the resulting active tab.
     /// </summary>
     private void OnShellTabsChanged(object? sender, EventArgs e)
     {
@@ -258,6 +282,8 @@ public partial class MainWindowView : Window
             _dockFactory.SetActiveDockable(activeViewModel);
             _dockFactory.SetFocusedDockable(_dockFactory.DiagramDock, activeViewModel);
         }
+
+        UpdateStatusBar();
     }
 
     private async void OnAddFileSourceClick(object? sender, RoutedEventArgs e)

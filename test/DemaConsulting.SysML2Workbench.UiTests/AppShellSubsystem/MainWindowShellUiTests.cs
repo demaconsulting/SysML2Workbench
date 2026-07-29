@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using DemaConsulting.SysML2Workbench.AppShellSubsystem;
 using DemaConsulting.SysML2Workbench.DiagnosticsPanelSubsystem;
 using DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
@@ -8,6 +9,8 @@ using DemaConsulting.SysML2Workbench.LoggingSubsystem;
 using DemaConsulting.SysML2Workbench.ViewBuilderSubsystem;
 using DemaConsulting.SysML2Workbench.ViewCatalogSubsystem;
 using DemaConsulting.SysML2Workbench.WorkspaceSubsystem;
+using Dock.Avalonia.Controls;
+using Dock.Model.Core;
 
 namespace DemaConsulting.SysML2Workbench.UiTests.AppShellSubsystem;
 
@@ -133,5 +136,102 @@ public sealed class MainWindowShellUiTests : IDisposable
         {
             Directory.Delete(tempRoot, recursive: true);
         }
+    }
+
+    /// <summary>
+    ///     Validates that the main window's bottom status bar exists, carries the automation id Appium and
+    ///     headless UI tests locate it by, and renders the shell's idle summary when no document tab is open.
+    /// </summary>
+    [AvaloniaFact]
+    public void MainWindowView_Startup_StatusBarShowsIdleSummary()
+    {
+        // Arrange
+        using var shell = CreateShell();
+
+        // Act
+        var window = new MainWindowView(shell);
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var statusBarText = window.FindControl<TextBlock>("StatusBarText");
+
+        // Assert
+        Assert.NotNull(statusBarText);
+        Assert.Equal(shell.GetActiveTabStatusSummary(), statusBarText.Text);
+        Assert.Equal("Ready", statusBarText.Text);
+    }
+
+    /// <summary>
+    ///     Validates that selecting a read-only source-text document tab updates the status bar with that file's
+    ///     name and full path, proving <c>MainWindowView.OnFocusedDockableChanged</c>'s source-text arm forwards
+    ///     the newly selected tab to the shell rather than only its diagram arm doing so. Selection is driven the
+    ///     way Dock itself drives a clicked tab - <c>SetActiveDockable</c> followed by <c>SetFocusedDockable</c>,
+    ///     which is exactly what Dock.Avalonia's internal <c>TryActivateDockable</c> does - so the assertion
+    ///     covers the whole production chain from Dock's selection API through the window's focus-change handler
+    ///     into the shell, matching the convention already used by <c>test/OtsSoftwareTests/AvaloniaTests.cs</c>.
+    ///     The window is deliberately not shown: realizing Dock's document tab strip adds a two-way
+    ///     <c>ActiveDockable</c> binding whose write-back races programmatic selection under load, which is a
+    ///     property of the headless harness rather than of the behavior under test.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task MainWindowView_SourceTextDocumentTabSelected_StatusBarShowsFileSummary()
+    {
+        // Arrange: load a source that offers both a predefined view and a source-text document
+        var tempRoot = Directory.CreateTempSubdirectory("sysml2workbench-ui-tests-").FullName;
+        try
+        {
+            var filePath = PathHelpers.SafePathCombine(tempRoot, "Sample.sysml");
+            await File.WriteAllTextAsync(
+                filePath,
+                "package Sample {\n"
+                + "    part def Engine;\n"
+                + "    view EngineView {\n"
+                + "        expose Engine;\n"
+                + "        render asGeneralDiagram;\n"
+                + "    }\n"
+                + "}\n");
+
+            using var shell = CreateShell();
+            await shell.AddFileSourceAsync(filePath);
+
+            var window = new MainWindowView(shell);
+            var statusBarText = window.FindControl<TextBlock>("StatusBarText");
+            Assert.NotNull(statusBarText);
+
+            shell.SelectPredefinedView(shell.ViewCatalog.AvailableViews[0].QualifiedName);
+            shell.OpenSourceTextTab(filePath);
+
+            var factory = (WorkbenchDockFactory)((IDock)window.WorkbenchDockControl.Layout!).Factory!;
+            var documents = factory.DiagramDock.VisibleDockables!;
+            var diagramDocument = documents.OfType<DiagramDocumentViewModel>().Single();
+            var sourceTextDocument = documents.OfType<SourceTextDocumentViewModel>().Single();
+
+            // Act: select the diagram tab first, so selecting the source-text tab is a genuine transition
+            SelectDocumentTab(factory, diagramDocument);
+            Assert.Equal("Sample::EngineView", shell.ActiveTabId);
+            Assert.Equal("General view \u2014 Engine", statusBarText.Text);
+
+            SelectDocumentTab(factory, sourceTextDocument);
+
+            // Assert
+            Assert.Equal(filePath, shell.ActiveTabId);
+            Assert.Equal($"Sample.sysml \u2014 {filePath}", statusBarText.Text);
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    /// <summary>
+    ///     Selects a document tab through the same two Dock factory calls that Dock.Avalonia's internal
+    ///     <c>TryActivateDockable</c> makes when a user clicks a tab, so tests exercise the production
+    ///     focus-notification path rather than a shortcut around it.
+    /// </summary>
+    /// <param name="factory">The workbench dock factory owning the document.</param>
+    /// <param name="document">The document to select.</param>
+    private static void SelectDocumentTab(WorkbenchDockFactory factory, IDockable document)
+    {
+        factory.SetActiveDockable(document);
+        factory.SetFocusedDockable(factory.DiagramDock, document);
     }
 }

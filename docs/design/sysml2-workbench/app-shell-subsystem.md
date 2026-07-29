@@ -60,7 +60,12 @@ environment.
    state. The three Tool panels (workspace, predefined views, diagnostics)
    are closable and restorable via a View menu, which reuses the same
    long-lived panel view model instance so its in-progress state survives
-   the close/restore cycle. Custom-view composition is not one of these
+   the close/restore cycle. The workspace and predefined-views panels share
+   the left column, with Workspace as its leading tab and the one shown by
+   default at startup (matching the order the View menu lists them in), so a
+   freshly launched application presents the workspace tree first - the
+   panel a user needs before any view can be rendered. Custom-view
+   composition is not one of these
    docked panels: it is `ViewBuilderDialog`, a modal `Window` shown via
    `ShowDialog` (like `AboutDialog`), opened from the View menu and
    discarded on close rather than living in the persistent Dock layout. The
@@ -86,3 +91,14 @@ environment.
    diagnostics panel in particular distinguishes "no diagnostics because the
    workspace is empty" from "no diagnostics because everything is clean,"
    since those are different facts the user needs to tell apart.
+8. A status area runs along the bottom edge of the main window, below every
+   docked panel, summarizing whatever document tab is currently active: the
+   file name and full path for a source-text tab, the view kind plus the
+   entities being viewed (elided to the first few with a trailing "+N more"
+   count) for a diagram tab, and a neutral idle message when no tab is open.
+   The summary text itself is computed by MainWindowShell
+   (`GetActiveTabStatusSummary`), so the logic stays Avalonia-free and
+   unit-testable and the UI layer only renders the resulting string,
+   refreshing it whenever the open-tab set or the focused document changes.
+   Because the shell is the only owner of that text, the status area never
+   duplicates tab-presentation rules the shell already applies.

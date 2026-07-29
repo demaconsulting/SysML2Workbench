@@ -36,3 +36,24 @@ sections:
               - 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-CancelDiscardsWithoutSideEffects'
             tests:
               - 'CustomViewWorkflow_PreviewsAndExportsFromShell'
+
+          - id: 'SysML2Workbench-AppShellSubsystem-DefaultSidebarPanel'
+            title: 'The AppShellSubsystem shall present the workspace panel as the sidebar panel shown by default when the application starts, ahead of the predefined-views panel in the same sidebar.'
+            justification: |
+              The workspace tree is the first thing a user needs at startup - sources must be added before any view can be
+              rendered - so it is the sidebar panel shown by default, matching the order the View menu already lists the
+              panels in. This behavior is realized by the subsystem's UI composition layer rather than by a documented
+              unit, so it is verified at subsystem level.
+            tests:
+              - 'Startup_ShowsWorkspacePanelAsDefaultSidebarTab'
+
+          - id: 'SysML2Workbench-AppShellSubsystem-ShowActiveDocumentStatus'
+            title: 'The AppShellSubsystem shall display a status area along the bottom of the main window summarizing the currently active document.'
+            justification: |
+              Users need to tell at a glance which file or view the front tab presents - the tab label alone is truncated and
+              omits the file path and the entities a diagram exposes - and need a neutral idle indication when no document
+              is open at all.
+            children:
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SummarizeActiveTab'
+            tests:
+              - 'ActiveTabChanges_ProduceStatusSummary'

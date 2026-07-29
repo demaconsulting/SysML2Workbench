@@ -533,7 +533,7 @@ public sealed class MainWindowShellTests : IDisposable
     ///     still-valid <see cref="MainWindowShell.ActiveTabId" />.
     /// </summary>
     [Fact]
-    public async Task NotifyActiveDiagramTab_UnknownId_IsIgnored()
+    public async Task NotifyActiveDocumentTab_UnknownId_IsIgnored()
     {
         // Arrange
         await WriteSampleWorkspaceAsync();
@@ -544,7 +544,7 @@ public sealed class MainWindowShellTests : IDisposable
         var activeTabId = shell.ActiveTabId;
 
         // Act
-        shell.NotifyActiveDiagramTab("not-a-real-tab");
+        shell.NotifyActiveDocumentTab("not-a-real-tab");
 
         // Assert
         Assert.Equal(activeTabId, shell.ActiveTabId);
@@ -815,5 +815,187 @@ public sealed class MainWindowShellTests : IDisposable
         Assert.Equal(filePath, shell.GetTabFilePath(sourceTextTab.Id));
         Assert.Null(shell.GetTabFilePath(diagramTabId));
         Assert.Null(shell.GetTabFilePath("not-a-real-tab"));
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.GetActiveTabStatusSummary" /> reports a neutral idle
+    ///     message when no tab is open at all, rather than an empty string.
+    /// </summary>
+    [Fact]
+    public void GetActiveTabStatusSummary_NoTabOpen_ReturnsIdleSummary()
+    {
+        // Arrange
+        using var shell = CreateShell();
+
+        // Act
+        var summary = shell.GetActiveTabStatusSummary();
+
+        // Assert
+        Assert.Equal("Ready", summary);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.GetActiveTabStatusSummary" /> reports a source-text tab's
+    ///     file name together with its full path.
+    /// </summary>
+    [Fact]
+    public async Task GetActiveTabStatusSummary_SourceTextTab_ReturnsFileNameAndPath()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
+        shell.OpenSourceTextTab(filePath);
+
+        // Act
+        var summary = shell.GetActiveTabStatusSummary();
+
+        // Assert
+        Assert.Equal($"Sample.sysml \u2014 {filePath}", summary);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.GetActiveTabStatusSummary" /> reports a predefined-view
+    ///     tab's view kind and the short names of the entities it exposes.
+    /// </summary>
+    [Fact]
+    public async Task GetActiveTabStatusSummary_PredefinedViewTab_ReturnsViewKindAndExposedEntities()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var view = shell.ViewCatalog.AvailableViews[0];
+
+        // Act
+        shell.SelectPredefinedView(view.QualifiedName);
+        var summary = shell.GetActiveTabStatusSummary();
+
+        // Assert
+        Assert.Equal("General view \u2014 Engine", summary);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.GetActiveTabStatusSummary" /> reports a custom-view-preview
+    ///     tab's view kind - spelled as a friendly, space-separated label - and its exposed entities.
+    /// </summary>
+    [Fact]
+    public async Task GetActiveTabStatusSummary_CustomPreviewTab_ReturnsViewKindAndExposedEntities()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.Interconnection);
+        definition.AddExposeTarget("Sample::Engine");
+        definition.AddExposeTarget("Sample::Wheel");
+
+        // Act
+        shell.PreviewCustomView(definition);
+        var summary = shell.GetActiveTabStatusSummary();
+
+        // Assert
+        Assert.Equal("Interconnection view \u2014 Engine, Wheel", summary);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.GetActiveTabStatusSummary" /> lists only the first few
+    ///     exposed entities and elides the remainder with a trailing count, so the summary stays single-line.
+    /// </summary>
+    [Fact]
+    public async Task GetActiveTabStatusSummary_ManyExposedEntities_ElidesWithMoreCount()
+    {
+        // Arrange: a workspace with more elements to expose than the summary lists
+        await File.WriteAllTextAsync(
+            PathHelpers.SafePathCombine(_tempRoot, "Fleet.sysml"),
+            "package Fleet {\n"
+            + "    part def Vehicle;\n"
+            + "    part def Engine;\n"
+            + "    part def Wheel;\n"
+            + "    part def Chassis;\n"
+            + "    part def Battery;\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var definition = new ViewDefinitionModel();
+        definition.SetViewKind(ViewKind.General);
+        definition.AddExposeTarget("Fleet::Vehicle");
+        definition.AddExposeTarget("Fleet::Engine");
+        definition.AddExposeTarget("Fleet::Wheel");
+        definition.AddExposeTarget("Fleet::Chassis");
+        definition.AddExposeTarget("Fleet::Battery");
+
+        // Act
+        shell.PreviewCustomView(definition);
+        var summary = shell.GetActiveTabStatusSummary();
+
+        // Assert
+        Assert.Equal("General view \u2014 Vehicle, Engine, Wheel (+2 more)", summary);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.GetActiveTabStatusSummary" /> falls back to the tab's own
+    ///     title for a diagram tab whose source definition could not be derived (an unscoped predefined view
+    ///     with zero expose members), rather than reporting an empty or invented summary.
+    /// </summary>
+    [Fact]
+    public async Task GetActiveTabStatusSummary_DiagramTabWithoutDefinition_FallsBackToTabTitle()
+    {
+        // Arrange: a workspace whose predefined view declares no expose members at all
+        await File.WriteAllTextAsync(
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
+            "package Sample {\n"
+            + "    part def Engine;\n"
+            + "    view UnscopedView {\n"
+            + "        render asGeneralDiagram;\n"
+            + "    }\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var view = shell.ViewCatalog.AvailableViews[0];
+        shell.SelectPredefinedView(view.QualifiedName);
+
+        // Act
+        var summary = shell.GetActiveTabStatusSummary();
+
+        // Assert
+        Assert.Null(shell.ActiveTab!.SourceDefinition);
+        Assert.Equal(shell.ActiveTab.Title, summary);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="MainWindowShell.GetActiveTabStatusSummary" /> reports "(no exposed
+    ///     entities)" for a diagram tab whose view definition declares an expose member that does not resolve to
+    ///     any workspace element, so the tab has a source definition but no exposed entities to name.
+    /// </summary>
+    [Fact]
+    public async Task GetActiveTabStatusSummary_UnresolvedExposeTarget_ReportsNoExposedEntities()
+    {
+        // Arrange: a workspace whose predefined view exposes an element that does not exist
+        await File.WriteAllTextAsync(
+            PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml"),
+            "package Sample {\n"
+            + "    part def Engine;\n"
+            + "    view GhostView {\n"
+            + "        expose Missing;\n"
+            + "        render asGeneralDiagram;\n"
+            + "    }\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var view = shell.ViewCatalog.AvailableViews[0];
+        shell.SelectPredefinedView(view.QualifiedName);
+
+        // Act
+        var summary = shell.GetActiveTabStatusSummary();
+
+        // Assert
+        Assert.NotNull(shell.ActiveTab!.SourceDefinition);
+        Assert.Equal("General view \u2014 (no exposed entities)", summary);
     }
 }

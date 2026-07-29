@@ -66,6 +66,28 @@ public sealed record WorkbenchTab(string Id, string Title, WorkbenchTabKind Kind
 /// </remarks>
 public sealed class MainWindowShell : IDisposable
 {
+    /// <summary>
+    ///     Summary reported by <see cref="GetActiveTabStatusSummary" /> when no tab is open at all.
+    /// </summary>
+    private const string IdleStatusSummary = "Ready";
+
+    /// <summary>
+    ///     Summary fragment reported for a diagram tab whose definition exposes no entities (an unscoped
+    ///     "expose everything" view).
+    /// </summary>
+    private const string NoExposedEntitiesSummary = "(no exposed entities)";
+
+    /// <summary>
+    ///     Separator placed between the two halves of a status summary.
+    /// </summary>
+    private const string SummarySeparator = "\u2014";
+
+    /// <summary>
+    ///     Maximum number of exposed entity names listed in a diagram tab's status summary before the remainder
+    ///     is elided with a trailing "(+N more)" count.
+    /// </summary>
+    private const int MaxSummarizedEntities = 3;
+
     private readonly WorkspaceModel _workspaceModel;
     private readonly FileWatcher _fileWatcher;
     private readonly DiagnosticsAggregator _diagnosticsAggregator;
@@ -135,10 +157,10 @@ public sealed class MainWindowShell : IDisposable
     public IReadOnlyList<WorkbenchTab> OpenTabs => _openTabs;
 
     /// <summary>
-    ///     Identifier of the diagram tab currently active/focused, or <see langword="null" /> when no diagram
+    ///     Identifier of the document tab currently active/focused, or <see langword="null" /> when no document
     ///     tab is open. Updated either by shell operations that open or focus a tab (<see cref="SelectPredefinedView" />,
     ///     <see cref="PreviewCustomView" />, <see cref="OpenNewCustomPreviewTab" />, <see cref="CloseDiagramTab" />)
-    ///     or by the UI layer forwarding Dock's own focus-change signal via <see cref="NotifyActiveDiagramTab" />.
+    ///     or by the UI layer forwarding Dock's own focus-change signal via <see cref="NotifyActiveDocumentTab" />.
     /// </summary>
     public string? ActiveTabId { get; private set; }
 
@@ -645,12 +667,14 @@ public sealed class MainWindowShell : IDisposable
     }
 
     /// <summary>
-    ///     Notifies the shell that a diagram tab has gained UI focus, so a subsequent <see cref="PreviewCustomView" />
-    ///     call knows which tab is "active" for its in-place-update-or-new-tab decision. Called by the
-    ///     Avalonia-aware UI layer when Dock reports a focus change onto a diagram document.
+    ///     Notifies the shell that a document tab - a rendered diagram or a read-only source-text document - has
+    ///     gained UI focus, so that <see cref="ActiveTabId" /> identifies whichever document tab the user is
+    ///     actually looking at. This drives both the active-tab status summary and a subsequent
+    ///     <see cref="PreviewCustomView" /> call's in-place-update-or-new-tab decision. Called by the
+    ///     Avalonia-aware UI layer when Dock reports a focus change onto a document.
     /// </summary>
-    /// <param name="tabId">Identifier of the newly focused diagram tab.</param>
-    public void NotifyActiveDiagramTab(string? tabId)
+    /// <param name="tabId">Identifier of the newly focused document tab.</param>
+    public void NotifyActiveDocumentTab(string? tabId)
     {
         if (tabId is not null && _openTabs.All(tab => tab.Id != tabId))
         {
@@ -684,6 +708,114 @@ public sealed class MainWindowShell : IDisposable
     public string? GetTabFilePath(string tabId)
     {
         return _openTabs.FirstOrDefault(tab => tab.Id == tabId)?.FilePath;
+    }
+
+    /// <summary>
+    ///     Builds a short, single-line summary of whatever the currently active tab presents, suitable for a
+    ///     status area along the bottom of the main window.
+    /// </summary>
+    /// <returns>
+    ///     <see cref="IdleStatusSummary" /> when no tab is active; the file name and full path for a
+    ///     <see cref="WorkbenchTabKind.SourceText" /> tab; or the view kind plus the entities being viewed for a
+    ///     diagram tab.
+    /// </returns>
+    /// <remarks>
+    ///     Returns a plain <see cref="string" /> computed only from already-resident shell state, so the
+    ///     Avalonia-aware UI layer only has to render it and this class stays free of any UI dependency. No file
+    ///     is read and nothing is re-rendered, so this is cheap enough to call on every tab or focus change.
+    /// </remarks>
+    public string GetActiveTabStatusSummary()
+    {
+        // No tab open is a first-class, non-error state - report a neutral idle message rather than an
+        // empty status area.
+        if (ActiveTab is not { } tab)
+        {
+            return IdleStatusSummary;
+        }
+
+        return tab.Kind == WorkbenchTabKind.SourceText
+            ? FormatSourceTextSummary(tab)
+            : FormatDiagramSummary(tab);
+    }
+
+    /// <summary>
+    ///     Formats the status summary of a <see cref="WorkbenchTabKind.SourceText" /> tab.
+    /// </summary>
+    /// <param name="tab">Source-text tab to summarize.</param>
+    /// <returns>
+    ///     The file's own name followed by its full path, or the tab's title when the tab carries no file path.
+    /// </returns>
+    private static string FormatSourceTextSummary(WorkbenchTab tab)
+    {
+        if (string.IsNullOrEmpty(tab.FilePath))
+        {
+            return tab.Title;
+        }
+
+        return $"{Path.GetFileName(tab.FilePath)} {SummarySeparator} {tab.FilePath}";
+    }
+
+    /// <summary>
+    ///     Formats the status summary of a predefined-view or custom-view-preview tab.
+    /// </summary>
+    /// <param name="tab">Diagram tab to summarize.</param>
+    /// <returns>
+    ///     The view kind followed by the exposed entities' short names (at most
+    ///     <see cref="MaxSummarizedEntities" />, with the remainder elided), or the tab's title when no source
+    ///     definition could be derived for the tab.
+    /// </returns>
+    private static string FormatDiagramSummary(WorkbenchTab tab)
+    {
+        // A diagram tab legitimately has no derivable definition (an unscoped predefined view, or a
+        // brand-new custom-preview tab) - fall back to the tab's own label rather than inventing one.
+        if (tab.SourceDefinition is not { } definition)
+        {
+            return tab.Title;
+        }
+
+        var names = definition.ExposeTargets.Select(target => ShortName(target.QualifiedName)).ToList();
+        var entities = names.Count switch
+        {
+            0 => NoExposedEntitiesSummary,
+            <= MaxSummarizedEntities => string.Join(", ", names),
+
+            // Long expose lists would overflow the status area - list the first few and report the count of
+            // whatever was left out, so the summary stays single-line and readable.
+            _ => $"{string.Join(", ", names.Take(MaxSummarizedEntities))} (+{names.Count - MaxSummarizedEntities} more)",
+        };
+
+        return $"{FormatViewKindLabel(definition.ViewKind)} view {SummarySeparator} {entities}";
+    }
+
+    /// <summary>
+    ///     Converts a view kind to its user-facing, space-separated label.
+    /// </summary>
+    /// <param name="viewKind">View kind to label, or <see langword="null" /> when the definition has none.</param>
+    /// <returns>The friendly label, or a generic "Diagram" label when no view kind has been chosen.</returns>
+    private static string FormatViewKindLabel(ViewKind? viewKind)
+    {
+        return viewKind switch
+        {
+            ViewKind.General => "General",
+            ViewKind.Interconnection => "Interconnection",
+            ViewKind.StateTransition => "State Transition",
+            ViewKind.ActionFlow => "Action Flow",
+            ViewKind.Sequence => "Sequence",
+            ViewKind.Grid => "Grid",
+            _ => "Diagram",
+        };
+    }
+
+    /// <summary>
+    ///     Reduces a SysML qualified name to its final segment, so the status area names entities the way the
+    ///     user refers to them rather than repeating their full package path.
+    /// </summary>
+    /// <param name="qualifiedName">Qualified name of an exposed target, for example <c>Sample::Engine</c>.</param>
+    /// <returns>The text after the last <c>::</c> separator, or the whole name when it has no separator.</returns>
+    private static string ShortName(string qualifiedName)
+    {
+        var separatorIndex = qualifiedName.LastIndexOf("::", StringComparison.Ordinal);
+        return separatorIndex < 0 ? qualifiedName : qualifiedName[(separatorIndex + 2)..];
     }
 
     /// <summary>

@@ -22,8 +22,9 @@ exported as copy-pasteable SysML `view ... expose ...` text to promote them
 into a permanent model file, and any workspace `.sysml` file's raw source
 text can be opened read-only, with syntax highlighting, by double-clicking
 it in the workspace tree. A live-updating diagnostics panel surfaces parser
-and reference-resolution problems across the whole workspace, and a local
-rolling log file is written for bug-report attachments.
+and reference-resolution problems across the whole workspace, a status bar
+along the bottom of the window summarizes whichever document tab is active,
+and a local rolling log file is written for bug-report attachments.
 
 This is a **Phase 0, read-only** release: there is no git integration, no
 text/structural editing, no telemetry, and custom views are session-only until
