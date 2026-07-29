@@ -133,12 +133,13 @@ the ones the Tool panels use:
   dock and *then* focuses it from the focusable root; the activation step
   already raises the focus change synchronously (via `InitActiveDockable`), so
   subscribing to `FocusedDockableChanged` alone tracks the selected tab.
-  Because Dock's document tab strip binds `ActiveDockable` two-way, headless
-  tests exercise this path most faithfully by assigning the realized
-  `DocumentTabStrip.SelectedItem` — the control a user actually clicks — which
-  writes `ActiveDockable` and raises the focus change through exactly the
-  production chain, rather than by calling the factory's
-  `SetActiveDockable`/`SetFocusedDockable` behind the strip's back.
+  Headless tests therefore reproduce a tab click by calling the factory's
+  `SetActiveDockable` followed by `SetFocusedDockable`, which is the same
+  activate-then-focus pair Dock's own tab-header click handler issues.
+  Calling `SetFocusedDockable` alone is not sufficient: it returns without
+  raising anything when the focusable root's focused dockable already matches
+  the requested one, so a test that only focuses cannot observe a transition
+  it did not first activate.
 
 `Document`s and `Tool`s therefore have deliberately different close
 semantics in this codebase: a closed `Tool` is hidden and restorable via the
