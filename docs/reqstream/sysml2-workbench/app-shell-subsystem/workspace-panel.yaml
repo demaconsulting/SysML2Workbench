@@ -40,3 +40,22 @@ sections:
                   - 'RemoveSelectedCommand_WithSourceNodeSelected_RemovesOwningSource'
                   - 'RemoveSelectedCommand_WithFileNodeSelected_RemovesOwningSource'
                   - 'RemoveSelectedCommand_NoSelection_IsNoOp'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-ResolveOpenableFile'
+                title: 'The WorkspacePanel shall resolve a selected tree node to the SysML file it opens, treating
+                  both a file source node and a file node beneath a folder source as openable, and treating folder
+                  sources, folder groupings, non-SysML files, and no selection as not openable.'
+                justification: |
+                  Opening a file is driven by the selected node, but the two node types that can denote a file are
+                  produced by different tree-building paths - a file added directly is a childless source node,
+                  whereas a file discovered under a folder source is a file node - so an implementation that
+                  recognizes only one of them silently refuses to open half the files in the tree, which is exactly
+                  the defect this requirement exists to prevent. Stating the non-openable cases explicitly keeps a
+                  double-click on a folder or an unsupported file a safe no-op rather than an error.
+                tests:
+                  - 'WorkspacePanelToolViewModel_ResolveOpenableFilePath_FileSourceNode_ReturnsSourcePath'
+                  - 'WorkspacePanelToolViewModel_ResolveOpenableFilePath_FileNode_ReturnsFilePath'
+                  - 'WorkspacePanelToolViewModel_ResolveOpenableFilePath_FolderSourceNode_ReturnsNull'
+                  - 'WorkspacePanelToolViewModel_ResolveOpenableFilePath_FolderNode_ReturnsNull'
+                  - 'WorkspacePanelToolViewModel_ResolveOpenableFilePath_NonSysmlPath_ReturnsNull'
+                  - 'WorkspacePanelToolViewModel_ResolveOpenableFilePath_NullNode_ReturnsNull'

@@ -15,7 +15,11 @@ with no intervening method call anywhere in the test bodies. The pure row-projec
 instead call the public `BuildRow` function directly with a hand-built result entry, so the mapping
 from engine metadata to displayed columns can be asserted exactly - including that the depth comes
 from the entry's machine-readable value rather than from its human-readable detail text - without
-depending on which entries a particular engine version happens to return. A single Avalonia-headless end-to-end
+depending on which entries a particular engine version happens to return. Two scenarios cannot be
+reached from a view-model-only test at all, because the optional-column logic lives in the view's
+code-behind and addresses the grid's columns by index; those live in
+`test/DemaConsulting.SysML2Workbench.UiTests/AppShellSubsystem/QueryDialogUiTests.cs`, which shows
+the real dialog `Window` on the Avalonia headless platform. A single Avalonia-headless end-to-end
 test in `test/OtsSoftwareTests/AvaloniaTests.cs` opens the real dialog through the real Query menu
 item, confirms the dialog opens on "List" with the selection-free filter control visible and the
 element picker hidden, selects the Describe Query Type (confirming the visibility flip) and an
@@ -160,6 +164,23 @@ traverse projects empty strings (never the text `"null"`) for depth, relation, a
 a null notes tooltip - the regression guard that keeps the data-driven column visibility hiding all
 three and the results panel rendering exactly as it did before those columns existed. Verified by
 `QueryDialogViewModelTests.BuildRow_NonTraversingEntry_LeavesMetadataEmpty`.
+
+**QueryDialogView_TraversalColumns_AreShownOnlyWhenRowsCarryThoseValues**: The real dialog `Window`
+is shown on the Avalonia headless platform and given first a result whose rows carry no traversal
+metadata, then one carrying a depth and a relation but no roll-up far endpoint. The Depth, Relation,
+and Via columns stay hidden for the first, and for the second only Depth and Relation appear - so
+each column is proven to track its own value independently rather than switching as a group. This
+covers the requirement's display clause, which the row-projection scenarios above cannot reach
+because the visibility logic lives in the view's code-behind. Verified by
+`QueryDialogUiTests.QueryDialogView_TraversalColumns_AreShownOnlyWhenRowsCarryThoseValues`.
+
+**QueryDialogView_EntriesDataGrid_DeclaresColumnsInIndexOrderCodeBehindAssumes**: The results grid's
+column headers are asserted to appear in the exact order the code-behind assumes when it toggles
+columns positionally. `DataGridColumn` does not participate in Avalonia's compiled-bindings field
+generation, so the code-behind has no alternative to index-based access; a reordering or insertion in
+the AXAML would otherwise silently toggle the wrong column, raising no exception and producing no
+binding error. This scenario converts that failure mode into a test failure. Verified by
+`QueryDialogUiTests.QueryDialogView_EntriesDataGrid_DeclaresColumnsInIndexOrderCodeBehindAssumes`.
 
 **IncludeStdlibToggle_RefreshesPickerAndRecomputesResult**: Toggling `IncludeStdlib` refreshes both
 `FilterOnly`'s and `Picker`'s candidate lists to reflect the new stdlib-inclusion rule, and

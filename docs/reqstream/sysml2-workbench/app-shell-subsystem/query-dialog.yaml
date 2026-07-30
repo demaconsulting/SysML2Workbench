@@ -95,6 +95,8 @@ sections:
                 tests:
                   - 'QueryDialogViewModel_BuildRow_TraversalEntry_ProjectsDepthRelationAndVia'
                   - 'QueryDialogViewModel_BuildRow_NonTraversingEntry_LeavesMetadataEmpty'
+                  - 'QueryDialogView_TraversalColumns_AreShownOnlyWhenRowsCarryThoseValues'
+                  - 'QueryDialogView_EntriesDataGrid_DeclaresColumnsInIndexOrderCodeBehindAssumes'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-HandleFailuresGracefully'
                 title: 'The QueryDialog shall report every recoverable failure or informational prompt (no
