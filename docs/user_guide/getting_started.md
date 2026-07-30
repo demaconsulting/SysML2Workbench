@@ -171,11 +171,19 @@ combo box below it to choose what to see:
   Query Type combo - pick an element there to use it as the query's target.
   Two of them expose extra controls: **Hierarchy** shows a Direction
   dropdown (*up*, *down*, *both*), and **Impact** shows an optional Walk
-  Depth text box (leave blank for no bound).
+  Depth text box plus an **Include connections (connect/bind)** checkbox.
+  Leave Walk Depth blank for no bound. Tick **Include
+  connections** to follow `connect` and `bind` relationships in addition to
+  the ordinary reference relationships an Impact query follows by default;
+  leave it unchecked to see only reference-driven impact. Walk Depth bounds
+  every relationship kind alike, so a connector hop costs the same one step
+  as a reference hop - use it when you want proximity rather than full
+  reachability, since connector graphs are dense meshes.
 
 Every change updates the results panel immediately - there is no Run
 button. Changing the Query Type, adding or removing a chip, editing the
-search text, picking an element, changing Direction or Walk Depth, or
+search text, picking an element, changing Direction, Walk Depth, or
+**Include connections**, or
 toggling **Include standard library** all recompute the results panel
 synchronously. If you choose one of the ten element-scoped query types
 before picking an element, the panel shows a prompt asking you to select
@@ -183,8 +191,14 @@ one instead of leaving a stale result on screen.
 
 The results panel shows a bullet-list summary and a table of matching
 entries with Qualified Name, Kind, and Detail columns; the **Dependencies**
-verb adds a Direction column. Any per-entry notes appear as a tooltip on
-that entry's row.
+verb adds a Direction column. Query types that walk the model - **Impact**
+in particular - add up to three more columns, each shown only when at least
+one entry actually has that information: **Depth** (how many steps away the
+entry was reached), **Relation** (the kind of relationship that reached it,
+for example *Connect* or *Supertype*), and **Via** (with **Include
+connections** ticked, the exact far endpoint - typically a port - behind an
+entry that is reported against its owning element). Any per-entry notes
+appear as a tooltip on that entry's row.
 
 Right-click the results panel and choose **Copy as Markdown** or **Copy as
 JSON** to place the rendered result on the clipboard for pasting into a

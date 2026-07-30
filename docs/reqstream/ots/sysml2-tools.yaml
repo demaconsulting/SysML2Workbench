@@ -12,8 +12,16 @@ sections:
               - 'LoadWorkspaceModel_ParsesAndResolvesImports'
 
           - id: 'SysML2Tools-GenerateViewLayouts'
-            title: 'The SysML2Workbench shall use SysML2Tools to generate layout data for supported predefined and custom views.'
+            title: 'The SysML2Workbench shall use SysML2Tools to render a named predefined or custom view usage into finished diagram output in a single call.'
             justification: |
-              The product depends on the existing SysML2Tools layout strategies to produce diagram structure for rendering.
+              The workbench deliberately holds no layout or diagram-rendering implementation of its own, so what it actually requires of the dependency is the observable end product: a named view usage in, finished renderable output out. Stating it that way keeps the requirement verifiable against the real DiagramRenderer.RenderWorkspace contract - the library exposes no intermediate layout graph or public layout-strategy registry for the workbench to consume, so a requirement phrased in terms of "layout data" could never be verified as written.
             tests:
               - 'RenderView_GeneratesLayoutGraph'
+
+          - id: 'SysML2Tools-ConnectionAwareImpactAnalysis'
+            title: 'The SysML2Workbench shall use SysML2Tools to perform impact analysis that optionally traverses connector (connect/bind) relationships in addition to resolved reference edges, bounded by a walk depth that applies uniformly to every relationship kind.'
+            justification: |
+              The impact walk now follows resolved reference edges only by default, so the connector reachability the workbench previously obtained implicitly must be requested explicitly; the dependency's opt-in behavior, and the traversal metadata it reports for connector-reached elements, are therefore the evidence target. The workbench's walk-depth control tells the user a blank value means unlimited, so the dependency's uniform treatment of connector edges under that bound is itself part of the contract being relied upon.
+            tests:
+              - 'ImpactQuery_IncludeConnections_TraversesConnectorEdges'
+              - 'ImpactQuery_WalkDepth_BoundsConnectorTraversalUniformly'

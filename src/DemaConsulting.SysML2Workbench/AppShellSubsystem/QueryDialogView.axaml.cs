@@ -138,8 +138,9 @@ public partial class QueryDialogView : Window
     }
 
     /// <summary>
-    ///     Toggles the Hierarchy / Impact per-verb control panels' visibility based on the currently
-    ///     selected Query Type.
+    ///     Toggles the Hierarchy / Impact per-verb option panels' visibility based on the currently
+    ///     selected Query Type. The Impact panel is a group (walk depth plus the include-connections
+    ///     checkbox), so it is named for the verb rather than for any single input it hosts.
     /// </summary>
     private void ApplyQueryTypeVisibility()
     {
@@ -149,7 +150,7 @@ public partial class QueryDialogView : Window
         }
 
         HierarchyDirectionPanel.IsVisible = _viewModel.SelectedQueryType == QueryVerb.Hierarchy;
-        WalkDepthPanel.IsVisible = _viewModel.SelectedQueryType == QueryVerb.Impact;
+        ImpactOptionsPanel.IsVisible = _viewModel.SelectedQueryType == QueryVerb.Impact;
 
         // "List" has no target-element concept - its result is a purely client-side filter over the
         // filter-only control's chip/search state - so ListFilterView is shown and ElementQueryPickerView
@@ -166,9 +167,11 @@ public partial class QueryDialogView : Window
 
     /// <summary>
     ///     Toggles the results panel's visibility based on the current
-    ///     <see cref="QueryDialogViewModel.CurrentResult" />. Copy-menu-item enablement is handled purely
-    ///     by the AXAML's <c>IsEnabled="{Binding HasCurrentResult}"</c> bindings, so this method no longer
-    ///     needs to imperatively toggle any button/menu-item state (unlike the old toolbar-button design).
+    ///     <see cref="QueryDialogViewModel.CurrentResult" />, and the visibility of each optional column
+    ///     so a column is only shown when it carries meaning for the current result. Copy-menu-item
+    ///     enablement is handled purely by the AXAML's <c>IsEnabled="{Binding HasCurrentResult}"</c>
+    ///     bindings, so this method no longer needs to imperatively toggle any button/menu-item state
+    ///     (unlike the old toolbar-button design).
     /// </summary>
     private void ApplyResultVisibility()
     {
@@ -185,10 +188,17 @@ public partial class QueryDialogView : Window
         SummaryItemsControl.ItemsSource = result?.Summary;
         EntriesTableBorder.IsVisible = hasEntries;
 
-        // The Direction column is dependency-verb specific per the plan; only show it when the current
-        // result is a dependency-verb result. Indexed rather than named: DataGridColumn does not
-        // participate in Avalonia's compiled-bindings field generation the way a Control does.
+        // Optional columns, in AXAML declaration order: [3] Direction, [4] Depth, [5] Relation,
+        // [6] Via. Indexed rather than named: DataGridColumn does not participate in Avalonia's
+        // compiled-bindings field generation the way a Control does. The Direction column is
+        // dependency-verb specific per the plan; the three traversal-metadata columns are instead
+        // data-driven, shown only when at least one row actually carries that value, so non-traversing
+        // verbs (whose rows leave all three empty) render exactly the same panel as before.
+        var rows = _viewModel.CurrentResultRows;
         EntriesDataGrid.Columns[3].IsVisible = string.Equals(result?.Verb, "dependencies", StringComparison.Ordinal);
+        EntriesDataGrid.Columns[4].IsVisible = rows.Any(row => row.Depth.Length > 0);
+        EntriesDataGrid.Columns[5].IsVisible = rows.Any(row => row.Relation.Length > 0);
+        EntriesDataGrid.Columns[6].IsVisible = rows.Any(row => row.Via.Length > 0);
     }
 
     private void OnQueryTypeSelectionChanged(object? sender, SelectionChangedEventArgs e)

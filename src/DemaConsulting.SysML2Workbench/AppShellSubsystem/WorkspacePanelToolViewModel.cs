@@ -28,6 +28,13 @@ public abstract class WorkspaceTreeNode
 ///     preserving that folder's on-disk hierarchy rather than flattening every discovered file into a single
 ///     list (see <see cref="WorkspaceFolderNode" />).
 /// </summary>
+/// <remarks>
+///     Because a <see cref="WorkspaceSourceKind.File" /> source has no <see cref="WorkspaceFileNode" /> beneath
+///     it, this node is itself the only tree representation of that file. It is therefore openable in its own
+///     right: <see cref="WorkspacePanelToolViewModel.ResolveOpenableFilePath" /> resolves a
+///     <see cref="WorkspaceSourceKind.File" /> node to <see cref="WorkspaceSource.Path" />, so double-clicking
+///     an "Add File..."-added file behaves the same as double-clicking a file discovered under a folder source.
+/// </remarks>
 public sealed class WorkspaceSourceNode : WorkspaceTreeNode
 {
     /// <summary>
@@ -70,11 +77,17 @@ public sealed class WorkspaceFolderNode : WorkspaceTreeNode
 }
 
 /// <summary>
-///     A leaf tree node representing one file contributed by a source. Its <see cref="FilePath" /> is a stable
-///     identity used by <see cref="WorkspacePanelToolView" />'s double-click handler to open a read-only
-///     source-text tab via <see cref="MainWindowShell.OpenSourceTextTab" />; it must not be erased or aggregated
-///     away even though nothing else currently reads it beyond display.
+///     A leaf tree node representing one file discovered under a <see cref="WorkspaceSourceKind.Folder" />
+///     source. Its <see cref="FilePath" /> is a stable identity used by
+///     <see cref="WorkspacePanelToolViewModel.ResolveOpenableFilePath" /> - and through it
+///     <see cref="WorkspacePanelToolView" />'s double-click handler - to open a read-only source-text tab via
+///     <see cref="MainWindowShell.OpenSourceTextTab" />; it must not be erased or aggregated away even though
+///     nothing else currently reads it beyond display.
 /// </summary>
+/// <remarks>
+///     This is not the only openable node kind: a <see cref="WorkspaceSourceKind.File" />
+///     <see cref="WorkspaceSourceNode" /> is openable too, via its <see cref="WorkspaceSource.Path" />.
+/// </remarks>
 public sealed class WorkspaceFileNode : WorkspaceTreeNode
 {
     /// <summary>
@@ -174,6 +187,48 @@ public partial class WorkspacePanelToolViewModel : Dock.Model.Mvvm.Controls.Tool
             .ToList();
 
         IsEmpty = RootNodes.Count == 0;
+    }
+
+    /// <summary>
+    ///     Decides which file, if any, a selected workspace tree node should open in a read-only source-text tab.
+    /// </summary>
+    /// <remarks>
+    ///     This lives on the view model rather than inline in <see cref="WorkspacePanelToolView" />'s
+    ///     <c>DoubleTapped</c> handler so the decision is a pure function that can be unit tested without an
+    ///     Avalonia view; the handler is reduced to calling this and forwarding a non-null result to
+    ///     <see cref="MainWindowShell.OpenSourceTextTab" />. Two node kinds are openable, because a workspace
+    ///     file has two possible tree representations: a <see cref="WorkspaceFileNode" /> when it was discovered
+    ///     under a folder source, and a <see cref="WorkspaceSourceNode" /> of kind
+    ///     <see cref="WorkspaceSourceKind.File" /> when the user added the file directly (that node is a leaf
+    ///     with no <see cref="WorkspaceFileNode" /> beneath it). Nodes that do not denote a single file - a
+    ///     <see cref="WorkspaceFolderNode" /> and a <see cref="WorkspaceSourceKind.Folder" />
+    ///     <see cref="WorkspaceSourceNode" /> - resolve to <c>null</c> so a double-tap on them is a safe no-op.
+    ///     The <c>.sysml</c> filter is applied uniformly to both openable kinds, since the source-text viewer
+    ///     only handles SysML v2 textual sources. Pure and side-effect free: it reads nothing but
+    ///     <paramref name="node" /> and touches neither the file system nor view-model state, and is therefore
+    ///     safe to call from any thread.
+    /// </remarks>
+    /// <param name="node">
+    ///     The currently selected tree node, or <c>null</c> when nothing is selected. Any
+    ///     <see cref="WorkspaceTreeNode" /> subtype is accepted; unrecognized kinds resolve to <c>null</c>.
+    /// </param>
+    /// <returns>
+    ///     The absolute path of the file to open, or <c>null</c> when <paramref name="node" /> denotes no single
+    ///     file or denotes a file whose extension is not <c>.sysml</c> (compared case-insensitively).
+    /// </returns>
+    public static string? ResolveOpenableFilePath(WorkspaceTreeNode? node)
+    {
+        // Map the node to the single file it denotes, if any. Folder groupings and folder-kind sources denote a
+        // set of files rather than one, so they intentionally fall through to null.
+        var filePath = node switch
+        {
+            WorkspaceFileNode fileNode => fileNode.FilePath,
+            WorkspaceSourceNode { Source.Kind: WorkspaceSourceKind.File } sourceNode => sourceNode.Source.Path,
+            _ => null,
+        };
+
+        // Only SysML v2 textual sources can be shown in the read-only source-text viewer.
+        return filePath?.EndsWith(".sysml", StringComparison.OrdinalIgnoreCase) == true ? filePath : null;
     }
 
     /// <summary>

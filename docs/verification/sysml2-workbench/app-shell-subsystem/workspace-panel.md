@@ -20,12 +20,13 @@ folders and files, plus real collaborator units. No external services are requir
 independently unit-tested: both handlers only branch on `File.Exists`/`Directory.Exists` for each dropped path and
 then call the exact same `MainWindowShell.AddFileSourceAsync`/`AddFolderSourceAsync` methods already covered by
 `MainWindowShellTests`, so drag-and-drop is verified by code review rather than a dedicated Avalonia UI-automation
-test. The double-click-to-view-source gesture added to `WorkspacePanelToolView`'s code-behind is likewise not
-independently unit-tested: it is thin view-layer wiring that resolves the tapped node's `FilePath` and calls the
-exact same `MainWindowShell.OpenSourceTextTab` already covered end-to-end by `MainWindowShellTests`, so it too is
-verified by code review rather than a dedicated Avalonia UI-automation test - consistent with this codebase's
-established convention that no view-layer gesture (drag-and-drop, pointer pan/zoom, and now double-click) has a
-headless-Avalonia test in the main test project.
+test. The double-click-to-view-source gesture in `WorkspacePanelToolView`'s code-behind is not itself independently
+unit-tested, but its decision logic is: the handler now only calls
+`WorkspacePanelToolViewModel.ResolveOpenableFilePath` and forwards a non-null result to the exact same
+`MainWindowShell.OpenSourceTextTab` already covered end-to-end by `MainWindowShellTests`, so the remaining
+view-layer wiring is verified by code review rather than a dedicated Avalonia UI-automation test - consistent with
+this codebase's established convention that no view-layer gesture (drag-and-drop, pointer pan/zoom, and
+double-click) has a headless-Avalonia test in the main test project.
 
 #### Acceptance Criteria
 
@@ -87,3 +88,30 @@ selected resolves and removes that file's owning source via `MainWindowShell.Rem
 **RemoveSelectedCommand_NoSelection_IsNoOp**: Invoking Remove with no node selected does not call
 `MainWindowShell.RemoveSourceAsync` and leaves the tree unchanged. Verified by
 `WorkspacePanelToolViewModelTests.RemoveSelectedCommand_NoSelection_IsNoOp`.
+
+**WorkspacePanelToolViewModel_ResolveOpenableFilePath_FileSourceNode_ReturnsSourcePath**: A `File`-kind
+`WorkspaceSourceNode` with a `.sysml` path resolves to that path, so double-clicking a file added via
+"Add File..." opens its source-text tab. Regression test for the defect where only `WorkspaceFileNode` was
+openable and such a double-click was a no-op. Verified by
+`WorkspacePanelToolViewModelTests.WorkspacePanelToolViewModel_ResolveOpenableFilePath_FileSourceNode_ReturnsSourcePath`.
+
+**WorkspacePanelToolViewModel_ResolveOpenableFilePath_FolderSourceNode_ReturnsNull**: A `Folder`-kind
+`WorkspaceSourceNode` resolves to nothing, keeping a double-tap on it a safe no-op. Verified by
+`WorkspacePanelToolViewModelTests.WorkspacePanelToolViewModel_ResolveOpenableFilePath_FolderSourceNode_ReturnsNull`.
+
+**WorkspacePanelToolViewModel_ResolveOpenableFilePath_FolderNode_ReturnsNull**: An intermediate
+`WorkspaceFolderNode` resolves to nothing, keeping a double-tap on it a safe no-op. Verified by
+`WorkspacePanelToolViewModelTests.WorkspacePanelToolViewModel_ResolveOpenableFilePath_FolderNode_ReturnsNull`.
+
+**WorkspacePanelToolViewModel_ResolveOpenableFilePath_FileNode_ReturnsFilePath**: A `WorkspaceFileNode` with a
+`.sysml` path still resolves to that path, confirming the pre-existing openable kind did not regress. Verified by
+`WorkspacePanelToolViewModelTests.WorkspacePanelToolViewModel_ResolveOpenableFilePath_FileNode_ReturnsFilePath`.
+
+**WorkspacePanelToolViewModel_ResolveOpenableFilePath_NonSysmlPath_ReturnsNull**: A non-`.sysml` path resolves to
+nothing for both openable node kinds, while a mixed-case `.SysML` extension still resolves, confirming the filter
+is applied uniformly and case-insensitively. Verified by
+`WorkspacePanelToolViewModelTests.WorkspacePanelToolViewModel_ResolveOpenableFilePath_NonSysmlPath_ReturnsNull`.
+
+**WorkspacePanelToolViewModel_ResolveOpenableFilePath_NullNode_ReturnsNull**: A null selection resolves to nothing,
+so a double-tap with no node selected cannot throw out of the view's event handler. Verified by
+`WorkspacePanelToolViewModelTests.WorkspacePanelToolViewModel_ResolveOpenableFilePath_NullNode_ReturnsNull`.

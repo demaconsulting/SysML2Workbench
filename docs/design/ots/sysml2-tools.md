@@ -26,6 +26,13 @@ and UI behavior instead of duplicating language infrastructure.
   named view usage directly into finished SVG output in one call; the
   workbench never sees an intermediate layout graph or a public layout
   strategy registry.
+- **Element querying** — `QueryEngine` runs the verb-scoped queries the Query
+  dialog exposes, including connection-aware impact analysis: an opt-in that
+  traverses connector (`connect`/`bind`) relationships undirected in addition
+  to the resolved reference edges the impact walk follows by default. The
+  library also reports per-entry traversal metadata (depth, the resolved
+  relation kind that reached the entry, and the far endpoint behind a
+  connection roll-up) which the dialog surfaces directly.
 
 ### Integration Pattern
 
@@ -42,3 +49,12 @@ cannot express), LayoutInvoker instead constructs an ephemeral
 before rendering. Initialization is limited to constructing the required
 workspace and render inputs; no separate service process or background
 daemon is introduced.
+
+QueryDialog is the one place where the workbench builds a library option
+object directly rather than through an adapter unit: it composes a
+`QueryOptions` from the dialog's form state and hands it to `QueryEngine`,
+gating each verb-specific option (hierarchy direction, impact walk depth,
+impact connection-awareness) on the selected verb so no other verb's option
+payload is affected. Result entries are projected once into a flattened
+row record for display, reading the library's machine-readable traversal
+metadata rather than parsing its human-readable detail text.

@@ -15,8 +15,9 @@ namespace DemaConsulting.SysML2Workbench.AppShellSubsystem;
 ///     user-facing options (a merged <see cref="QueryVerb.List" /> entry plus the ten element-scoped
 ///     <see cref="QueryVerb" /> operations dispatched through <see cref="QueryEngine.Execute" />). Every
 ///     relevant change - Query Type, chip/search edits, element selection, Hierarchy direction, Impact
-///     walk depth, or the Include-standard-library toggle - immediately recomputes
-///     <see cref="CurrentResult" />; there is no explicit "Run" gesture anywhere in this design.
+///     walk depth, the Impact include-connections toggle, or the Include-standard-library toggle -
+///     immediately recomputes <see cref="CurrentResult" />; there is no explicit "Run" gesture anywhere
+///     in this design.
 /// </summary>
 /// <remarks>
 ///     Deliberately parallels <see cref="ViewBuilderDialogViewModel" />'s "dialog owned by the shell,
@@ -88,6 +89,19 @@ public sealed partial class QueryDialogViewModel : ObservableObject
 
     [ObservableProperty]
     public partial string? WalkDepthText { get; set; }
+
+    /// <summary>
+    ///     Whether an <see cref="QueryVerb.Impact" /> walk should also traverse connector
+    ///     (<c>connect</c>/<c>bind</c>) relationships in addition to resolved reference edges. Only
+    ///     meaningful for <see cref="QueryVerb.Impact" /> - <see cref="BuildOptions" /> leaves
+    ///     <see cref="QueryOptions.IncludeConnections" /> unset for every other Query Type. Starts
+    ///     <see langword="false" />, matching the engine's own default. Independent of
+    ///     <see cref="WalkDepthText" />: this flag selects only which edges the walk may traverse,
+    ///     never how far it goes, and connector edges cost the same one unit of depth as any other
+    ///     relationship.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool IncludeConnections { get; set; }
 
     [ObservableProperty]
     public partial QueryResult? CurrentResult { get; set; }
@@ -350,9 +364,9 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     /// <summary>
     ///     Builds a <see cref="QueryOptions" /> instance for <paramref name="qualifiedName" /> that
     ///     reflects the current form's verb-specific state: <see cref="HierarchyDirection" /> is only
-    ///     attached for <see cref="QueryVerb.Hierarchy" />, and <see cref="WalkDepthText" /> is only
-    ///     parsed for <see cref="QueryVerb.Impact" />. Every option unconditionally carries
-    ///     <see cref="IncludeStdlib" />.
+    ///     attached for <see cref="QueryVerb.Hierarchy" />, and <see cref="WalkDepthText" /> and
+    ///     <see cref="IncludeConnections" /> are only attached for <see cref="QueryVerb.Impact" />.
+    ///     Every option unconditionally carries <see cref="IncludeStdlib" />.
     /// </summary>
     /// <param name="qualifiedName">The resolved target element's qualified name.</param>
     /// <returns>The <see cref="QueryOptions" /> to pass to <see cref="QueryEngine.Execute" />.</returns>
@@ -374,6 +388,11 @@ public sealed partial class QueryDialogViewModel : ObservableObject
             IncludeStdlib = IncludeStdlib,
             Direction = SelectedQueryType == QueryVerb.Hierarchy ? HierarchyDirection : null,
             WalkDepth = walkDepth,
+
+            // Connector traversal is an Impact-only concern; gating it here (rather than passing the
+            // raw flag through) keeps every other verb's option payload byte-for-byte unchanged when
+            // the user leaves the checkbox ticked and switches Query Type.
+            IncludeConnections = SelectedQueryType == QueryVerb.Impact && IncludeConnections,
         };
     }
 
@@ -413,6 +432,18 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     /// </summary>
     /// <param name="value">The newly edited walk-depth text.</param>
     partial void OnWalkDepthTextChanged(string? value)
+    {
+        RecomputeResult();
+    }
+
+    /// <summary>
+    ///     Recomputes immediately whenever the Impact include-connections toggle changes, so a selection
+    ///     already made for <see cref="QueryVerb.Impact" /> stays live as the user opts connector
+    ///     (<c>connect</c>/<c>bind</c>) traversal in or out - the same "no explicit Run gesture" contract
+    ///     the walk-depth and Query Type inputs follow.
+    /// </summary>
+    /// <param name="value">The new value of the <see cref="IncludeConnections" /> property.</param>
+    partial void OnIncludeConnectionsChanged(bool value)
     {
         RecomputeResult();
     }
@@ -459,14 +490,20 @@ public sealed partial class QueryDialogViewModel : ObservableObject
 
     /// <summary>
     ///     Converts a <see cref="QueryResultEntry" /> into a display-friendly row for the results panel,
-    ///     eagerly flattening <see cref="QueryResultEntry.Direction" /> to a human-readable string and
+    ///     eagerly flattening <see cref="QueryResultEntry.Direction" /> to a human-readable string,
+    ///     <see cref="QueryResultEntry.Depth" />/<see cref="QueryResultEntry.Relation" />/
+    ///     <see cref="QueryResultEntry.ViaQualifiedName" /> to plain traversal-metadata strings, and
     ///     <see cref="QueryResultEntry.Notes" /> to a newline-joined tooltip string so the view can bind
-    ///     directly to string properties without additional converters.
+    ///     directly to string properties without additional converters. Exposed publicly (like
+    ///     <see cref="BuildListResult" />) so tests can assert the projection contract directly without
+    ///     spinning up an Avalonia view; it is a pure function of <paramref name="entry" />.
     /// </summary>
     /// <param name="entry">The engine-produced entry to project.</param>
     /// <returns>A <see cref="QueryResultRow" /> ready for the results-panel <c>ItemsControl</c>.</returns>
-    private static QueryResultRow BuildRow(QueryResultEntry entry)
+    public static QueryResultRow BuildRow(QueryResultEntry entry)
     {
+        ArgumentNullException.ThrowIfNull(entry);
+
         return new QueryResultRow(
             entry.QualifiedName,
             entry.Kind ?? string.Empty,
@@ -477,6 +514,13 @@ public sealed partial class QueryDialogViewModel : ObservableObject
                 QueryEntryDirection.Incoming => "incoming",
                 _ => string.Empty,
             },
+
+            // Depth is read from the engine's machine-readable property, never parsed out of the
+            // human-readable "depth N" text carried in Detail - the upstream API documents that
+            // consumers shall read this property instead.
+            entry.Depth?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            entry.Relation?.ToString() ?? string.Empty,
+            entry.ViaQualifiedName ?? string.Empty,
             entry.Notes.Count > 0 ? string.Join("\n", entry.Notes) : null);
     }
 }
@@ -495,6 +539,21 @@ public sealed partial class QueryDialogViewModel : ObservableObject
 ///     other verb. Rendered in a dedicated column shown only when the current verb is
 ///     <c>dependencies</c>.
 /// </param>
+/// <param name="Depth">
+///     The entry's 1-based traversal depth rendered as an invariant-culture integer, or empty for verbs
+///     that do not traverse. Rendered in a dedicated column shown only when at least one row carries a
+///     depth.
+/// </param>
+/// <param name="Relation">
+///     The resolved semantic edge kind that reached this entry (for example <c>"Supertype"</c> or
+///     <c>"Connect"</c>), or empty when the entry was not produced by traversing a resolved edge.
+///     Rendered in a dedicated column shown only when at least one row carries a relation.
+/// </param>
+/// <param name="Via">
+///     For connection roll-up, the qualified name of the actual far endpoint whose nearest owning
+///     declaration is reported as <see cref="QualifiedName" />; empty when no roll-up occurred. Rendered
+///     in a dedicated column shown only when at least one row carries a far endpoint.
+/// </param>
 /// <param name="Notes">
 ///     Newline-joined additional notes attached to the entry, or <see langword="null" /> when the entry
 ///     has no notes. Bound to the row's tooltip.
@@ -504,4 +563,7 @@ public sealed record QueryResultRow(
     string Kind,
     string Detail,
     string Direction,
+    string Depth,
+    string Relation,
+    string Via,
     string? Notes);
