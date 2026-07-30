@@ -160,11 +160,13 @@ public partial class WorkspacePanelToolView : UserControl
 
     /// <summary>
     ///     Handles a double-tap anywhere on <c>WorkspaceTreeView</c> by opening a read-only source-text tab for
-    ///     the currently selected node, if it is a <see cref="WorkspaceFileNode" /> whose <see cref="WorkspaceFileNode.FilePath" />
-    ///     ends in <c>.sysml</c>. Avalonia's <see cref="TreeView" /> updates <see cref="TreeView.SelectedItem" />
-    ///     on the same click that raises <c>DoubleTapped</c>, so no custom hit-testing of the
-    ///     event's source is needed. A double-tap on any other node kind (a source or folder node), or a
-    ///     non-<c>.sysml</c> file, is a safe no-op.
+    ///     the currently selected node, when
+    ///     <see cref="WorkspacePanelToolViewModel.ResolveOpenableFilePath" /> resolves that node to a file path.
+    ///     Avalonia's <see cref="TreeView" /> updates <see cref="TreeView.SelectedItem" /> on the same click that
+    ///     raises <c>DoubleTapped</c>, so no custom hit-testing of the event's source is needed. All of the
+    ///     "which node opens what" logic lives on the view model so it is unit testable without a view; this
+    ///     handler only forwards a resolved path. A double-tap on a node that resolves to nothing - a folder
+    ///     grouping, a folder-kind source, or a non-<c>.sysml</c> file - is a safe no-op.
     /// </summary>
     private void OnWorkspaceTreeViewDoubleTapped(object? sender, TappedEventArgs e)
     {
@@ -173,7 +175,7 @@ public partial class WorkspacePanelToolView : UserControl
             return;
         }
 
-        if (viewModel.SelectedNode is WorkspaceFileNode { FilePath: { } filePath } && filePath.EndsWith(".sysml", StringComparison.OrdinalIgnoreCase))
+        if (WorkspacePanelToolViewModel.ResolveOpenableFilePath(viewModel.SelectedNode) is { } filePath)
         {
             viewModel.Shell.OpenSourceTextTab(filePath);
         }

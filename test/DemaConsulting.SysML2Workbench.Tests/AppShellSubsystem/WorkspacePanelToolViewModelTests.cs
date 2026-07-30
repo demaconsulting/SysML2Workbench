@@ -328,4 +328,127 @@ public sealed class WorkspacePanelToolViewModelTests : IDisposable
         Assert.Null(exception);
         Assert.Single(shell.CurrentWorkspace.Sources);
     }
+
+    /// <summary>
+    ///     Regression test for the defect where double-clicking a file added via "Add File..." did nothing: such
+    ///     a file is represented by a leaf <see cref="WorkspaceSourceNode" /> of kind
+    ///     <see cref="WorkspaceSourceKind.File" /> (there is no <see cref="WorkspaceFileNode" /> beneath it), so
+    ///     it must resolve to its own <c>Source.Path</c>.
+    /// </summary>
+    [Fact]
+    public void WorkspacePanelToolViewModel_ResolveOpenableFilePath_FileSourceNode_ReturnsSourcePath()
+    {
+        // Arrange: a file-kind source node exactly as RebuildTree produces for an "Add File..."-added .sysml file
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.sysml");
+        var node = new WorkspaceSourceNode
+        {
+            Id = "source-1",
+            Source = new WorkspaceSource("source-1", WorkspaceSourceKind.File, filePath),
+            Children = [],
+        };
+
+        // Act
+        var resolved = WorkspacePanelToolViewModel.ResolveOpenableFilePath(node);
+
+        // Assert
+        Assert.Equal(filePath, resolved);
+    }
+
+    /// <summary>
+    ///     Validates that a folder-kind <see cref="WorkspaceSourceNode" /> resolves to nothing, since it denotes
+    ///     a set of files rather than one openable file - double-tapping it must remain a safe no-op.
+    /// </summary>
+    [Fact]
+    public void WorkspacePanelToolViewModel_ResolveOpenableFilePath_FolderSourceNode_ReturnsNull()
+    {
+        // Arrange
+        var node = new WorkspaceSourceNode
+        {
+            Id = "source-1",
+            Source = new WorkspaceSource("source-1", WorkspaceSourceKind.Folder, _tempRoot),
+            Children = [],
+        };
+
+        // Act
+        var resolved = WorkspacePanelToolViewModel.ResolveOpenableFilePath(node);
+
+        // Assert
+        Assert.Null(resolved);
+    }
+
+    /// <summary>
+    ///     Validates that an intermediate <see cref="WorkspaceFolderNode" /> resolves to nothing, since it is a
+    ///     purely-display grouping with no file of its own.
+    /// </summary>
+    [Fact]
+    public void WorkspacePanelToolViewModel_ResolveOpenableFilePath_FolderNode_ReturnsNull()
+    {
+        // Arrange
+        var node = new WorkspaceFolderNode { Id = "source-1::Sub", Name = "Sub", Children = [] };
+
+        // Act
+        var resolved = WorkspacePanelToolViewModel.ResolveOpenableFilePath(node);
+
+        // Assert
+        Assert.Null(resolved);
+    }
+
+    /// <summary>
+    ///     Validates that the pre-existing openable node kind - a <see cref="WorkspaceFileNode" /> discovered
+    ///     under a folder source - still resolves to its own path, so the defect fix did not regress it.
+    /// </summary>
+    [Fact]
+    public void WorkspacePanelToolViewModel_ResolveOpenableFilePath_FileNode_ReturnsFilePath()
+    {
+        // Arrange
+        var filePath = PathHelpers.SafePathCombine(_tempRoot, "Sub", "Nested.sysml");
+        var node = new WorkspaceFileNode { Id = $"source-1::{filePath}", FilePath = filePath, SourceId = "source-1" };
+
+        // Act
+        var resolved = WorkspacePanelToolViewModel.ResolveOpenableFilePath(node);
+
+        // Assert
+        Assert.Equal(filePath, resolved);
+    }
+
+    /// <summary>
+    ///     Validates that the case-insensitive <c>.sysml</c> filter is applied to both openable node kinds, so a
+    ///     non-SysML file the source-text viewer cannot render is never opened, while an unusually-cased
+    ///     <c>.SysML</c> extension still is.
+    /// </summary>
+    [Fact]
+    public void WorkspacePanelToolViewModel_ResolveOpenableFilePath_NonSysmlPath_ReturnsNull()
+    {
+        // Arrange: the same non-.sysml file expressed as each openable node kind, plus a mixed-case .sysml path
+        var textPath = PathHelpers.SafePathCombine(_tempRoot, "Notes.txt");
+        var mixedCasePath = PathHelpers.SafePathCombine(_tempRoot, "Sample.SysML");
+        var textSourceNode = new WorkspaceSourceNode
+        {
+            Id = "source-1",
+            Source = new WorkspaceSource("source-1", WorkspaceSourceKind.File, textPath),
+            Children = [],
+        };
+        var textFileNode = new WorkspaceFileNode { Id = "source-2::text", FilePath = textPath, SourceId = "source-2" };
+        var mixedCaseFileNode = new WorkspaceFileNode { Id = "source-2::mixed", FilePath = mixedCasePath, SourceId = "source-2" };
+
+        // Act / Assert: neither openable kind opens a non-.sysml file, but casing alone does not block a .sysml one
+        Assert.Multiple(
+            () => Assert.Null(WorkspacePanelToolViewModel.ResolveOpenableFilePath(textSourceNode)),
+            () => Assert.Null(WorkspacePanelToolViewModel.ResolveOpenableFilePath(textFileNode)),
+            () => Assert.Equal(mixedCasePath, WorkspacePanelToolViewModel.ResolveOpenableFilePath(mixedCaseFileNode)));
+    }
+
+    /// <summary>
+    ///     Validates that a null selection resolves to nothing, so a double-tap with no node selected cannot
+    ///     throw out of the view's event handler.
+    /// </summary>
+    [Fact]
+    public void WorkspacePanelToolViewModel_ResolveOpenableFilePath_NullNode_ReturnsNull()
+    {
+        // Arrange / Act
+        var resolved = WorkspacePanelToolViewModel.ResolveOpenableFilePath(null);
+
+        // Assert
+        Assert.Null(resolved);
+    }
 }

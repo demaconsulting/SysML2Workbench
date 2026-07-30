@@ -27,7 +27,10 @@ and `required IReadOnlyList<WorkspaceTreeNode> Children` — a source's node.
 `Folder`-kind source it holds one entry per top-level subfolder
 (`WorkspaceFolderNode`) or file (`WorkspaceFileNode`) directly under that
 folder, preserving its on-disk hierarchy rather than flattening every
-discovered file into a single list.
+discovered file into a single list. Because a `File`-kind source has no
+`WorkspaceFileNode` beneath it, its source node is itself the only tree
+representation of that file, and is therefore openable in its own right (see
+`ResolveOpenableFilePath`).
 
 **WorkspaceFolderNode**: `WorkspaceTreeNode` with `required string Name` (the
 folder's own last path segment, not its full path) and
@@ -40,11 +43,13 @@ already covers everything beneath it).
 **WorkspaceFileNode**: `WorkspaceTreeNode` with `required string FilePath`,
 `required string SourceId`, and a computed `Name` (`Path.GetFileName(FilePath)`,
 shown in the tree since ancestor nodes already convey the file's directory) —
-a leaf node for one file. `FilePath` is a stable identity used by
-`WorkspacePanelToolView`'s double-click handler to open a `.sysml` file's
+a leaf node for one file discovered under a `Folder`-kind source. `FilePath` is
+a stable identity used by `ResolveOpenableFilePath` (and through it
+`WorkspacePanelToolView`'s double-click handler) to open a `.sysml` file's
 read-only source-text tab via `MainWindowShell.OpenSourceTextTab`; it is
 preserved even though nothing else currently reads it beyond display and
-that handler.
+that handler. It is not the only openable node kind — a `File`-kind
+`WorkspaceSourceNode` is openable too, via its `Source.Path`.
 
 **SelectedNode**: `WorkspaceTreeNode?` — the tree node currently selected by
 the user, used to resolve which source `RemoveSelected` acts on.
@@ -96,13 +101,31 @@ into `MainWindowShell.AddFileSourceAsync` / `AddFolderSourceAsync`.
   and surfaced via `StatusMessage` rather than propagated, since a failed
   remove should not crash the shell.
 
-`WorkspacePanelToolView`'s code-behind also wires a `DoubleTapped` handler on
-its `TreeView` directly to `MainWindowShell.OpenSourceTextTab`: when the
-selected item is a `WorkspaceFileNode` whose `FilePath` ends in `.sysml`
-(case-insensitive), double-clicking it opens the file's read-only
-source-text tab. No view-model method backs this - it follows the same
-"view calls `Shell` directly" pattern already used by the Add File/Add
-Folder picker flows, and is thin enough that it is not unit tested (see
+**ResolveOpenableFilePath**: Decides which file, if any, a selected workspace
+tree node should open in a read-only source-text tab.
+
+- *Parameters*: `node` (`WorkspaceTreeNode?`) — the currently selected node, or
+  `null` when nothing is selected.
+- *Returns*: `string?` — the absolute path to open, or `null` when the node
+  denotes no single file or denotes a non-`.sysml` file.
+- *Postconditions*: A `WorkspaceFileNode` resolves to its `FilePath`, and a
+  `File`-kind `WorkspaceSourceNode` resolves to its `Source.Path` — a workspace
+  file has two possible tree representations and both must be openable. A
+  `WorkspaceFolderNode` and a `Folder`-kind `WorkspaceSourceNode` resolve to
+  `null`, since they denote a set of files rather than one. The `.sysml`
+  extension filter (case-insensitive) is applied uniformly to both openable
+  kinds because the source-text viewer only renders SysML v2 textual sources.
+  Pure and side-effect free — it reads only its argument and touches neither
+  the file system nor view-model state.
+
+`WorkspacePanelToolView`'s code-behind wires a `DoubleTapped` handler on its
+`TreeView` that calls `ResolveOpenableFilePath` for the currently selected node
+and forwards any non-null result to `MainWindowShell.OpenSourceTextTab`. The
+decision lives on the view model - rather than inline in the handler as it did
+originally - so it is a pure function unit-testable without an Avalonia view;
+the handler itself remains thin view-layer wiring following the same "view
+calls `Shell` directly" pattern already used by the Add File/Add Folder picker
+flows, and is not itself unit tested (see
 `docs/verification/sysml2-workbench/app-shell-subsystem/workspace-panel.md`).
 
 #### Error Handling
