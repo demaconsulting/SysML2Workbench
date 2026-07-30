@@ -159,4 +159,71 @@ public sealed class SysML2ToolsTests : IDisposable
         Assert.NotNull(reached.Depth);
         Assert.NotNull(reached.Relation);
     }
+
+    /// <summary>
+    ///     Validates that <see cref="QueryOptions.WalkDepth" /> bounds connector traversal on exactly the
+    ///     same terms as any other relationship: one connector is one unit of depth, and a
+    ///     <see langword="null" /> walk depth is unlimited for connector edges too.
+    /// </summary>
+    /// <remarks>
+    ///     The workbench's Impact walk-depth control tells the user that a blank value means unlimited,
+    ///     with no connector-specific exception. That wording is only truthful while the dependency
+    ///     treats depth uniformly - SysML2Tools 0.2.0-beta.1 instead capped an unbounded connector walk
+    ///     at a single hop, which made the full connector closure unreachable from the dialog at any
+    ///     setting. This pins the 0.2.0-beta.2 behavior so a regression is caught here rather than
+    ///     silently turning the dialog's label into a lie.
+    /// </remarks>
+    [Fact]
+    public async Task ImpactQuery_WalkDepth_BoundsConnectorTraversalUniformly()
+    {
+        // Arrange: a connector chain three hops long, joined by nothing but connectors
+        await File.WriteAllTextAsync(
+            PathHelpers.SafePathCombine(_tempRoot, "Chain.sysml"),
+            "package Chain {\n"
+            + "    part def Node;\n"
+            + "    part def Assembly {\n"
+            + "        part a : Node;\n"
+            + "        part b : Node;\n"
+            + "        part c : Node;\n"
+            + "        part d : Node;\n"
+            + "        connect a to b;\n"
+            + "        connect b to c;\n"
+            + "        connect c to d;\n"
+            + "    }\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+        var discoveredFiles = GlobFileCollector.Collect(["**/*.sysml"], [], _tempRoot);
+        var (symbolTable, _) = StdlibProvider.GetSymbolTable();
+        var loadResult = await WorkspaceLoader.LoadAsync(discoveredFiles, symbolTable);
+        var workspace = loadResult.Workspace!;
+        var target = workspace.Declarations["Chain::Assembly::a"];
+
+        QueryResult Impact(int? walkDepth) => QueryEngine.Impact(
+            workspace,
+            target,
+            new QueryOptions
+            {
+                Verb = QueryVerb.Impact,
+                Element = "Chain::Assembly::a",
+                WalkDepth = walkDepth,
+                IncludeConnections = true,
+            });
+
+        // Act: the chain walked unbounded, then bounded to one hop and to two
+        var unbounded = Impact(null);
+        var depthOne = Impact(1);
+        var depthTwo = Impact(2);
+
+        // Assert: an unbounded walk reaches the whole chain, reporting each element's distance so the
+        // results panel can present impact as an increasing blast radius
+        Assert.Equal(
+            [("Chain::Assembly::b", 1), ("Chain::Assembly::c", 2), ("Chain::Assembly::d", 3)],
+            unbounded.Entries.Select(entry => (entry.QualifiedName, entry.Depth)).OrderBy(row => row.Depth));
+
+        // Assert: an explicit depth truncates that same chain at exactly that many connector hops
+        Assert.Equal(["Chain::Assembly::b"], depthOne.Entries.Select(entry => entry.QualifiedName));
+        Assert.Equal(
+            ["Chain::Assembly::b", "Chain::Assembly::c"],
+            depthTwo.Entries.Select(entry => entry.QualifiedName).Order());
+    }
 }

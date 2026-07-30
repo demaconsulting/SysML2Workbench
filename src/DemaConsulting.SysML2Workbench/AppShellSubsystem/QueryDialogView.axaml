@@ -49,8 +49,7 @@
 
         <!-- Impact-only options: walk depth + connector traversal opt-in -->
         <StackPanel Name="ImpactOptionsPanel" Spacing="4" IsVisible="False">
-          <TextBlock Text="Walk depth (blank = unlimited, or one connector hop when connections are included)"
-                     TextWrapping="Wrap" />
+          <TextBlock Text="Walk depth (blank = unlimited)" TextWrapping="Wrap" />
           <TextBox Name="WalkDepthTextBox" Text="{Binding WalkDepthText, Mode=TwoWay}" />
           <CheckBox Name="IncludeConnectionsCheckBox" Content="Include connections (connect/bind)"
                     IsChecked="{Binding IncludeConnections, Mode=TwoWay}"

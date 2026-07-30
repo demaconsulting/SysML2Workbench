@@ -19,8 +19,9 @@ sections:
               - 'RenderView_GeneratesLayoutGraph'
 
           - id: 'SysML2Tools-ConnectionAwareImpactAnalysis'
-            title: 'The SysML2Workbench shall use SysML2Tools to perform impact analysis that optionally traverses connector (connect/bind) relationships in addition to resolved reference edges.'
+            title: 'The SysML2Workbench shall use SysML2Tools to perform impact analysis that optionally traverses connector (connect/bind) relationships in addition to resolved reference edges, bounded by a walk depth that applies uniformly to every relationship kind.'
             justification: |
-              The impact walk now follows resolved reference edges only by default, so the connector reachability the workbench previously obtained implicitly must be requested explicitly; the dependency's opt-in behavior, and the traversal metadata it reports for connector-reached elements, are therefore the evidence target.
+              The impact walk now follows resolved reference edges only by default, so the connector reachability the workbench previously obtained implicitly must be requested explicitly; the dependency's opt-in behavior, and the traversal metadata it reports for connector-reached elements, are therefore the evidence target. The workbench's walk-depth control tells the user a blank value means unlimited, so the dependency's uniform treatment of connector edges under that bound is itself part of the contract being relied upon.
             tests:
               - 'ImpactQuery_IncludeConnections_TraversesConnectorEdges'
+              - 'ImpactQuery_WalkDepth_BoundsConnectorTraversalUniformly'

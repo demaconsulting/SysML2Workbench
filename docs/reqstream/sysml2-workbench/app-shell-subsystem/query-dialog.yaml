@@ -68,13 +68,15 @@ sections:
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-ConnectionAwareImpact'
                 title: 'The QueryDialog shall offer an Impact-only "Include connections" option that requests
                   connection-aware impact analysis, shall leave that option unset for every other Query Type,
-                  and shall present the walk-depth control with wording that states a blank value means one
-                  connector hop when connections are included rather than unlimited.'
+                  and shall present the walk-depth control with wording that states a blank value means an
+                  unlimited walk across every relationship kind the query traverses.'
                 justification: |
                   Impact analysis that ignores connect/bind relationships hides real physical and behavioral
                   coupling from the user, while always following them floods the result with the dense
-                  connector mesh; making it an explicit, clearly-bounded per-query choice lets the user ask
-                  either question deliberately instead of guessing which one the tool answered.
+                  connector mesh; making it an explicit per-query choice lets the user ask either question
+                  deliberately instead of guessing which one the tool answered. Keeping the walk-depth
+                  wording free of connector-specific exceptions matches the engine, where depth bounds all
+                  edge kinds uniformly.
                 tests:
                   - 'QueryDialogViewModel_BuildOptions_ImpactVerbWithIncludeConnections_SetsIncludeConnections'
                   - 'QueryDialogViewModel_BuildOptions_NonImpactVerb_OmitsIncludeConnections'

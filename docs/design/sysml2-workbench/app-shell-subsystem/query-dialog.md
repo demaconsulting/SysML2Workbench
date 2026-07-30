@@ -26,8 +26,8 @@ workspace through a single, always-visible adaptive form — there is no
 - Verb-specific extra controls appear only when relevant: a "Direction"
   combo for `Hierarchy`, and — for `Impact` — a "Walk depth" text box plus
   an "Include connections (connect/bind)" checkbox. The walk-depth label
-  states both meanings of a blank value: unlimited normally, or a single
-  connector hop when connections are included.
+  states the single meaning of a blank value: unlimited, for every
+  relationship kind the walk traverses.
 - Every interaction — Query Type selection, chip add/remove, search text,
   element selection, Direction change, Walk depth text change, the
   Include-connections toggle, or the Include-standard-library toggle —
@@ -99,10 +99,10 @@ cleanly as a non-negative integer.
 checkbox state, requesting that connector (`connect`/`bind`) relationships be
 traversed in addition to resolved reference edges. Only attached to
 `QueryOptions.IncludeConnections` when `SelectedQueryType` is `Impact`;
-defaults to `false`, matching the engine's own default. Interacts with
-`WalkDepthText`: a blank walk depth normally means unlimited, but when this
-flag is set it instead bounds connector hops along a single traversal path
-to one, which the walk-depth label states explicitly.
+defaults to `false`, matching the engine's own default. Independent of
+`WalkDepthText`: the flag selects only which edges the walk may traverse,
+never how far it goes, and a connector edge costs the same single unit of
+depth as any other relationship.
 
 **CurrentResult**: `QueryResult?` — the most recently produced `QueryResult`
 (either List's client-built list result or the engine's response), or

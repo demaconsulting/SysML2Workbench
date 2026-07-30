@@ -95,9 +95,10 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     ///     (<c>connect</c>/<c>bind</c>) relationships in addition to resolved reference edges. Only
     ///     meaningful for <see cref="QueryVerb.Impact" /> - <see cref="BuildOptions" /> leaves
     ///     <see cref="QueryOptions.IncludeConnections" /> unset for every other Query Type. Starts
-    ///     <see langword="false" />, matching the engine's own default. Note the interaction with
-    ///     <see cref="WalkDepthText" />: a blank walk depth normally means "unlimited", but when this
-    ///     flag is set a blank walk depth bounds connector hops along a single traversal path to one.
+    ///     <see langword="false" />, matching the engine's own default. Independent of
+    ///     <see cref="WalkDepthText" />: this flag selects only which edges the walk may traverse,
+    ///     never how far it goes, and connector edges cost the same one unit of depth as any other
+    ///     relationship.
     /// </summary>
     [ObservableProperty]
     public partial bool IncludeConnections { get; set; }

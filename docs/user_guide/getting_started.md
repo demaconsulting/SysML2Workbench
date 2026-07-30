@@ -172,12 +172,13 @@ combo box below it to choose what to see:
   Two of them expose extra controls: **Hierarchy** shows a Direction
   dropdown (*up*, *down*, *both*), and **Impact** shows an optional Walk
   Depth text box plus an **Include connections (connect/bind)** checkbox.
-  Leave Walk Depth blank for no bound - except when **Include connections**
-  is ticked, where a blank Walk Depth instead limits the walk to a single
-  connector hop, because connector graphs are dense meshes. Tick **Include
+  Leave Walk Depth blank for no bound. Tick **Include
   connections** to follow `connect` and `bind` relationships in addition to
   the ordinary reference relationships an Impact query follows by default;
-  leave it unchecked to see only reference-driven impact.
+  leave it unchecked to see only reference-driven impact. Walk Depth bounds
+  every relationship kind alike, so a connector hop costs the same one step
+  as a reference hop - use it when you want proximity rather than full
+  reachability, since connector graphs are dense meshes.
 
 Every change updates the results panel immediately - there is no Run
 button. Changing the Query Type, adding or removing a chip, editing the
