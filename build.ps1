@@ -83,8 +83,32 @@ if ($IntegrationTest) {
             npm install -g appium
             if ($LASTEXITCODE -ne 0) { $buildError = $true }
 
-            $driverName = $IsWindows ? "appium-novawindows-driver" : "mac2"
+            # appium-novawindows-driver is pinned: 1.4.2 reintroduced an inverted return value in
+            # trySetForegroundWindow, so every session fails with "Failed to locate window of the
+            # app." 1.4.1 is the last good release. See docs/design/ots/appium.md for the analysis;
+            # remove the pin once a fixed release ships.
+            $novaWindowsDriverVersion = "1.4.1"
+
+            $driverName = $IsWindows ? "appium-novawindows-driver@$novaWindowsDriverVersion" : "mac2"
             $driverArgs = $IsWindows ? @("--source=npm", $driverName) : @($driverName)
+
+            # A driver already installed at a different version makes `driver install` fail with
+            # "already installed", which the check below deliberately tolerates. Uninstall a
+            # mismatched version first so that tolerance can never silently leave the pin unapplied.
+            if ($IsWindows) {
+                $installedVersion = $null
+                try {
+                    $installedVersion = (appium driver list --installed --json 2>$null | ConvertFrom-Json).novawindows.version
+                } catch {
+                    $installedVersion = $null
+                }
+
+                if ($installedVersion -and $installedVersion -ne $novaWindowsDriverVersion) {
+                    Write-Host "Replacing the novawindows driver $installedVersion with the pinned $novaWindowsDriverVersion..."
+                    appium driver uninstall novawindows
+                }
+            }
+
             Write-Host "Installing the $driverName driver..."
             $driverInstallOutput = appium driver install @driverArgs 2>&1 | Out-String
             Write-Host $driverInstallOutput
