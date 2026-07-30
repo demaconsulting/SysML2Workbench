@@ -17,3 +17,10 @@ sections:
               The product depends on the existing SysML2Tools layout strategies to produce diagram structure for rendering.
             tests:
               - 'RenderView_GeneratesLayoutGraph'
+
+          - id: 'SysML2Tools-ConnectionAwareImpactAnalysis'
+            title: 'The SysML2Workbench shall use SysML2Tools to perform impact analysis that optionally traverses connector (connect/bind) relationships in addition to resolved reference edges.'
+            justification: |
+              The impact walk now follows resolved reference edges only by default, so the connector reachability the workbench previously obtained implicitly must be requested explicitly; the dependency's opt-in behavior, and the traversal metadata it reports for connector-reached elements, are therefore the evidence target.
+            tests:
+              - 'ImpactQuery_IncludeConnections_TraversesConnectorEdges'

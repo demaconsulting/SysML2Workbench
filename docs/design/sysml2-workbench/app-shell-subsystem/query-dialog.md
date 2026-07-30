@@ -24,16 +24,23 @@ workspace through a single, always-visible adaptive form — there is no
   box, plus a selectable candidate list used as the target-element
   selector).
 - Verb-specific extra controls appear only when relevant: a "Direction"
-  combo for `Hierarchy`, and a "Walk depth" text box for `Impact`.
+  combo for `Hierarchy`, and — for `Impact` — a "Walk depth" text box plus
+  an "Include connections (connect/bind)" checkbox. The walk-depth label
+  states both meanings of a blank value: unlimited normally, or a single
+  connector hop when connections are included.
 - Every interaction — Query Type selection, chip add/remove, search text,
-  element selection, Direction change, Walk depth text change, or the
-  Include-standard-library toggle — immediately recomputes and displays the
-  result synchronously; there is no "Run Query" button.
+  element selection, Direction change, Walk depth text change, the
+  Include-connections toggle, or the Include-standard-library toggle —
+  immediately recomputes and displays the result synchronously; there is no
+  "Run Query" button.
 
 Results feed the same shared results panel: a summary bullet list plus a
-`Grid`-based (not `DataGrid`) entries table with columns for Qualified Name,
-Kind, Detail, and a Direction column shown only when the current result is a
-`dependencies` verb result. There is no toolbar: "Copy as Markdown" and
+`DataGrid` entries table whose always-visible columns are Qualified Name,
+Kind, and Detail, followed by four optional columns. Direction is shown only
+when the current result is a `dependencies` verb result; Depth, Relation, and
+Via are data-driven, shown only when at least one displayed row actually
+carries that value, so verbs that do not traverse render exactly the same
+three-column panel as before. There is no toolbar: "Copy as Markdown" and
 "Copy as JSON" are right-click `ContextMenu` items on the results panel,
 wired to `QueryResultRenderer.RenderMarkdown`/`RenderJson` via the same
 `AvaloniaClipboardService` pattern `DiagramDocumentView` uses for its "Copy
@@ -88,6 +95,15 @@ attached to `QueryOptions.Direction` when `SelectedQueryType` is `Hierarchy`.
 optional walk-depth bound. Only parsed for `Impact`, and only when it parses
 cleanly as a non-negative integer.
 
+**IncludeConnections**: `bool` — the Impact verb's "Include connections"
+checkbox state, requesting that connector (`connect`/`bind`) relationships be
+traversed in addition to resolved reference edges. Only attached to
+`QueryOptions.IncludeConnections` when `SelectedQueryType` is `Impact`;
+defaults to `false`, matching the engine's own default. Interacts with
+`WalkDepthText`: a blank walk depth normally means unlimited, but when this
+flag is set it instead bounds connector hops along a single traversal path
+to one, which the walk-depth label states explicitly.
+
 **CurrentResult**: `QueryResult?` — the most recently produced `QueryResult`
 (either List's client-built list result or the engine's response), or
 `null` when an element-scoped Query Type has no selection yet. Feeds the
@@ -95,8 +111,10 @@ shared results panel.
 
 **CurrentResultRows**: `IReadOnlyList<QueryResultRow>` — a flattened,
 view-friendly projection of `CurrentResult.Entries` (empty strings replacing
-nullable fields, `Direction` mapped to a human-readable label, notes joined
-into a tooltip string), bound directly by the results-panel `ItemsControl`.
+nullable fields, `Direction` mapped to a human-readable label, traversal
+depth, resolved relation kind, and connection roll-up far endpoint flattened
+to plain strings, notes joined into a tooltip string), bound directly by the
+results-panel `ItemsControl`.
 
 **StatusMessage**: `string?` — user-visible error/hint text set on every
 recoverable failure or prompt (no workspace, no selection yet, engine
@@ -131,7 +149,8 @@ the shell's current workspace, then recomputes the result.
 **RecomputeResult**: Recomputes `CurrentResult`/`CurrentResultRows` for the
 currently selected `SelectedQueryType`. This is the redesign's entire
 "no explicit Run gesture" mechanism, invoked automatically by every relevant
-property change (Query Type, Hierarchy direction, Walk depth text, and — via
+property change (Query Type, Hierarchy direction, Walk depth text, the
+Include-connections toggle, and — via
 `FilterOnly`'s and `Picker`'s `PropertyChanged` subscriptions —
 `FilterOnly.DisplayedItems`/`Picker.DisplayedItems`/`Picker.SelectedQualifiedName`).
 
@@ -161,7 +180,24 @@ form's verb-specific state.
 - *Parameters*: `string qualifiedName` — the resolved target's qualified name.
 - *Returns*: `QueryOptions` — always carries `IncludeStdlib`; attaches
   `Direction` only for `Hierarchy`; parses `WalkDepth` only for `Impact` and
-  only when the text parses cleanly.
+  only when the text parses cleanly; sets `IncludeConnections` only for
+  `Impact`, so leaving the checkbox ticked and switching Query Type never
+  changes another verb's option payload.
+
+**BuildRow**: Projects one engine-produced result entry into the flattened
+`QueryResultRow` the results panel binds to.
+
+- *Parameters*: `QueryResultEntry entry` — the entry to project; must not be
+  `null`.
+- *Returns*: `QueryResultRow` — every field is a non-null string except the
+  tooltip `Notes`, so the AXAML binds directly without value converters.
+  Traversal depth is taken from the entry's machine-readable depth value and
+  is never parsed out of the entry's human-readable detail text; the resolved
+  relation kind is rendered as its enum member name (for example `Connect`);
+  the connection roll-up far endpoint is rendered as its qualified name.
+  Entries carrying none of these leave all three fields empty.
+- *Postconditions*: A pure static function with no view-model state, exposed
+  publicly so tests can assert the projection contract directly.
 
 **CopyResultAsMarkdownAsync** / **CopyResultAsJsonAsync**: Copy
 `CurrentResult` to the clipboard through `QueryResultRenderer` and
@@ -184,6 +220,11 @@ an unhandled exception. Unlike the prior "leave the last result visible"
 behavior, every one of these paths also clears `CurrentResult`/
 `CurrentResultRows` so the results panel never shows a stale result left
 over from a previous Query Type or selection.
+
+The one deliberate exception is `BuildRow`'s null-entry guard: a `null`
+result entry is a programming error in the caller, not a user-reachable
+condition, so it throws `ArgumentNullException` rather than being reported
+through `StatusMessage`.
 
 #### Dependencies
 

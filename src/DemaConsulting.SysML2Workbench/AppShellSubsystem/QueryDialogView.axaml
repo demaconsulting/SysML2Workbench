@@ -47,10 +47,14 @@
           <ComboBox Name="HierarchyDirectionComboBox" HorizontalAlignment="Stretch" />
         </StackPanel>
 
-        <!-- Impact-only walk depth input -->
-        <StackPanel Name="WalkDepthPanel" Spacing="4" IsVisible="False">
-          <TextBlock Text="Walk depth (blank = unlimited)" />
+        <!-- Impact-only options: walk depth + connector traversal opt-in -->
+        <StackPanel Name="ImpactOptionsPanel" Spacing="4" IsVisible="False">
+          <TextBlock Text="Walk depth (blank = unlimited, or one connector hop when connections are included)"
+                     TextWrapping="Wrap" />
           <TextBox Name="WalkDepthTextBox" Text="{Binding WalkDepthText, Mode=TwoWay}" />
+          <CheckBox Name="IncludeConnectionsCheckBox" Content="Include connections (connect/bind)"
+                    IsChecked="{Binding IncludeConnections, Mode=TwoWay}"
+                    AutomationProperties.AutomationId="QueryDialogIncludeConnectionsCheckBox" />
         </StackPanel>
       </StackPanel>
 
@@ -99,6 +103,9 @@
                 <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="1*" />
                 <DataGridTextColumn Header="Detail" Binding="{Binding Detail}" Width="2*" />
                 <DataGridTextColumn Header="Direction" Binding="{Binding Direction}" Width="1*" IsVisible="False" />
+                <DataGridTextColumn Header="Depth" Binding="{Binding Depth}" Width="Auto" IsVisible="False" />
+                <DataGridTextColumn Header="Relation" Binding="{Binding Relation}" Width="1*" IsVisible="False" />
+                <DataGridTextColumn Header="Via" Binding="{Binding Via}" Width="2*" IsVisible="False" />
               </DataGrid.Columns>
             </DataGrid>
           </Border>

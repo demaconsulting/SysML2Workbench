@@ -1,5 +1,6 @@
 using DemaConsulting.SysML2Tools.Io;
 using DemaConsulting.SysML2Tools.Parser;
+using DemaConsulting.SysML2Tools.Query;
 using DemaConsulting.SysML2Tools.Semantic;
 using DemaConsulting.SysML2Tools.Stdlib;
 using DemaConsulting.SysML2Workbench;
@@ -98,5 +99,64 @@ public sealed class SysML2ToolsTests : IDisposable
 
         // Assert: SysML2Tools produced concrete, renderable diagram output for the requested view
         Assert.NotEmpty(outputs);
+    }
+
+    /// <summary>
+    ///     Validates that the impact analysis in <see cref="QueryEngine" /> traverses connector
+    ///     (<c>connect</c>) relationships only when <see cref="QueryOptions.IncludeConnections" /> is set,
+    ///     and that entries reached that way carry the machine-readable traversal metadata
+    ///     (<see cref="QueryResultEntry.Depth" /> and <see cref="QueryResultEntry.Relation" />) the
+    ///     workbench's results panel displays.
+    /// </summary>
+    /// <remarks>
+    ///     This pins the dependency's narrowed default: the impact walk now follows resolved reference
+    ///     edges only, so connector reachability the workbench previously got implicitly must be
+    ///     requested explicitly.
+    /// </remarks>
+    [Fact]
+    public async Task ImpactQuery_IncludeConnections_TraversesConnectorEdges()
+    {
+        // Arrange: two sibling parts joined by nothing but a connector
+        await File.WriteAllTextAsync(
+            PathHelpers.SafePathCombine(_tempRoot, "Connected.sysml"),
+            "package Connected {\n"
+            + "    part def Engine;\n"
+            + "    part def Gearbox;\n"
+            + "    part def Car {\n"
+            + "        part engine : Engine;\n"
+            + "        part gearbox : Gearbox;\n"
+            + "        connect engine to gearbox;\n"
+            + "    }\n"
+            + "}\n",
+            TestContext.Current.CancellationToken);
+        var discoveredFiles = GlobFileCollector.Collect(["**/*.sysml"], [], _tempRoot);
+        var (symbolTable, _) = StdlibProvider.GetSymbolTable();
+        var loadResult = await WorkspaceLoader.LoadAsync(discoveredFiles, symbolTable);
+        var workspace = loadResult.Workspace!;
+        var target = workspace.Declarations["Connected::Car::engine"];
+
+        // Act: the same impact query with connector traversal off, then on
+        var withoutConnections = QueryEngine.Impact(
+            workspace,
+            target,
+            new QueryOptions { Verb = QueryVerb.Impact, Element = "Connected::Car::engine" });
+        var withConnections = QueryEngine.Impact(
+            workspace,
+            target,
+            new QueryOptions
+            {
+                Verb = QueryVerb.Impact,
+                Element = "Connected::Car::engine",
+                IncludeConnections = true,
+            });
+
+        // Assert: the connector-reached sibling appears only when connections are included, and its
+        // entry carries the traversal metadata the workbench surfaces
+        Assert.DoesNotContain(withoutConnections.Entries, entry => entry.QualifiedName == "Connected::Car::gearbox");
+        var reached = Assert.Single(
+            withConnections.Entries,
+            entry => entry.QualifiedName == "Connected::Car::gearbox");
+        Assert.NotNull(reached.Depth);
+        Assert.NotNull(reached.Relation);
     }
 }

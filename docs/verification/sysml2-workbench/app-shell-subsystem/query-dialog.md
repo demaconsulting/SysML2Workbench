@@ -9,8 +9,13 @@ on-disk workspace - it has no Avalonia dependency itself, so no UI thread or dia
 needed to exercise its state, `BuildOptions` shape, or clipboard composition. This design has no
 explicit "Run" method: every scenario drives the auto-recompute contract by assigning the property
 that should trigger it (`SelectedQueryType`, `Picker.SelectedQualifiedName`, `HierarchyDirection`,
-`WalkDepthText`, `IncludeStdlib`) and asserting `CurrentResult`/`StatusMessage` update immediately,
-with no intervening method call anywhere in the test bodies. A single Avalonia-headless end-to-end
+`WalkDepthText`, `IncludeConnections`, `IncludeStdlib`) and asserting `CurrentResult`/`StatusMessage`
+update immediately,
+with no intervening method call anywhere in the test bodies. The pure row-projection scenarios
+instead call the public `BuildRow` function directly with a hand-built result entry, so the mapping
+from engine metadata to displayed columns can be asserted exactly - including that the depth comes
+from the entry's machine-readable value rather than from its human-readable detail text - without
+depending on which entries a particular engine version happens to return. A single Avalonia-headless end-to-end
 test in `test/OtsSoftwareTests/AvaloniaTests.cs` opens the real dialog through the real Query menu
 item, confirms the dialog opens on "List" with the selection-free filter control visible and the
 element picker hidden, selects the Describe Query Type (confirming the visibility flip) and an
@@ -125,6 +130,36 @@ to that integer. Verified by
 **BuildOptions_PropagatesIncludeStdlib**: `BuildOptions` always carries the current `IncludeStdlib`
 flag to `QueryOptions.IncludeStdlib`, regardless of Query Type. Verified by
 `QueryDialogViewModelTests.BuildOptions_PropagatesIncludeStdlib`.
+
+**BuildOptions_ImpactVerbWithIncludeConnections_SetsIncludeConnections**: With
+`SelectedQueryType=Impact` and `IncludeConnections` set, `BuildOptions` requests connection-aware
+impact analysis, so the user's opt-in to connector (`connect`/`bind`) traversal actually reaches the
+engine. Verified by
+`QueryDialogViewModelTests.BuildOptions_ImpactVerbWithIncludeConnections_SetsIncludeConnections`.
+
+**BuildOptions_NonImpactVerb_OmitsIncludeConnections**: With any Query Type other than Impact
+(exercised over Describe, Uses, and Hierarchy), `BuildOptions` leaves connection awareness unset even
+when the checkbox was left ticked from a prior Impact query, so switching Query Type never changes
+another verb's option payload. Verified by
+`QueryDialogViewModelTests.BuildOptions_NonImpactVerb_OmitsIncludeConnections`.
+
+**IncludeConnectionsChange_WithSelection_RecomputesImmediately**: With `SelectedQueryType=Impact` and
+an active selection, toggling `IncludeConnections` recomputes `CurrentResult` immediately, with no
+intervening method call and no stale state or thrown exception. Verified by
+`QueryDialogViewModelTests.IncludeConnectionsChange_WithSelection_RecomputesImmediately`.
+
+**BuildRow_TraversalEntry_ProjectsDepthRelationAndVia**: A result entry carrying a traversal depth, a
+resolved relation kind, and a connection roll-up far endpoint projects all three into the displayed
+row (as `"2"`, `"Connect"`, and the far endpoint's qualified name). The entry's detail text
+deliberately claims a different depth, so an implementation that parsed the depth out of the detail
+text instead of reading the engine's machine-readable value would fail this scenario. Verified by
+`QueryDialogViewModelTests.BuildRow_TraversalEntry_ProjectsDepthRelationAndVia`.
+
+**BuildRow_NonTraversingEntry_LeavesMetadataEmpty**: A result entry from a verb that does not
+traverse projects empty strings (never the text `"null"`) for depth, relation, and far endpoint, and
+a null notes tooltip - the regression guard that keeps the data-driven column visibility hiding all
+three and the results panel rendering exactly as it did before those columns existed. Verified by
+`QueryDialogViewModelTests.BuildRow_NonTraversingEntry_LeavesMetadataEmpty`.
 
 **IncludeStdlibToggle_RefreshesPickerAndRecomputesResult**: Toggling `IncludeStdlib` refreshes both
 `FilterOnly`'s and `Picker`'s candidate lists to reflect the new stdlib-inclusion rule, and

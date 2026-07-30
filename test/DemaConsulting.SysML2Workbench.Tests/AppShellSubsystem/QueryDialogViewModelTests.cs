@@ -452,6 +452,135 @@ public sealed class QueryDialogViewModelTests : IDisposable
     }
 
     /// <summary>
+    ///     Validates that <see cref="QueryDialogViewModel.IncludeConnections" /> reaches
+    ///     <see cref="QueryOptions.IncludeConnections" /> when the Query Type is
+    ///     <see cref="QueryVerb.Impact" />, so the user's opt-in to connector (connect/bind) traversal
+    ///     actually reaches the engine.
+    /// </summary>
+    [Fact]
+    public void QueryDialogViewModel_BuildOptions_ImpactVerbWithIncludeConnections_SetsIncludeConnections()
+    {
+        // Arrange
+        using var shell = CreateShell();
+        var viewModel = new QueryDialogViewModel(shell);
+        viewModel.SelectedQueryType = QueryVerb.Impact;
+        viewModel.IncludeConnections = true;
+
+        // Act
+        var options = viewModel.BuildOptions("Some::Element");
+
+        // Assert
+        Assert.Equal(QueryVerb.Impact, options.Verb);
+        Assert.True(options.IncludeConnections);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="QueryOptions.IncludeConnections" /> stays unset for every non-Impact
+    ///     Query Type even when the checkbox was left ticked from a prior Impact query, so switching verb
+    ///     never changes another verb's option payload.
+    /// </summary>
+    /// <param name="queryType">A Query Type for which connector traversal has no meaning.</param>
+    [Theory]
+    [InlineData(QueryVerb.Describe)]
+    [InlineData(QueryVerb.Uses)]
+    [InlineData(QueryVerb.Hierarchy)]
+    public void QueryDialogViewModel_BuildOptions_NonImpactVerb_OmitsIncludeConnections(QueryVerb queryType)
+    {
+        // Arrange
+        using var shell = CreateShell();
+        var viewModel = new QueryDialogViewModel(shell);
+        viewModel.IncludeConnections = true;
+        viewModel.SelectedQueryType = queryType;
+
+        // Act
+        var options = viewModel.BuildOptions("Some::Element");
+
+        // Assert
+        Assert.False(options.IncludeConnections);
+    }
+
+    /// <summary>
+    ///     Validates that toggling <see cref="QueryDialogViewModel.IncludeConnections" /> while
+    ///     <see cref="QueryVerb.Impact" /> is selected with an active selection recomputes immediately,
+    ///     with no intervening method call - the dialog's "no explicit Run gesture" contract.
+    /// </summary>
+    [Fact]
+    public async Task QueryDialogViewModel_IncludeConnectionsChange_WithSelection_RecomputesImmediately()
+    {
+        // Arrange
+        await WriteSampleWorkspaceAsync();
+        using var shell = CreateShell();
+        await shell.AddFolderSourceAsync(_tempRoot);
+        var viewModel = new QueryDialogViewModel(shell);
+        viewModel.SelectedQueryType = QueryVerb.Impact;
+        viewModel.Picker.SelectedQualifiedName = "Sample::Engine";
+        Assert.NotNull(viewModel.CurrentResult);
+
+        // Act
+        viewModel.IncludeConnections = true;
+
+        // Assert
+        Assert.NotNull(viewModel.CurrentResult);
+        Assert.Equal("impact", viewModel.CurrentResult!.Verb);
+        Assert.Null(viewModel.StatusMessage);
+    }
+
+    /// <summary>
+    ///     Validates that <see cref="QueryDialogViewModel.BuildRow" /> projects a traversal entry's
+    ///     machine-readable depth, resolved relation kind, and connection roll-up far endpoint into the
+    ///     row - reading <see cref="QueryResultEntry.Depth" /> directly rather than parsing the
+    ///     human-readable "depth N" text out of <see cref="QueryResultEntry.Detail" />, which the entry
+    ///     here deliberately contradicts so a parsing implementation would fail this test.
+    /// </summary>
+    [Fact]
+    public void QueryDialogViewModel_BuildRow_TraversalEntry_ProjectsDepthRelationAndVia()
+    {
+        // Arrange: Detail claims a different depth than the Depth property carries
+        var entry = new QueryResultEntry
+        {
+            QualifiedName = "Sample::Engine",
+            Kind = "part def",
+            Detail = "depth 9",
+            Depth = 2,
+            Relation = SysmlEdgeKind.Connect,
+            ViaQualifiedName = "Sample::Car::enginePort",
+        };
+
+        // Act
+        var row = QueryDialogViewModel.BuildRow(entry);
+
+        // Assert
+        Assert.Equal("2", row.Depth);
+        Assert.Equal("Connect", row.Relation);
+        Assert.Equal("Sample::Car::enginePort", row.Via);
+    }
+
+    /// <summary>
+    ///     Regression guard for the results panel of non-traversing verbs: an entry carrying no traversal
+    ///     metadata projects empty strings (never "null" text) for all three new columns, so the
+    ///     data-driven column visibility keeps them hidden and the panel renders exactly as before.
+    /// </summary>
+    [Fact]
+    public void QueryDialogViewModel_BuildRow_NonTraversingEntry_LeavesMetadataEmpty()
+    {
+        // Arrange
+        var entry = new QueryResultEntry
+        {
+            QualifiedName = "Sample::Engine",
+            Kind = "part def",
+        };
+
+        // Act
+        var row = QueryDialogViewModel.BuildRow(entry);
+
+        // Assert
+        Assert.Equal(string.Empty, row.Depth);
+        Assert.Equal(string.Empty, row.Relation);
+        Assert.Equal(string.Empty, row.Via);
+        Assert.Null(row.Notes);
+    }
+
+    /// <summary>
     ///     Validates that <see cref="QueryDialogViewModel.IncludeStdlib" /> flows through into
     ///     <see cref="QueryOptions.IncludeStdlib" /> for every verb.
     /// </summary>

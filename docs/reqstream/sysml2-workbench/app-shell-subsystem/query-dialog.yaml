@@ -38,9 +38,11 @@ sections:
                   QueryVerb values in addition to "List"; selecting one of them resolves the single picker''s
                   selected qualified name against the current workspace, builds a QueryOptions instance
                   carrying the selected Query Type, the qualified name, IncludeStdlib, and verb-specific inputs
-                  (Direction for Hierarchy, WalkDepth for Impact), and dispatches through QueryEngine.Execute
+                  (Direction for Hierarchy, WalkDepth and IncludeConnections for Impact), and dispatches
+                  through QueryEngine.Execute
                   immediately - with no explicit "Run" gesture anywhere in the dialog. Every subsequent change
-                  to the Query Type, the picker''s selection, the Hierarchy direction, or the Impact walk depth
+                  to the Query Type, the picker''s selection, the Hierarchy direction, the Impact walk depth,
+                  or the Impact include-connections option
                   recomputes the displayed result immediately, without stale data from a previous selection or
                   Query Type persisting on screen.'
                 justification: |
@@ -54,6 +56,7 @@ sections:
                   - 'QueryDialogViewModel_SwitchingQueryType_FromListToDescribeNoSelection_ShowsSelectPrompt'
                   - 'QueryDialogViewModel_HierarchyDirectionChange_WithSelection_RecomputesImmediately'
                   - 'QueryDialogViewModel_WalkDepthTextChange_WithSelection_RecomputesImmediately'
+                  - 'QueryDialogViewModel_IncludeConnectionsChange_WithSelection_RecomputesImmediately'
                   - 'QueryDialogViewModel_BuildOptions_HierarchyVerb_AttachesDirection'
                   - 'QueryDialogViewModel_BuildOptions_NonHierarchyVerb_OmitsDirection'
                   - 'QueryDialogViewModel_BuildOptions_ImpactVerbWithWalkDepth_ParsesWalkDepth'
@@ -61,6 +64,35 @@ sections:
                   - 'QueryDialogViewModel_BuildOptions_PropagatesIncludeStdlib'
                   - 'QueryDialogViewModel_QueryTypes_HasExpectedElevenEntries'
                   - 'QueryDialogViewModel_HierarchyDirectionOptions_HasExpectedThree'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-ConnectionAwareImpact'
+                title: 'The QueryDialog shall offer an Impact-only "Include connections" option that requests
+                  connection-aware impact analysis, shall leave that option unset for every other Query Type,
+                  and shall present the walk-depth control with wording that states a blank value means one
+                  connector hop when connections are included rather than unlimited.'
+                justification: |
+                  Impact analysis that ignores connect/bind relationships hides real physical and behavioral
+                  coupling from the user, while always following them floods the result with the dense
+                  connector mesh; making it an explicit, clearly-bounded per-query choice lets the user ask
+                  either question deliberately instead of guessing which one the tool answered.
+                tests:
+                  - 'QueryDialogViewModel_BuildOptions_ImpactVerbWithIncludeConnections_SetsIncludeConnections'
+                  - 'QueryDialogViewModel_BuildOptions_NonImpactVerb_OmitsIncludeConnections'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-SurfaceTraversalMetadata'
+                title: 'The QueryDialog shall project each result entry''s traversal depth, resolved relation
+                  kind, and connection roll-up far endpoint into the displayed result row, taking the depth
+                  from the engine''s machine-readable value rather than from the entry''s human-readable
+                  detail text, shall display each of those columns only when at least one entry carries that
+                  value, and shall leave every such field empty for verbs that do not traverse.'
+                justification: |
+                  A bare list of impacted names does not tell the user how far away an element is, what kind
+                  of relationship reached it, or which port or endpoint actually caused the hit - the three
+                  facts needed to judge whether a reported impact is real, and the reason the same panel must
+                  stay uncluttered for verbs that produce none of them.
+                tests:
+                  - 'QueryDialogViewModel_BuildRow_TraversalEntry_ProjectsDepthRelationAndVia'
+                  - 'QueryDialogViewModel_BuildRow_NonTraversingEntry_LeavesMetadataEmpty'
 
               - id: 'SysML2Workbench-AppShellSubsystem-QueryDialog-HandleFailuresGracefully'
                 title: 'The QueryDialog shall report every recoverable failure or informational prompt (no
