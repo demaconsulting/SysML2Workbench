@@ -378,6 +378,7 @@ reviews:
       - src/**/AppShellSubsystem/QueryDialogView.axaml
       - src/**/AppShellSubsystem/QueryDialogView.axaml.cs
       - test/**/AppShellSubsystem/QueryDialogViewModelTests.cs
+      - test/**/AppShellSubsystem/QueryDialogUiTests.cs
   - id: SysML2Workbench-ElementPickerSubsystem
     title: Review that SysML2Workbench ElementPickerSubsystem Implementation is Correct
     context:
@@ -426,15 +427,15 @@ reviews:
   - id: OTS-DemaConsultingSysML2Tools
     title: Review that DemaConsulting.SysML2Tools Provides Required Functionality
     paths:
-      - docs/reqstream/ots/demaconsulting-sysml2tools.yaml
-      - docs/design/ots/demaconsulting-sysml2tools.md
-      - docs/verification/ots/demaconsulting-sysml2tools.md
+      - docs/reqstream/ots/sysml2-tools.yaml
+      - docs/design/ots/sysml2-tools.md
+      - docs/verification/ots/sysml2-tools.md
   - id: OTS-DemaConsultingRendering
     title: Review that DemaConsulting.Rendering Provides Required Functionality
     paths:
-      - docs/reqstream/ots/demaconsulting-rendering.yaml
-      - docs/design/ots/demaconsulting-rendering.md
-      - docs/verification/ots/demaconsulting-rendering.md
+      - docs/reqstream/ots/rendering.yaml
+      - docs/design/ots/rendering.md
+      - docs/verification/ots/rendering.md
   - id: OTS-Avalonia
     title: Review that Avalonia Provides Required Functionality
     paths:
