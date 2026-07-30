@@ -34,3 +34,12 @@ state across the catalog and diagnostics regions. Verified by
 
 **CustomViewWorkflow_PreviewsAndExportsFromShell**: A custom view can be previewed and exported as SysML text from the
 shell. Verified by `AppShellSubsystemTests.CustomViewWorkflow_PreviewsAndExportsFromShell`.
+
+**Startup_ShowsWorkspacePanelAsDefaultSidebarTab**: The sidebar composed at startup presents the workspace panel as its
+leading tab and shows it by default, with the predefined-views panel second in the same column. Verified by
+`AppShellSubsystemTests.Startup_ShowsWorkspacePanelAsDefaultSidebarTab`.
+
+**ActiveTabChanges_ProduceStatusSummary**: The subsystem summarizes the currently active document for the main window's
+status area, reporting a neutral idle message with no tab open, the view kind and exposed entities once a predefined
+view is opened, and the file name plus full path once a source-text tab takes over. Verified by
+`AppShellSubsystemTests.ActiveTabChanges_ProduceStatusSummary`.

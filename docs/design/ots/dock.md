@@ -122,12 +122,24 @@ the ones the Tool panels use:
 - **`IFactory.FocusedDockableChanged`/`OnDockableClosed`** — `MainWindowView`
   subscribes to `WorkbenchDockFactory`'s inherited `FocusedDockableChanged`
   event to forward Dock's own tab-focus tracking to
-  `MainWindowShell.NotifyActiveDiagramTab` whenever focus lands on a diagram
-  document (focus changes onto a Tool panel are ignored), and
+  `MainWindowShell.NotifyActiveDocumentTab` whenever focus lands on a
+  document, whether a diagram or a read-only source-text document (focus
+  changes onto a Tool panel are ignored), and
   `WorkbenchDockFactory` overrides `OnDockableClosed` to raise a
   `DiagramTabClosed` event when a diagram document closes through Dock's own
   chrome, which `MainWindowView` uses to call
-  `MainWindowShell.CloseDiagramTab`.
+  `MainWindowShell.CloseDiagramTab`. Selecting a document tab drives Dock's
+  internal `TryActivateDockable`, which activates the dockable within its own
+  dock and *then* focuses it from the focusable root; the activation step
+  already raises the focus change synchronously (via `InitActiveDockable`), so
+  subscribing to `FocusedDockableChanged` alone tracks the selected tab.
+  Headless tests therefore reproduce a tab click by calling the factory's
+  `SetActiveDockable` followed by `SetFocusedDockable`, which is the same
+  activate-then-focus pair Dock's own tab-header click handler issues.
+  Calling `SetFocusedDockable` alone is not sufficient: it returns without
+  raising anything when the focusable root's focused dockable already matches
+  the requested one, so a test that only focuses cannot observe a transition
+  it did not first activate.
 
 `Document`s and `Tool`s therefore have deliberately different close
 semantics in this codebase: a closed `Tool` is hidden and restorable via the

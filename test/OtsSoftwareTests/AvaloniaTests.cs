@@ -42,6 +42,13 @@ public sealed class AvaloniaTests : IDisposable
         }
     }
 
+    /// <summary>
+    ///     Creates a shell composed exactly as <c>App.axaml.cs</c> composes it in production, including the
+    ///     <see cref="AvaloniaUiDispatcher" />. The dispatcher matters here because these qualification tests
+    ///     mutate the workspace asynchronously; the Avalonia dispatcher marshals the resulting
+    ///     <see cref="MainWindowShell.TabsChanged" /> notification back onto the UI thread, exactly as the
+    ///     running application does, so the tests exercise the production threading composition.
+    /// </summary>
     private MainWindowShell CreateShell()
     {
         return new MainWindowShell(
@@ -52,14 +59,16 @@ public sealed class AvaloniaTests : IDisposable
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(_tempLogRoot));
+            new RollingFileLogger(_tempLogRoot),
+            uiDispatcher: new AvaloniaUiDispatcher());
     }
 
     /// <summary>
     ///     Validates that Avalonia hosts the desktop shell's window and Dock-composed control tree: the menu
-    ///     and the predefined-views list are real Avalonia controls attached to the window's visual tree, even
+    ///     and the workspace tree are real Avalonia controls attached to the window's visual tree, even
     ///     though the panel lives in its own separately-named-scoped UserControl hosted by the Dock layout rather
-    ///     than directly in the window.
+    ///     than directly in the window. The workspace panel is asserted because it is the sidebar's leading,
+    ///     initially-active tab, so it is the panel Dock actually realizes at startup.
     /// </summary>
     [AvaloniaFact]
     public void Startup_HostsDesktopShellControls()
@@ -70,11 +79,11 @@ public sealed class AvaloniaTests : IDisposable
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
-        // Assert: the menu and predefined-view list are all real, discoverable Avalonia controls hosted
+        // Assert: the menu and workspace tree are all real, discoverable Avalonia controls hosted
         // somewhere in the window's visual tree, regardless of which Dock-hosted UserControl's own NameScope
         // they belong to
         Assert.NotNull(window.GetVisualDescendants().OfType<Menu>().FirstOrDefault());
-        Assert.NotNull(FindByName<ListBox>(window, "PredefinedViewsListBox"));
+        Assert.NotNull(FindByName<TreeView>(window, "WorkspaceTreeView"));
 
         window.Close();
     }
@@ -263,7 +272,7 @@ public sealed class AvaloniaTests : IDisposable
     /// <summary>
     ///     Selects the diagram document tab with the given tab id via the real Dock factory's
     ///     <c>SetActiveDockable</c>/<c>SetFocusedDockable</c> - exactly what Dock's own tab-header click handler
-    ///     invokes - so the resulting <see cref="MainWindowShell.NotifyActiveDiagramTab" /> notification (raised
+    ///     invokes - so the resulting <see cref="MainWindowShell.NotifyActiveDocumentTab" /> notification (raised
     ///     through <see cref="MainWindowView" />'s <c>FocusedDockableChanged</c> forwarding) faithfully reflects a
     ///     real user tab click rather than only updating shell-side bookkeeping. Reached via reflection since
     ///     <see cref="MainWindowView" />'s Dock factory and per-tab view-model tracking are private implementation

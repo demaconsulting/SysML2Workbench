@@ -33,7 +33,10 @@ for setup prerequisites.
    added source as a tree - folders expand to show the files discovered
    under them, files appear as non-expandable entries - and lets you add
    more sources or remove one via its toolbar or a right-click/selection
-   plus **Remove**. The **Predefined Views** list is populated with every
+   plus **Remove**. **Workspace** is the sidebar tab shown by default when
+   the application starts, with **Predefined Views** as the second tab of
+   the same panel - click either tab to switch between them. The
+   **Predefined Views** list is populated with every
    view usage declared in the workspace, and the **Diagnostics** panel
    (bottom) lists any parser or reference-resolution problems found across
    the whole workspace. Panels are docked in this default arrangement but can
@@ -194,6 +197,23 @@ The **Diagnostics** panel lists every parser and reference-resolution problem
 found anywhere in the currently loaded workspace, refreshed automatically on
 every reload (initial open or external file change). Each entry shows the
 affected file, location, severity, and message.
+
+## Status Bar
+
+A status bar runs along the bottom edge of the window, below every docked
+panel, showing a short summary of whichever document tab is currently
+active:
+
+- A **source-text tab** shows the file's name followed by its full path.
+- A **diagram tab** - predefined view or custom-view preview - shows the
+  view kind followed by the entities being viewed, for example
+  *Interconnection view — Vehicle, Engine*. Only the first few entities are
+  listed; the rest are summarized as a trailing *(+N more)* count so the
+  status bar stays on one line.
+- With **no tab open** at all, the status bar shows *Ready*.
+
+The summary updates automatically as you open, close, or switch between
+tabs.
 
 ## Local Log File
 

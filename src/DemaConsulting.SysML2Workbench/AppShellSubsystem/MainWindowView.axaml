@@ -73,6 +73,14 @@
       </MenuItem>
     </Menu>
 
+    <!--
+      Docked before the DockControl so the DockPanel gives the status bar its measured height along the
+      bottom edge and lets the dock fill whatever remains, rather than the other way around.
+    -->
+    <Border Name="StatusBar" DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" Padding="8,3">
+      <TextBlock Name="StatusBarText" AutomationProperties.AutomationId="StatusBarText" Text="Ready" TextTrimming="CharacterEllipsis" />
+    </Border>
+
     <dock:DockControl Name="WorkbenchDockControl" AutomationProperties.AutomationId="WorkbenchDockControl">
       <dock:DockControl.Styles>
         <!--

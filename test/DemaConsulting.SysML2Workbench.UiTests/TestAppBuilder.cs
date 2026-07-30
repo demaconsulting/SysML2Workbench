@@ -5,6 +5,17 @@ using DemaConsulting.SysML2Workbench;
 
 [assembly: AvaloniaTestApplication(typeof(DemaConsulting.SysML2Workbench.UiTests.TestAppBuilder))]
 
+// Every [AvaloniaFact] in this assembly runs against ONE shared headless Avalonia application and its single
+// UI thread/dispatcher. xUnit, however, runs distinct test classes as distinct collections in parallel by
+// default, so two Avalonia tests can interleave on that one dispatcher: each test's
+// Dispatcher.UIThread.RunJobs() then pumps the *other* test's queued UI work, and a test can observe control
+// and Dock state settling at a point the other test never intended. That is a shared-state hazard of the
+// headless platform, not of the code under test - it made
+// MainWindowShellUiTests.MainWindowView_SourceTextDocumentTabSelected_StatusBarShowsFileSummary fail only when
+// MainWindowShellUiTests and WorkspacePanelUiTests ran together (each class passed in isolation). Serializing
+// the assembly is the supported remedy and costs nothing measurable: the whole suite runs in ~2 seconds.
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
 namespace DemaConsulting.SysML2Workbench.UiTests;
 
 /// <summary>

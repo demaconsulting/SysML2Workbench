@@ -28,10 +28,10 @@ content. Each `WorkbenchTab` owns its own `SvgCanvasHost` (unused/never
 loaded for a source-text tab), so multiple open diagram tabs have fully
 independent zoom/pan/content state.
 
-**ActiveTabId**: `string?` — identifier of the diagram tab currently
-active/focused, or `null` when no diagram tab is open. Updated both by shell
+**ActiveTabId**: `string?` — identifier of the document tab currently
+active/focused, or `null` when no document tab is open. Updated both by shell
 operations that open or focus a tab, and by the UI layer forwarding Dock's
-own focus-change signal via `NotifyActiveDiagramTab`.
+own focus-change signal via `NotifyActiveDocumentTab`.
 
 **CurrentSourceIdToFiles**: `IReadOnlyDictionary<string, IReadOnlyList<string>>`
 — per-source file lists from the most recent workspace resolution, used by
@@ -150,10 +150,10 @@ and makes it active, without rendering anything into it.
   tab, a neighboring tab becomes active, or `ActiveTabId` becomes `null` if no
   tabs remain.
 
-**NotifyActiveDiagramTab**: Notifies the shell that a diagram tab has gained
-UI focus.
+**NotifyActiveDocumentTab**: Notifies the shell that a document tab — a
+rendered diagram or a read-only source-text document — has gained UI focus.
 
-- *Parameters*: `string? tabId` — identifier of the newly focused diagram
+- *Parameters*: `string? tabId` — identifier of the newly focused document
   tab.
 - *Returns*: `void` — `ActiveTabId` updates in place.
 - *Postconditions*: `ActiveTabId` is updated, unless `tabId` does not refer to
@@ -223,6 +223,29 @@ the diagram currently rendered in an open tab.
   (an expected, valid outcome, not a failure) rather than thrown; a
   successful export is also logged at `Info` level, mirroring
   `ExportCustomViewSnippet`'s existing style.
+
+**GetActiveTabStatusSummary**: Builds a short, single-line summary of
+whatever the currently active tab presents, for the main window's bottom
+status area.
+
+- *Parameters*: none.
+- *Returns*: `string` — never `null` or empty.
+- *Preconditions*: None; every shell state, including "no tab open", is
+  valid input.
+- *Postconditions*: None (read-only; no file is read and nothing is
+  re-rendered, so it is cheap enough to call on every tab or focus change).
+  The result is `Ready` when no tab is active; `{fileName} — {fullPath}` for
+  a `SourceText` tab (falling back to the tab's `Title` when it carries no
+  file path); and `{View Kind} view — {Entity1}, {Entity2}, {Entity3}
+  (+N more)` for a diagram tab, where the view kind is the definition's
+  friendly space-separated label (for example *State Transition*), each
+  entity is the final `::` segment of an `ExposeTargetSelection`'s qualified
+  name, at most three are listed and the remainder is elided with a trailing
+  count, and a definition exposing nothing reports
+  `(no exposed entities)`. A diagram tab whose `SourceDefinition` is `null`
+  falls back to the tab's `Title`. Returning a plain `string` computed from
+  already-resident shell state keeps this class free of any UI dependency -
+  the Avalonia layer only renders the result.
 
 #### Supporting Types
 

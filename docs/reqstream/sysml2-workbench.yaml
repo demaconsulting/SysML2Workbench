@@ -52,5 +52,7 @@ sections:
         children:
           - 'SysML2Workbench-LoggingSubsystem-PersistOperationalEvents'
           - 'SysML2Workbench-AppShellSubsystem-CoordinateSessionWorkspace'
+          - 'SysML2Workbench-AppShellSubsystem-DefaultSidebarPanel'
+          - 'SysML2Workbench-AppShellSubsystem-ShowActiveDocumentStatus'
         tests:
           - 'StartSession_OpensShellAndWritesOperationalLogs'

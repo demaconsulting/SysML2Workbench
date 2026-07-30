@@ -63,8 +63,8 @@ empty-workspace guard. Verified by
 a neighbor; closing the final tab leaves no open tabs, a null active tab, and an idle (empty) canvas. Verified by
 `MainWindowShellTests.CloseDiagramTab_RemovesTab_AndReassignsActiveTab`.
 
-**NotifyActiveDiagramTab_UnknownId_IsIgnored**: Notifying the shell of an unknown/stale tab id is ignored rather than
-clearing a still-valid active tab id. Verified by `MainWindowShellTests.NotifyActiveDiagramTab_UnknownId_IsIgnored`.
+**NotifyActiveDocumentTab_UnknownId_IsIgnored**: Notifying the shell of an unknown/stale tab id is ignored rather than
+clearing a still-valid active tab id. Verified by `MainWindowShellTests.NotifyActiveDocumentTab_UnknownId_IsIgnored`.
 
 **SelectPredefinedView_TabsHaveIndependentCanvases**: Each diagram tab owns a fully independent canvas: opening two
 predefined views produces two distinct canvas host instances, and zooming one does not affect the other's zoom level.
@@ -135,3 +135,33 @@ Verified by `MainWindowShellTests.OpenSourceTextTab_SamePathTwice_RefocusesExist
 an open source-text tab, and `null` for a tab id that does not refer to any currently open tab, or that refers to
 a tab of a different kind. Verified by
 `MainWindowShellTests.GetTabFilePath_ReturnsPathForSourceTextTab_AndNullOtherwise`.
+
+**GetActiveTabStatusSummary_NoTabOpen_ReturnsIdleSummary**: With no tab open at all, the active-tab status summary
+is the neutral idle message `Ready` rather than an empty string. Verified by
+`MainWindowShellTests.GetActiveTabStatusSummary_NoTabOpen_ReturnsIdleSummary`.
+
+**GetActiveTabStatusSummary_SourceTextTab_ReturnsFileNameAndPath**: An active source-text tab is summarized as its
+file's own name followed by the file's full path. Verified by
+`MainWindowShellTests.GetActiveTabStatusSummary_SourceTextTab_ReturnsFileNameAndPath`.
+
+**GetActiveTabStatusSummary_PredefinedViewTab_ReturnsViewKindAndExposedEntities**: An active predefined-view tab is
+summarized as its view kind followed by the short names of the entities its derived definition exposes. Verified by
+`MainWindowShellTests.GetActiveTabStatusSummary_PredefinedViewTab_ReturnsViewKindAndExposedEntities`.
+
+**GetActiveTabStatusSummary_CustomPreviewTab_ReturnsViewKindAndExposedEntities**: An active custom-view-preview tab
+is summarized the same way as a predefined-view tab, with the view kind spelled as its friendly, space-separated
+label. Verified by `MainWindowShellTests.GetActiveTabStatusSummary_CustomPreviewTab_ReturnsViewKindAndExposedEntities`.
+
+**GetActiveTabStatusSummary_ManyExposedEntities_ElidesWithMoreCount**: A definition exposing more entities than the
+summary lists reports only the first few, followed by a count of those left out, so the summary stays single-line.
+Verified by `MainWindowShellTests.GetActiveTabStatusSummary_ManyExposedEntities_ElidesWithMoreCount`.
+
+**GetActiveTabStatusSummary_DiagramTabWithoutDefinition_FallsBackToTabTitle**: A diagram tab whose source definition
+could not be derived (an unscoped predefined view with zero expose members) is summarized by its own tab title
+rather than by an empty or invented summary. Verified by
+`MainWindowShellTests.GetActiveTabStatusSummary_DiagramTabWithoutDefinition_FallsBackToTabTitle`.
+
+**GetActiveTabStatusSummary_UnresolvedExposeTarget_ReportsNoExposedEntities**: A diagram tab whose view definition
+declares an expose member that resolves to no workspace element is summarized as its view kind followed by
+"(no exposed entities)", rather than by an empty entity list. Verified by
+`MainWindowShellTests.GetActiveTabStatusSummary_UnresolvedExposeTarget_ReportsNoExposedEntities`.

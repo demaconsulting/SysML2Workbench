@@ -252,7 +252,7 @@ public sealed class DockTests : IDisposable
     /// <summary>
     ///     Validates that <see cref="Dock.Model.Core.IFactory.FocusedDockableChanged" /> fires for a programmatic
     ///     active-dockable change onto a diagram document, the mechanism <see cref="MainWindowView" /> relies on
-    ///     to forward Dock's own focus tracking to <see cref="MainWindowShell.NotifyActiveDiagramTab" />.
+    ///     to forward Dock's own focus tracking to <see cref="MainWindowShell.NotifyActiveDocumentTab" />.
     /// </summary>
     [Fact]
     public void FocusedDockableChanged_FiresForActiveDockableChangesOnDiagramDocuments()

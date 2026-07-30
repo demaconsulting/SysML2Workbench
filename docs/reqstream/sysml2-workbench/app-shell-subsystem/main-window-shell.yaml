@@ -24,7 +24,7 @@ sections:
                   - 'PreviewCustomView_WithNoTabsOpen_OpensNewTab'
                   - 'OpenNewCustomPreviewTab_OpensEmptyActiveTab_AndSubsequentPreviewUpdatesIt'
                   - 'CloseDiagramTab_RemovesTab_AndReassignsActiveTab'
-                  - 'NotifyActiveDiagramTab_UnknownId_IsIgnored'
+                  - 'NotifyActiveDocumentTab_UnknownId_IsIgnored'
                   - 'SelectPredefinedView_TabsHaveIndependentCanvases'
 
               - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SynchronizeSessionState'
@@ -85,3 +85,18 @@ sections:
                   - 'OpenSourceTextTab_NewFile_CreatesOneNewActiveTab'
                   - 'OpenSourceTextTab_SamePathTwice_RefocusesExistingTabWithoutDuplicating'
                   - 'GetTabFilePath_ReturnsPathForSourceTextTab_AndNullOtherwise'
+
+              - id: 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SummarizeActiveTab'
+                title: 'The MainWindowShell shall produce a short single-line summary of the currently active tab - the file name and full path for a source-text tab, the view kind and exposed entities for a diagram tab, and a neutral idle message when no tab is open.'
+                justification: |
+                  The main window's bottom status area needs the summary text computed in Avalonia-free, unit-testable shell
+                  code so the UI layer only renders it; the summary must stay single-line for any number of exposed entities
+                  and must degrade gracefully for a diagram tab whose view definition could not be derived.
+                tests:
+                  - 'GetActiveTabStatusSummary_NoTabOpen_ReturnsIdleSummary'
+                  - 'GetActiveTabStatusSummary_SourceTextTab_ReturnsFileNameAndPath'
+                  - 'GetActiveTabStatusSummary_PredefinedViewTab_ReturnsViewKindAndExposedEntities'
+                  - 'GetActiveTabStatusSummary_CustomPreviewTab_ReturnsViewKindAndExposedEntities'
+                  - 'GetActiveTabStatusSummary_ManyExposedEntities_ElidesWithMoreCount'
+                  - 'GetActiveTabStatusSummary_DiagramTabWithoutDefinition_FallsBackToTabTitle'
+                  - 'GetActiveTabStatusSummary_UnresolvedExposeTarget_ReportsNoExposedEntities'
