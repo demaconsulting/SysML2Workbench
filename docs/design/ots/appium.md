@@ -132,26 +132,9 @@ slowly, one at a time, with this cryptic stack trace. The remediation is
 simply to **unlock the interactive console/RDP session** and re-run
 `-IntegrationTest`; no code change can substitute for this.
 
-The same error had a second, entirely different cause: a regression in
-**`appium-novawindows-driver` 1.4.2**. Its `trySetForegroundWindow`
-(`lib/winapi/user32.ts`) returned the result of the Win32 `EnumWindows` call
-that locates the window, but `EnumWindows` returns FALSE precisely when its
-callback halts enumeration - i.e. when the window *was* found and
-foregrounded. The value was therefore inverted, so `attachToApplicationWindow`
-took its `focusElement` fallback branch on every successful launch;
-`focusElement` issued UI Automation `SetFocus()` against a window that already
-held the foreground, that threw, and the launch loop swallowed the error and
-retried 20 times before reporting `Failed to locate window of the app.` The
-inverted form was pre-1.4.1 code that 1.4.1's stability refactor incidentally
-corrected and 1.4.2's revert of that refactor reintroduced.
-
-Because that failure was indistinguishable from the locked-session one at the
-top-level error message, `build.ps1 -IntegrationTest` and
-`.github/workflows/build.yaml` temporarily pinned the driver to 1.4.1 - the
-last good release at the time - until upstream shipped a proper fix. 1.4.3
-corrected the inverted return value, and 1.4.4 further hardened
-`trySetForegroundWindow` to report whether the window was actually brought to
-the foreground; both were verified locally (repeated clean
-`build.ps1 -IntegrationTest` runs, 10/10 tests passing) before the pin was
-removed. Both scripts now install the unpinned, latest
-`appium-novawindows-driver`.
+If this signature appears while the console/RDP session is confirmed
+unlocked, check the installed `appium-novawindows-driver` version and its
+changelog for `trySetForegroundWindow`/foreground-window regressions before
+assuming an application code change is at fault - `build.ps1
+-IntegrationTest` and `.github/workflows/build.yaml` always install the
+latest release via unpinned `appium driver install`.
