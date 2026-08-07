@@ -132,26 +132,26 @@ slowly, one at a time, with this cryptic stack trace. The remediation is
 simply to **unlock the interactive console/RDP session** and re-run
 `-IntegrationTest`; no code change can substitute for this.
 
-The same error has a second, entirely different cause: a regression in
+The same error had a second, entirely different cause: a regression in
 **`appium-novawindows-driver` 1.4.2**. Its `trySetForegroundWindow`
-(`lib/winapi/user32.ts`) returns the result of the Win32 `EnumWindows` call
+(`lib/winapi/user32.ts`) returned the result of the Win32 `EnumWindows` call
 that locates the window, but `EnumWindows` returns FALSE precisely when its
 callback halts enumeration - i.e. when the window *was* found and
-foregrounded. The value is therefore inverted, so `attachToApplicationWindow`
-takes its `focusElement` fallback branch on every successful launch;
-`focusElement` issues UI Automation `SetFocus()` against a window that already
-holds the foreground, that throws, and the launch loop swallows the error and
-retries 20 times before reporting `Failed to locate window of the app.` The
-inverted form is pre-1.4.1 code that 1.4.1's stability refactor incidentally
+foregrounded. The value was therefore inverted, so `attachToApplicationWindow`
+took its `focusElement` fallback branch on every successful launch;
+`focusElement` issued UI Automation `SetFocus()` against a window that already
+held the foreground, that threw, and the launch loop swallowed the error and
+retried 20 times before reporting `Failed to locate window of the app.` The
+inverted form was pre-1.4.1 code that 1.4.1's stability refactor incidentally
 corrected and 1.4.2's revert of that refactor reintroduced.
 
-Because that failure is indistinguishable from the locked-session one at the
-top-level error message, and because an unpinned `appium driver install`
-silently picks up new releases, **both `build.ps1 -IntegrationTest` and
-`.github/workflows/build.yaml` pin the driver to 1.4.1** - the last good
-release. `build.ps1` additionally uninstalls a mismatched version before
-installing, because `appium driver install` refuses to overwrite an existing
-driver and both scripts deliberately tolerate its "already installed" error;
-without that uninstall, a developer's stale driver would silently defeat the
-pin and let local results diverge from CI. Remove both pins once a fixed
-release ships.
+Because that failure was indistinguishable from the locked-session one at the
+top-level error message, `build.ps1 -IntegrationTest` and
+`.github/workflows/build.yaml` temporarily pinned the driver to 1.4.1 - the
+last good release at the time - until upstream shipped a proper fix. 1.4.3
+corrected the inverted return value, and 1.4.4 further hardened
+`trySetForegroundWindow` to report whether the window was actually brought to
+the foreground; both were verified locally (repeated clean
+`build.ps1 -IntegrationTest` runs, 10/10 tests passing) before the pin was
+removed. Both scripts now install the unpinned, latest
+`appium-novawindows-driver`.
