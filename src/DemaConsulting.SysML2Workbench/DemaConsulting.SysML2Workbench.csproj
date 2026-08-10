@@ -23,6 +23,16 @@
     <PackageReference Include="DemaConsulting.SysML2Tools.Language" Version="0.2.0-beta.2" />
     <PackageReference Include="DemaConsulting.SysML2Tools.Stdlib" Version="0.2.0-beta.2" />
     <PackageReference Include="DemaConsulting.Rendering.Svg" Version="0.1.0" />
+
+    <!-- Avalonia.Skia 12.1.1 pins older SkiaSharp native asset versions (e.g. Linux 3.119.4) than
+         the SkiaSharp core version NuGet resolves to (4.148.0, pulled up by Svg.Controls.Skia.Avalonia's
+         Svg.Skia dependency). Without these pins, restore leaves the non-Windows native asset packages
+         behind at the older, incompatible version, causing SkiaSharp's native library version check to
+         fail at runtime on Linux/macOS. Pinning all three platform packages to the same version as the
+         resolved SkiaSharp core keeps them in lockstep. -->
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.148.0" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.148.0" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+    <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="4.148.0" Condition="$([MSBuild]::IsOSPlatform('macOS'))" />
   </ItemGroup>
 
   <ItemGroup>
