@@ -19,6 +19,10 @@
     <PackageReference Include="DemaConsulting.SysML2Tools.Language" Version="0.2.0" />
     <PackageReference Include="DemaConsulting.SysML2Tools.Stdlib" Version="0.2.0" />
     <PackageReference Include="DemaConsulting.Rendering.Svg" Version="0.1.0" />
+    <PackageReference Include="coverlet.collector" Version="10.0.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
