@@ -239,7 +239,7 @@ public partial class WorkspacePanelToolViewModel : Dock.Model.Mvvm.Controls.Tool
     /// </summary>
     /// <param name="source">The source the files were discovered under.</param>
     /// <param name="files">Absolute paths of every file discovered under <paramref name="source" />.</param>
-    private static IReadOnlyList<WorkspaceTreeNode> BuildFolderChildren(WorkspaceSource source, IReadOnlyList<string> files)
+    private static List<WorkspaceTreeNode> BuildFolderChildren(WorkspaceSource source, IReadOnlyList<string> files)
     {
         if (files.Count == 0)
         {
