@@ -25,6 +25,55 @@ public sealed class ElementPickerViewModelTests
     ];
 
     /// <summary>
+    ///     Expected distinct, ordinally-sorted type labels derived from <see cref="MixedCandidates" />.
+    /// </summary>
+    private static readonly string[] ExpectedSortedTypeLabels = ["package", "part", "part def"];
+
+    /// <summary>
+    ///     Single-label filter set used to pre-populate the "part" chip.
+    /// </summary>
+    private static readonly string[] PartChipOnly = ["part"];
+
+    /// <summary>
+    ///     Expected qualified names of the "part" (non-definition) candidates in <see cref="MixedCandidates" />.
+    /// </summary>
+    private static readonly string[] ExpectedPartUsages = ["Model::engineInstance", "Model::wheelInstance"];
+
+    /// <summary>
+    ///     Expected single displayed item after narrowing by the substring "engine".
+    /// </summary>
+    private static readonly string[] ExpectedEngineOnly = ["Model::Engine"];
+
+    /// <summary>
+    ///     Expected single displayed item after narrowing by the substring "SUBPACKAGE".
+    /// </summary>
+    private static readonly string[] ExpectedSubPackageOnly = ["Model::SubPackage"];
+
+    /// <summary>
+    ///     Expected addable type labels (all labels except the pre-populated "part" chip).
+    /// </summary>
+    private static readonly string[] ExpectedAddableLabels = ["package", "part def"];
+
+    /// <summary>
+    ///     Replacement candidate list used to verify <see cref="ElementPickerViewModel.SetCandidates" />
+    ///     fully replaces prior state on a second call.
+    /// </summary>
+    private static readonly (string QualifiedName, string TypeLabel)[] ReplacementCandidates =
+    [
+        ("Other::Foo", "other"),
+    ];
+
+    /// <summary>
+    ///     Expected sole type label after replacing candidates with <see cref="ReplacementCandidates" />.
+    /// </summary>
+    private static readonly string[] ExpectedOtherLabelOnly = ["other"];
+
+    /// <summary>
+    ///     Expected sole displayed item after replacing candidates with <see cref="ReplacementCandidates" />.
+    /// </summary>
+    private static readonly string[] ExpectedOtherFooOnly = ["Other::Foo"];
+
+    /// <summary>
     ///     Validates that a freshly-constructed picker has no candidates, no active filters,
     ///     an empty (non-null) search text, and an empty displayed list.
     /// </summary>
@@ -71,7 +120,7 @@ public sealed class ElementPickerViewModelTests
         picker.SetCandidates(MixedCandidates);
 
         // Assert
-        Assert.Equal(new[] { "package", "part", "part def" }, picker.AvailableTypeLabels);
+        Assert.Equal(ExpectedSortedTypeLabels, picker.AvailableTypeLabels);
     }
 
     /// <summary>
@@ -89,7 +138,7 @@ public sealed class ElementPickerViewModelTests
         picker.SetCandidates(MixedCandidates, defaultTypeFilterLabel: "part");
 
         // Assert
-        Assert.Equal(new[] { "part" }, picker.ActiveTypeFilters);
+        Assert.Equal(PartChipOnly, picker.ActiveTypeFilters);
     }
 
     /// <summary>
@@ -125,7 +174,7 @@ public sealed class ElementPickerViewModelTests
 
         // Assert
         Assert.Equal(
-            new[] { "Model::engineInstance", "Model::wheelInstance" },
+            ExpectedPartUsages,
             picker.DisplayedItems);
     }
 
@@ -188,7 +237,7 @@ public sealed class ElementPickerViewModelTests
 
         // Assert - "part def" chip matches Engine + Wheel; "package" chip matches SubPackage.
         // After substring "engine", only Engine remains.
-        Assert.Equal(new[] { "Model::Engine" }, picker.DisplayedItems);
+        Assert.Equal(ExpectedEngineOnly, picker.DisplayedItems);
     }
 
     /// <summary>
@@ -205,7 +254,7 @@ public sealed class ElementPickerViewModelTests
         picker.SearchText = "SUBPACKAGE";
 
         // Assert
-        Assert.Equal(new[] { "Model::SubPackage" }, picker.DisplayedItems);
+        Assert.Equal(ExpectedSubPackageOnly, picker.DisplayedItems);
     }
 
     /// <summary>
@@ -266,7 +315,7 @@ public sealed class ElementPickerViewModelTests
         var addable = picker.GetAddableTypeLabels();
 
         // Assert
-        Assert.Equal(new[] { "package", "part def" }, addable);
+        Assert.Equal(ExpectedAddableLabels, addable);
     }
 
     /// <summary>
@@ -285,13 +334,13 @@ public sealed class ElementPickerViewModelTests
 
         // Act
         picker.SearchText = null;
-        picker.SetCandidates([("Other::Foo", "other")], defaultTypeFilterLabel: null);
+        picker.SetCandidates(ReplacementCandidates, defaultTypeFilterLabel: null);
 
         // Assert
-        Assert.Equal(new[] { "other" }, picker.AvailableTypeLabels);
+        Assert.Equal(ExpectedOtherLabelOnly, picker.AvailableTypeLabels);
         Assert.Empty(picker.ActiveTypeFilters);
         Assert.Null(picker.SelectedQualifiedName);
-        Assert.Equal(new[] { "Other::Foo" }, picker.DisplayedItems);
+        Assert.Equal(ExpectedOtherFooOnly, picker.DisplayedItems);
     }
 
     /// <summary>

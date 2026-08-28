@@ -276,7 +276,7 @@ public partial class WorkspacePanelToolViewModel : Dock.Model.Mvvm.Controls.Tool
     ///     <see cref="WorkspaceTreeNode" /> shape the tree binds to, listing subfolders before files and sorting
     ///     each alphabetically by name.
     /// </summary>
-    private static IReadOnlyList<WorkspaceTreeNode> ToTreeNodes(FolderGroup group, string sourceId)
+    private static List<WorkspaceTreeNode> ToTreeNodes(FolderGroup group, string sourceId)
     {
         var nodes = new List<WorkspaceTreeNode>();
 

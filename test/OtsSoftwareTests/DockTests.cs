@@ -42,6 +42,7 @@ public sealed class DockTests : IDisposable
     private MainWindowShell CreateShell(IUiDispatcher? dispatcher = null)
     {
         return new MainWindowShell(
+            new MainWindowShellDependencies(
             new WorkspaceModel(),
             new FileWatcher(TimeSpan.FromMilliseconds(1)),
             new DiagnosticsAggregator(),
@@ -49,7 +50,7 @@ public sealed class DockTests : IDisposable
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(_tempLogRoot),
+            new RollingFileLogger(_tempLogRoot)),
             uiDispatcher: dispatcher);
     }
 

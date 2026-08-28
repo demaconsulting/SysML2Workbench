@@ -72,8 +72,8 @@ public sealed partial class QueryDialogViewModel : ObservableObject
     ///     workspace, and so <see cref="BuildListResult" /> can attach the same
     ///     <see cref="ElementTypeLabeler" /> kind label to each List-type entry.
     /// </summary>
-    private IReadOnlyDictionary<string, SysmlNode> _candidateMap =
-        new Dictionary<string, SysmlNode>(StringComparer.Ordinal);
+    private Dictionary<string, SysmlNode> _candidateMap =
+        new(StringComparer.Ordinal);
 
     [ObservableProperty]
     public partial bool IncludeStdlib { get; set; }

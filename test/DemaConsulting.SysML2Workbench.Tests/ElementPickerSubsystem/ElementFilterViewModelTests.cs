@@ -27,6 +27,60 @@ public sealed class ElementFilterViewModelTests
     ];
 
     /// <summary>
+    ///     Expected distinct, ordinally-sorted type labels derived from <see cref="MixedCandidates" />.
+    /// </summary>
+    private static readonly string[] ExpectedSortedTypeLabels = ["package", "part", "part def"];
+
+    /// <summary>
+    ///     Single-label filter set used to pre-populate the "part" chip.
+    /// </summary>
+    private static readonly string[] PartChipOnly = ["part"];
+
+    /// <summary>
+    ///     Expected qualified names of the "part" (non-definition) candidates in <see cref="MixedCandidates" />.
+    /// </summary>
+    private static readonly string[] ExpectedPartUsages = ["Model::engineInstance", "Model::wheelInstance"];
+
+    /// <summary>
+    ///     Expected single displayed item after narrowing by the substring "engine".
+    /// </summary>
+    private static readonly string[] ExpectedEngineOnly = ["Model::Engine"];
+
+    /// <summary>
+    ///     Expected single displayed item after narrowing by the substring "SUBPACKAGE".
+    /// </summary>
+    private static readonly string[] ExpectedSubPackageOnly = ["Model::SubPackage"];
+
+    /// <summary>
+    ///     Expected addable type labels (all labels except the pre-populated "part" chip).
+    /// </summary>
+    private static readonly string[] ExpectedAddableLabels = ["package", "part def"];
+
+    /// <summary>
+    ///     Expected addable type filter candidates narrowed to labels containing "def".
+    /// </summary>
+    private static readonly string[] ExpectedDefLabelOnly = ["part def"];
+
+    /// <summary>
+    ///     Replacement candidate list used to verify <see cref="ElementFilterViewModel.SetCandidates" />
+    ///     fully replaces prior state on a second call.
+    /// </summary>
+    private static readonly (string QualifiedName, string TypeLabel)[] ReplacementCandidates =
+    [
+        ("Other::Foo", "other"),
+    ];
+
+    /// <summary>
+    ///     Expected sole type label after replacing candidates with <see cref="ReplacementCandidates" />.
+    /// </summary>
+    private static readonly string[] ExpectedOtherLabelOnly = ["other"];
+
+    /// <summary>
+    ///     Expected sole displayed item after replacing candidates with <see cref="ReplacementCandidates" />.
+    /// </summary>
+    private static readonly string[] ExpectedOtherFooOnly = ["Other::Foo"];
+
+    /// <summary>
     ///     Validates that a freshly-constructed filter has no candidates, no active filters,
     ///     an empty (non-null) search text, and an empty displayed list.
     /// </summary>
@@ -72,7 +126,7 @@ public sealed class ElementFilterViewModelTests
         filter.SetCandidates(MixedCandidates);
 
         // Assert
-        Assert.Equal(new[] { "package", "part", "part def" }, filter.AvailableTypeLabels);
+        Assert.Equal(ExpectedSortedTypeLabels, filter.AvailableTypeLabels);
     }
 
     /// <summary>
@@ -90,7 +144,7 @@ public sealed class ElementFilterViewModelTests
         filter.SetCandidates(MixedCandidates, defaultTypeFilterLabel: "part");
 
         // Assert
-        Assert.Equal(new[] { "part" }, filter.ActiveTypeFilters);
+        Assert.Equal(PartChipOnly, filter.ActiveTypeFilters);
     }
 
     /// <summary>
@@ -126,7 +180,7 @@ public sealed class ElementFilterViewModelTests
 
         // Assert
         Assert.Equal(
-            new[] { "Model::engineInstance", "Model::wheelInstance" },
+            ExpectedPartUsages,
             filter.DisplayedItems);
     }
 
@@ -189,7 +243,7 @@ public sealed class ElementFilterViewModelTests
 
         // Assert - "part def" chip matches Engine + Wheel; "package" chip matches SubPackage.
         // After substring "engine", only Engine remains.
-        Assert.Equal(new[] { "Model::Engine" }, filter.DisplayedItems);
+        Assert.Equal(ExpectedEngineOnly, filter.DisplayedItems);
     }
 
     /// <summary>
@@ -206,7 +260,7 @@ public sealed class ElementFilterViewModelTests
         filter.SearchText = "SUBPACKAGE";
 
         // Assert
-        Assert.Equal(new[] { "Model::SubPackage" }, filter.DisplayedItems);
+        Assert.Equal(ExpectedSubPackageOnly, filter.DisplayedItems);
     }
 
     /// <summary>
@@ -267,7 +321,7 @@ public sealed class ElementFilterViewModelTests
         var addable = filter.GetAddableTypeLabels();
 
         // Assert
-        Assert.Equal(new[] { "package", "part def" }, addable);
+        Assert.Equal(ExpectedAddableLabels, addable);
     }
 
     /// <summary>
@@ -290,7 +344,7 @@ public sealed class ElementFilterViewModelTests
 
         // Assert
         Assert.Equal("", filter.AddableTypeFilterSearchText);
-        Assert.Equal(new[] { "package", "part def" }, filter.AddableTypeFilterCandidates);
+        Assert.Equal(ExpectedAddableLabels, filter.AddableTypeFilterCandidates);
     }
 
     /// <summary>
@@ -311,7 +365,7 @@ public sealed class ElementFilterViewModelTests
         filter.AddableTypeFilterSearchText = "DEF";
 
         // Assert
-        Assert.Equal(new[] { "part def" }, filter.AddableTypeFilterCandidates);
+        Assert.Equal(ExpectedDefLabelOnly, filter.AddableTypeFilterCandidates);
     }
 
     /// <summary>
@@ -373,11 +427,11 @@ public sealed class ElementFilterViewModelTests
 
         // Act
         filter.SearchText = null;
-        filter.SetCandidates([("Other::Foo", "other")], defaultTypeFilterLabel: null);
+        filter.SetCandidates(ReplacementCandidates, defaultTypeFilterLabel: null);
 
         // Assert
-        Assert.Equal(new[] { "other" }, filter.AvailableTypeLabels);
+        Assert.Equal(ExpectedOtherLabelOnly, filter.AvailableTypeLabels);
         Assert.Empty(filter.ActiveTypeFilters);
-        Assert.Equal(new[] { "Other::Foo" }, filter.DisplayedItems);
+        Assert.Equal(ExpectedOtherFooOnly, filter.DisplayedItems);
     }
 }

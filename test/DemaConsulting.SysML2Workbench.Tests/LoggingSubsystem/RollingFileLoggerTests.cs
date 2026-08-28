@@ -92,10 +92,10 @@ public sealed class RollingFileLoggerTests : IDisposable
     public void Flush_BeforeAnyLogEntry_DoesNotThrow()
     {
         // Arrange
-        var logger = new RollingFileLogger(_tempRoot);
+        _ = new RollingFileLogger(_tempRoot);
 
         // Act / Assert
-        var exception = Record.Exception(logger.Flush);
+        var exception = Record.Exception(RollingFileLogger.Flush);
         Assert.Null(exception);
     }
 

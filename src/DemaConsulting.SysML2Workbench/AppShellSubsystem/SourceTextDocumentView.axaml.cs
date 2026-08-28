@@ -67,6 +67,9 @@ public partial class SourceTextDocumentView : UserControl
     /// <returns>The loaded, registered highlighting definition.</returns>
     private static IHighlightingDefinition LoadSysMlHighlighting()
     {
+        // NOSONAR: "avares://" is Avalonia's compile-time embedded-resource URI scheme (an asset
+        // reference baked into this assembly's own resources), not a filesystem path or
+        // externally-configurable endpoint - there is no meaningful "avoid the hardcoded value" here.
         using var stream = AssetLoader.Open(new Uri("avares://DemaConsulting.SysML2Workbench/Assets/SysML.xshd"));
         using var reader = XmlReader.Create(stream);
         var definition = HighlightingLoader.Load(reader, HighlightingManager.Instance);
@@ -102,7 +105,7 @@ public partial class SourceTextDocumentView : UserControl
             // type (SysMLv2Lexer), and wrapped in a try/catch with a hard-coded fallback list below,
             // so if the field is ever renamed or removed by a future SysML2Tools release, this
             // degrades gracefully instead of crashing.
-            var field = typeof(SysMLv2Lexer).GetField("_LiteralNames", BindingFlags.NonPublic | BindingFlags.Static);
+            var field = typeof(SysMLv2Lexer).GetField("_LiteralNames", BindingFlags.NonPublic | BindingFlags.Static); // NOSONAR: read-only reflection of a well-known third-party field, guarded by the try/catch fallback below.
             if (field?.GetValue(null) is string[] literalNames)
             {
                 var keywords = literalNames

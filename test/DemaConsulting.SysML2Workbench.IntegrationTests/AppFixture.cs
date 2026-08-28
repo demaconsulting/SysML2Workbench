@@ -191,7 +191,7 @@ public sealed class AppFixture : IDisposable
     ///     binary's path. Not exercised by CI and not validated against a real Linux machine - see
     ///     <see cref="AppFixture" />'s remarks.
     /// </summary>
-    private static AppiumDriver CreateLinuxDriver(string startupArguments)
+    private static LinuxDriver CreateLinuxDriver(string startupArguments)
     {
         var options = new AppiumOptions
         {

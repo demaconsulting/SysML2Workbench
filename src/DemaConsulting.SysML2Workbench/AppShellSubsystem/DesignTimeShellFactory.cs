@@ -22,13 +22,14 @@ internal static class DesignTimeShellFactory
     public static MainWindowShell Create()
     {
         return new MainWindowShell(
-            new WorkspaceModel(),
-            new FileWatcher(TimeSpan.FromMilliseconds(500)),
-            new DiagnosticsAggregator(),
-            new ViewCatalogPresenter(),
-            new LayoutInvoker(),
-            new DiagnosticsListView(),
-            new SysmlSnippetGenerator(),
-            new RollingFileLogger(PathHelpers.SafePathCombine(Path.GetTempPath(), "SysML2Workbench-DesignTime")));
+            new MainWindowShellDependencies(
+                new WorkspaceModel(),
+                new FileWatcher(TimeSpan.FromMilliseconds(500)),
+                new DiagnosticsAggregator(),
+                new ViewCatalogPresenter(),
+                new LayoutInvoker(),
+                new DiagnosticsListView(),
+                new SysmlSnippetGenerator(),
+                new RollingFileLogger(PathHelpers.SafePathCombine(Path.GetTempPath(), "SysML2Workbench-DesignTime"))));
     }
 }

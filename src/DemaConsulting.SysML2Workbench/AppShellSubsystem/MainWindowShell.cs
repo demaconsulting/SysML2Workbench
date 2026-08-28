@@ -56,6 +56,29 @@ public enum WorkbenchTabKind
 public sealed record WorkbenchTab(string Id, string Title, WorkbenchTabKind Kind, SvgCanvasHost Canvas, ViewDefinitionModel? SourceDefinition = null, string? FilePath = null);
 
 /// <summary>
+///     Groups the eight required constructor dependencies of <see cref="MainWindowShell" /> into a single
+///     parameter object, keeping the shell's constructor within the project's parameter-count quality gate
+///     while still requiring every dependency to be supplied explicitly (no dependency is optional).
+/// </summary>
+/// <param name="WorkspaceModel">Owns discovery, load, and reload of the workspace.</param>
+/// <param name="FileWatcher">Detects external workspace changes.</param>
+/// <param name="DiagnosticsAggregator">Aggregates per-file diagnostics into a workspace-wide view.</param>
+/// <param name="ViewCatalogPresenter">Supplies predefined view choices.</param>
+/// <param name="LayoutInvoker">Renders predefined and custom views to SVG.</param>
+/// <param name="DiagnosticsListView">Displays workspace diagnostics.</param>
+/// <param name="SnippetGenerator">Exports custom-view definitions as SysML text.</param>
+/// <param name="Logger">Records shell-level operational events and failures.</param>
+public sealed record MainWindowShellDependencies(
+    WorkspaceModel WorkspaceModel,
+    FileWatcher FileWatcher,
+    DiagnosticsAggregator DiagnosticsAggregator,
+    ViewCatalogPresenter ViewCatalogPresenter,
+    LayoutInvoker LayoutInvoker,
+    DiagnosticsListView DiagnosticsListView,
+    SysmlSnippetGenerator SnippetGenerator,
+    RollingFileLogger Logger);
+
+/// <summary>
 ///     MainWindowShell is the desktop composition root that coordinates workspace lifecycle, view selection,
 ///     diagram display, diagnostics presentation, and snippet export within a single windowed user experience.
 /// </summary>
@@ -221,14 +244,10 @@ public sealed class MainWindowShell : IDisposable
     /// <summary>
     ///     Creates the shell from its constituent subsystem units.
     /// </summary>
-    /// <param name="workspaceModel">Owns discovery, load, and reload of the workspace.</param>
-    /// <param name="fileWatcher">Detects external workspace changes.</param>
-    /// <param name="diagnosticsAggregator">Aggregates per-file diagnostics into a workspace-wide view.</param>
-    /// <param name="viewCatalogPresenter">Supplies predefined view choices.</param>
-    /// <param name="layoutInvoker">Renders predefined and custom views to SVG.</param>
-    /// <param name="diagnosticsListView">Displays workspace diagnostics.</param>
-    /// <param name="snippetGenerator">Exports custom-view definitions as SysML text.</param>
-    /// <param name="logger">Records shell-level operational events and failures.</param>
+    /// <param name="dependencies">
+    ///     The shell's required subsystem dependencies, grouped into a single parameter object - see
+    ///     <see cref="MainWindowShellDependencies" /> for what each member provides.
+    /// </param>
     /// <param name="uiDispatcher">
     ///     Dispatcher used to marshal <see cref="TabsChanged" /> notifications. Defaults to
     ///     <see cref="ImmediateUiDispatcher" />, which runs the notification synchronously on the calling thread;
@@ -237,34 +256,26 @@ public sealed class MainWindowShell : IDisposable
     ///     when raised from a background continuation.
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when any required dependency is null.</exception>
-    public MainWindowShell(
-        WorkspaceModel workspaceModel,
-        FileWatcher fileWatcher,
-        DiagnosticsAggregator diagnosticsAggregator,
-        ViewCatalogPresenter viewCatalogPresenter,
-        LayoutInvoker layoutInvoker,
-        DiagnosticsListView diagnosticsListView,
-        SysmlSnippetGenerator snippetGenerator,
-        RollingFileLogger logger,
-        IUiDispatcher? uiDispatcher = null)
+    public MainWindowShell(MainWindowShellDependencies dependencies, IUiDispatcher? uiDispatcher = null)
     {
-        ArgumentNullException.ThrowIfNull(workspaceModel);
-        ArgumentNullException.ThrowIfNull(fileWatcher);
-        ArgumentNullException.ThrowIfNull(diagnosticsAggregator);
-        ArgumentNullException.ThrowIfNull(viewCatalogPresenter);
-        ArgumentNullException.ThrowIfNull(layoutInvoker);
-        ArgumentNullException.ThrowIfNull(diagnosticsListView);
-        ArgumentNullException.ThrowIfNull(snippetGenerator);
-        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(dependencies);
+        ArgumentNullException.ThrowIfNull(dependencies.WorkspaceModel);
+        ArgumentNullException.ThrowIfNull(dependencies.FileWatcher);
+        ArgumentNullException.ThrowIfNull(dependencies.DiagnosticsAggregator);
+        ArgumentNullException.ThrowIfNull(dependencies.ViewCatalogPresenter);
+        ArgumentNullException.ThrowIfNull(dependencies.LayoutInvoker);
+        ArgumentNullException.ThrowIfNull(dependencies.DiagnosticsListView);
+        ArgumentNullException.ThrowIfNull(dependencies.SnippetGenerator);
+        ArgumentNullException.ThrowIfNull(dependencies.Logger);
 
-        _workspaceModel = workspaceModel;
-        _fileWatcher = fileWatcher;
-        _diagnosticsAggregator = diagnosticsAggregator;
-        _viewCatalogPresenter = viewCatalogPresenter;
-        _layoutInvoker = layoutInvoker;
-        _diagnosticsListView = diagnosticsListView;
-        _snippetGenerator = snippetGenerator;
-        _logger = logger;
+        _workspaceModel = dependencies.WorkspaceModel;
+        _fileWatcher = dependencies.FileWatcher;
+        _diagnosticsAggregator = dependencies.DiagnosticsAggregator;
+        _viewCatalogPresenter = dependencies.ViewCatalogPresenter;
+        _layoutInvoker = dependencies.LayoutInvoker;
+        _diagnosticsListView = dependencies.DiagnosticsListView;
+        _snippetGenerator = dependencies.SnippetGenerator;
+        _logger = dependencies.Logger;
         _uiDispatcher = uiDispatcher ?? new ImmediateUiDispatcher();
 
         // Eagerly establish a valid, empty (0-source) workspace snapshot at construction, so CurrentWorkspace is

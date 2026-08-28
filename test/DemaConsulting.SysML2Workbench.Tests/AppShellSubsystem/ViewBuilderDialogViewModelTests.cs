@@ -90,6 +90,7 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
     private MainWindowShell CreateShell()
     {
         return new MainWindowShell(
+            new MainWindowShellDependencies(
             new WorkspaceModel(),
             new FileWatcher(TimeSpan.FromMilliseconds(1)),
             new DiagnosticsAggregator(),
@@ -97,7 +98,7 @@ public sealed class ViewBuilderDialogViewModelTests : IDisposable
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(_tempLogRoot));
+            new RollingFileLogger(_tempLogRoot)));
     }
 
     /// <summary>

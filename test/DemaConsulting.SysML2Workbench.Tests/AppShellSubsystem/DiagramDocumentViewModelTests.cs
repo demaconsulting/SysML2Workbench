@@ -69,6 +69,7 @@ public sealed class DiagramDocumentViewModelTests : IDisposable
             + "}\n");
 
         var shell = new MainWindowShell(
+            new MainWindowShellDependencies(
             new WorkspaceModel(),
             new FileWatcher(TimeSpan.FromMilliseconds(1)),
             new DiagnosticsAggregator(),
@@ -76,7 +77,7 @@ public sealed class DiagramDocumentViewModelTests : IDisposable
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(_tempLogRoot));
+            new RollingFileLogger(_tempLogRoot)));
 
         await shell.AddFolderSourceAsync(_tempRoot);
         return shell;

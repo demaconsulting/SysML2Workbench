@@ -24,6 +24,11 @@ public sealed class QueryDialogViewModelTests : IDisposable
     private readonly string _tempRoot = Directory.CreateTempSubdirectory("sysml2workbench-tests-").FullName;
     private readonly string _tempLogRoot = Directory.CreateTempSubdirectory("sysml2workbench-tests-logs-").FullName;
 
+    /// <summary>
+    ///     Expected hierarchy direction option values, in display order.
+    /// </summary>
+    private static readonly string[] ExpectedHierarchyDirectionOptions = ["up", "down", "both"];
+
     /// <inheritdoc />
     public void Dispose()
     {
@@ -57,6 +62,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
     private MainWindowShell CreateShell()
     {
         return new MainWindowShell(
+            new MainWindowShellDependencies(
             new WorkspaceModel(),
             new FileWatcher(TimeSpan.FromMilliseconds(1)),
             new DiagnosticsAggregator(),
@@ -64,7 +70,7 @@ public sealed class QueryDialogViewModelTests : IDisposable
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(_tempLogRoot));
+            new RollingFileLogger(_tempLogRoot)));
     }
 
     /// <summary>
@@ -753,6 +759,6 @@ public sealed class QueryDialogViewModelTests : IDisposable
     public void QueryDialogViewModel_HierarchyDirectionOptions_HasExpectedThree()
     {
         // Assert
-        Assert.Equal(new[] { "up", "down", "both" }, QueryDialogViewModel.HierarchyDirectionOptions);
+        Assert.Equal(ExpectedHierarchyDirectionOptions, QueryDialogViewModel.HierarchyDirectionOptions);
     }
 }

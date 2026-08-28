@@ -43,14 +43,15 @@ public sealed class App : Application
                 "logs");
 
             var shell = new MainWindowShell(
-                new WorkspaceModel(),
-                new FileWatcher(TimeSpan.FromMilliseconds(500), dispatcher: new AvaloniaUiDispatcher()),
-                new DiagnosticsAggregator(),
-                new ViewCatalogPresenter(),
-                new LayoutInvoker(),
-                new DiagnosticsListView(),
-                new SysmlSnippetGenerator(),
-                new RollingFileLogger(logDirectory),
+                new MainWindowShellDependencies(
+                    new WorkspaceModel(),
+                    new FileWatcher(TimeSpan.FromMilliseconds(500), dispatcher: new AvaloniaUiDispatcher()),
+                    new DiagnosticsAggregator(),
+                    new ViewCatalogPresenter(),
+                    new LayoutInvoker(),
+                    new DiagnosticsListView(),
+                    new SysmlSnippetGenerator(),
+                    new RollingFileLogger(logDirectory)),
                 uiDispatcher: new AvaloniaUiDispatcher());
 
             desktop.MainWindow = new MainWindowView(shell);
@@ -88,9 +89,9 @@ public sealed class App : Application
     /// </remarks>
     /// <param name="shell">The freshly composed shell to preload sources into.</param>
     /// <param name="args">The raw command-line arguments the process was launched with.</param>
-    private static void ApplyStartupSourceArgumentsForTesting(MainWindowShell shell, IReadOnlyList<string> args)
+    private static void ApplyStartupSourceArgumentsForTesting(MainWindowShell shell, string[] args)
     {
-        for (var i = 0; i < args.Count - 1; i++)
+        for (var i = 0; i < args.Length - 1; i++)
         {
             if (args[i] != "--startup-source")
             {
