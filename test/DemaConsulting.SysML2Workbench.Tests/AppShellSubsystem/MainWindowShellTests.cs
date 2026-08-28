@@ -69,6 +69,7 @@ public sealed class MainWindowShellTests : IDisposable
     private MainWindowShell CreateShell(FileWatcher? fileWatcher = null)
     {
         return new MainWindowShell(
+            new MainWindowShellDependencies(
             new WorkspaceModel(),
             fileWatcher ?? new FileWatcher(TimeSpan.FromMilliseconds(1)),
             new DiagnosticsAggregator(),
@@ -76,7 +77,7 @@ public sealed class MainWindowShellTests : IDisposable
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(_tempLogRoot));
+            new RollingFileLogger(_tempLogRoot)));
     }
 
     /// <summary>

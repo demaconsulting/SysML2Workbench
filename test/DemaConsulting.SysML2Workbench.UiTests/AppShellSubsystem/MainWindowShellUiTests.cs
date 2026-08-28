@@ -37,6 +37,7 @@ public sealed class MainWindowShellUiTests : IDisposable
     private MainWindowShell CreateShell()
     {
         return new MainWindowShell(
+            new MainWindowShellDependencies(
             new WorkspaceModel(),
             new FileWatcher(TimeSpan.FromMilliseconds(1)),
             new DiagnosticsAggregator(),
@@ -44,7 +45,7 @@ public sealed class MainWindowShellUiTests : IDisposable
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(_tempLogRoot));
+            new RollingFileLogger(_tempLogRoot)));
     }
 
     /// <summary>
@@ -200,7 +201,7 @@ public sealed class MainWindowShellUiTests : IDisposable
             shell.SelectPredefinedView(shell.ViewCatalog.AvailableViews[0].QualifiedName);
             shell.OpenSourceTextTab(filePath);
 
-            var factory = (WorkbenchDockFactory)((IDock)window.WorkbenchDockControl.Layout!).Factory!;
+            var factory = (WorkbenchDockFactory)window.WorkbenchDockControl.Layout!.Factory!;
             var documents = factory.DiagramDock.VisibleDockables!;
             var diagramDocument = documents.OfType<DiagramDocumentViewModel>().Single();
             var sourceTextDocument = documents.OfType<SourceTextDocumentViewModel>().Single();

@@ -145,7 +145,7 @@ public sealed class RollingFileLogger
     ///     immediately, no additional buffered state exists to flush; this method exists to satisfy the
     ///     documented unit contract and is safe to call at any time, including before any entry has been written.
     /// </summary>
-    public void Flush()
+    public static void Flush()
     {
         // No-op by design: File.AppendAllText fully commits and closes the file handle on every call
     }

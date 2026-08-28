@@ -67,6 +67,7 @@ public abstract class AppiumTestBase : IDisposable
     public void Dispose()
     {
         _fixture?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -84,7 +85,7 @@ public abstract class AppiumTestBase : IDisposable
         topLevelMenu.Click();
 
         // Act / Assert
-        OpenQA.Selenium.IWebElement? lastMenuItem = null;
+        OpenQA.Selenium.Appium.AppiumElement? lastMenuItem = null;
         foreach (var automationId in automationIds)
         {
             var menuItem = Session.FindElement(MobileBy.AccessibilityId(automationId));

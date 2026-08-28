@@ -43,6 +43,7 @@ public sealed class WorkspacePanelToolViewModelTests : IDisposable
     private MainWindowShell CreateShell()
     {
         return new MainWindowShell(
+            new MainWindowShellDependencies(
             new WorkspaceModel(),
             new FileWatcher(TimeSpan.FromMilliseconds(1)),
             new DiagnosticsAggregator(),
@@ -50,7 +51,7 @@ public sealed class WorkspacePanelToolViewModelTests : IDisposable
             new LayoutInvoker(),
             new DiagnosticsListView(),
             new SysmlSnippetGenerator(),
-            new RollingFileLogger(_tempLogRoot));
+            new RollingFileLogger(_tempLogRoot)));
     }
 
     private static Task WriteFileAsync(string path, string content)

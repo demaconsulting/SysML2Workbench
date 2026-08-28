@@ -116,7 +116,7 @@ public sealed class AvaloniaEditTests
     ///     <c>SourceTextDocumentView.LoadSysMlHighlighting</c> does, so this test verifies the real reflected
     ///     keyword set rather than a hand-copied duplicate.
     /// </summary>
-    private static IReadOnlyList<string> GetSysmlKeywords()
+    private static List<string> GetSysmlKeywords()
     {
         var field = typeof(DemaConsulting.SysML2Tools.Parser.Antlr.SysMLv2Lexer).GetField(
             "_LiteralNames",

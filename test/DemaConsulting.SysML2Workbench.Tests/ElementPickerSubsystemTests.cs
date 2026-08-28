@@ -12,6 +12,21 @@ namespace DemaConsulting.SysML2Workbench.Tests;
 public sealed class ElementPickerSubsystemTests
 {
     /// <summary>
+    ///     Expected distinct, ordinally-sorted type labels for the candidates constructed below.
+    /// </summary>
+    private static readonly string[] ExpectedSortedTypeLabels = ["package", "part", "part def"];
+
+    /// <summary>
+    ///     Single-label filter set used to pre-populate the "part" chip.
+    /// </summary>
+    private static readonly string[] PartChipOnly = ["part"];
+
+    /// <summary>
+    ///     Expected sole displayed item once the "part" chip narrows the candidate list.
+    /// </summary>
+    private static readonly string[] ExpectedPartUsageOnly = ["Sample::engine"];
+
+    /// <summary>
     ///     Validates that the labeler and the view model compose end-to-end: labels computed by
     ///     <see cref="ElementTypeLabeler.GetTypeLabel" /> flow through <see cref="ElementPickerViewModel.SetCandidates" />
     ///     into <see cref="ElementPickerViewModel.AvailableTypeLabels" /> and gate
@@ -39,8 +54,8 @@ public sealed class ElementPickerSubsystemTests
 
         // Assert: all three labels surface in AvailableTypeLabels (distinct, sorted), the
         // default chip is active, and only the "part" candidate is displayed.
-        Assert.Equal(new[] { "package", "part", "part def" }, vm.AvailableTypeLabels);
-        Assert.Equal(new[] { "part" }, vm.ActiveTypeFilters);
-        Assert.Equal(new[] { "Sample::engine" }, vm.DisplayedItems);
+        Assert.Equal(ExpectedSortedTypeLabels, vm.AvailableTypeLabels);
+        Assert.Equal(PartChipOnly, vm.ActiveTypeFilters);
+        Assert.Equal(ExpectedPartUsageOnly, vm.DisplayedItems);
     }
 }
