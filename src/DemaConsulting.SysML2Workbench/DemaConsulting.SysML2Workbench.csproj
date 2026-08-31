@@ -31,7 +31,7 @@
          fail at runtime on Linux/macOS. Pinning all three platform packages to the same version as the
          resolved SkiaSharp core keeps them in lockstep. -->
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.148.0" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.151.1" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.148.0" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="4.148.0" Condition="$([MSBuild]::IsOSPlatform('macOS'))" />
   </ItemGroup>
 
