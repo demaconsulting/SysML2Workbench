@@ -13,6 +13,7 @@ sections:
               - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeTargets'
               - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-StoreExposeRecursionAndFilter'
               - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-ReportDefinitionReadiness'
+              - 'SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel-AddExposeTargetSelectionDirectly'
             tests:
               - 'EditDefinition_TracksCustomViewInputs'
 

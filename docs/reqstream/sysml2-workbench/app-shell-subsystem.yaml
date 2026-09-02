@@ -31,11 +31,61 @@ sections:
               - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ArrangePrimaryRegions'
               - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SynchronizeSessionState'
               - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-RenderCustomViewPreviewWithoutMutatingTabs'
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ExportTabAsSysml'
               - 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-LiveUpdatePreviewOnEveryEdit'
               - 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-CommitCreatesNewDiagramTab'
               - 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-CancelDiscardsWithoutSideEffects'
+              - 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-RefreshExposeTargetsFromWorkspace'
+              - 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-ManageExposeTargets'
+              - 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-FreshInstancePerOpen'
+              - 'SysML2Workbench-AppShellSubsystem-ViewBuilderDialog-FilterExposeTargetsByTypeAndText'
             tests:
               - 'CustomViewWorkflow_PreviewsAndExportsFromShell'
+
+          - id: 'SysML2Workbench-AppShellSubsystem-PresentWorkspaceSources'
+            title: 'The AppShellSubsystem shall let users add, remove, and browse individual file and folder workspace sources - including opening a source''s underlying files - from a dedicated workspace panel, and shall support closing every source at once.'
+            justification: |
+              A workspace is built up incrementally from an arbitrary combination of files and folders rather than a single root, so the shell must expose source-management commands and a visual inventory of the resulting tree, plus a one-action way to reset back to empty.
+            children:
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-ManageMultipleSources'
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-SupportEmptyWorkspace'
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-CloseAllSources'
+              - 'SysML2Workbench-AppShellSubsystem-MainWindowShell-OpenSourceTextTab'
+              - 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-BuildSourceTree'
+              - 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-ReflectDedupeInTreeShape'
+              - 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-RefreshOnSourcesChanged'
+              - 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-WireAddRemoveCommands'
+              - 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-ResolveOpenableFile'
+            tests:
+              - 'AddFolderSourceAsync_SecondDistinctFolder_IsAdditiveAndWatchesBothSources'
+              - 'RebuildTree_FolderSource_ProducesSourceNodeWithFileChildren'
+
+          - id: 'SysML2Workbench-AppShellSubsystem-HostQueryWorkflow'
+            title: 'The AppShellSubsystem shall provide a Query menu dialog that lets users list workspace declarations or run any element-scoped SysML2Tools query against a selected element, see results update live with no explicit "Run" gesture, and copy the rendered result to the clipboard.'
+            justification: |
+              Interactively querying the loaded model (list, describe, uses, used-by, dependencies, impact, hierarchy, requirements, interface, connections, states) without leaving the desktop shell is a distinct, user-visible capability that reuses the shared ElementPickerSubsystem control and the DemaConsulting.SysML2Tools query engine.
+            children:
+              - 'SysML2Workbench-AppShellSubsystem-QueryDialog-RefreshPickersFromWorkspace'
+              - 'SysML2Workbench-AppShellSubsystem-QueryDialog-BrowseTabIsClientSideList'
+              - 'SysML2Workbench-AppShellSubsystem-QueryDialog-ElementQueryDispatchesThroughEngine'
+              - 'SysML2Workbench-AppShellSubsystem-QueryDialog-ConnectionAwareImpact'
+              - 'SysML2Workbench-AppShellSubsystem-QueryDialog-SurfaceTraversalMetadata'
+              - 'SysML2Workbench-AppShellSubsystem-QueryDialog-HandleFailuresGracefully'
+              - 'SysML2Workbench-AppShellSubsystem-QueryDialog-CopyResultToClipboard'
+              - 'SysML2Workbench-AppShellSubsystem-QueryDialog-EndToEndFromMenu'
+            tests:
+              - 'QueryDialog_SelectDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard'
+
+          - id: 'SysML2Workbench-AppShellSubsystem-PresentAboutDialog'
+            title: 'The AppShellSubsystem shall present an About dialog, opened from the main window, that shows application identity information and lists the key third-party dependencies the desktop application relies on.'
+            justification: |
+              Users and support staff need a discoverable, in-app way to confirm which application version and key dependencies are running without inspecting build artifacts.
+            children:
+              - 'SysML2Workbench-AppShellSubsystem-AboutDialog-ExposeApplicationInfo'
+              - 'SysML2Workbench-AppShellSubsystem-AboutDialog-ListKeyDependencies'
+            tests:
+              - 'Construction_ExposesApplicationNameAndTagline'
+              - 'Construction_ExposesDependencyList_ContainsExpectedEntries'
 
           - id: 'SysML2Workbench-AppShellSubsystem-DefaultSidebarPanel'
             title: 'The AppShellSubsystem shall present the workspace panel as the sidebar panel shown by default when the application starts, ahead of the predefined-views panel in the same sidebar.'
