@@ -84,7 +84,8 @@ sections:
               - 'SysML2Workbench-AppShellSubsystem-AboutDialog-ExposeApplicationInfo'
               - 'SysML2Workbench-AppShellSubsystem-AboutDialog-ListKeyDependencies'
             tests:
-              - 'AboutDialog_Opened_ShowsApplicationInfoAndDependencies'
+              - 'Construction_ExposesApplicationNameAndTagline'
+              - 'Construction_ExposesDependencyList_ContainsExpectedEntries'
 
           - id: 'SysML2Workbench-AppShellSubsystem-DefaultSidebarPanel'
             title: 'The AppShellSubsystem shall present the workspace panel as the sidebar panel shown by default when the application starts, ahead of the predefined-views panel in the same sidebar.'
