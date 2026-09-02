@@ -11,6 +11,13 @@ sections:
             children:
               - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-MaintainWorkspaceTree'
               - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-ResolveWorkspaceInputs'
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-SupportEmptyResolution'
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-MaintainOrderedSources'
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-RemoveSource'
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-ClearSources'
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-ResolveEmptySet'
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-DiscoverFolderFiles'
+              - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet-DedupeOverlap'
             tests:
               - 'OpenWorkspace_BuildsWorkspaceState'
 
@@ -24,6 +31,9 @@ sections:
               - 'SysML2Workbench-WorkspaceSubsystem-WorkspaceModel-TrackPerFileLoadState'
               - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-CollectWorkspaceDiagnostics'
               - 'SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator-PublishDeterministicDiagnostics'
+              - 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-WatchPerSourceScope'
+              - 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-UnwatchSource'
+              - 'SysML2Workbench-WorkspaceSubsystem-FileWatcher-RequireWatchBeforeQueue'
             tests:
               - 'ExternalChange_RefreshesWorkspaceState'
 

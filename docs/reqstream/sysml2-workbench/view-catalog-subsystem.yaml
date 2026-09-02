@@ -20,5 +20,6 @@ sections:
               Selecting a predefined view is the handoff point between view discovery and actual diagram rendering.
             children:
               - 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-TrackSelectedView'
+              - 'SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter-BuildViewDefinitionFromWorkspaceView'
             tests:
               - 'SelectView_PublishesActiveSelection'

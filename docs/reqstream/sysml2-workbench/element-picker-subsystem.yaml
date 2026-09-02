@@ -16,6 +16,13 @@ sections:
             children:
               - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-AcceptCallerBuiltCandidates'
               - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-FilterByTypeAndText'
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-ManageChipsWithoutDuplicates'
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-TrackSelection'
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementPicker-LabelKnownNodeKinds'
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-AcceptCallerBuiltCandidates'
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-FilterByTypeAndText'
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-ManageChipsWithoutDuplicates'
+              - 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-SearchAndCommitAddableTypeFilter'
             tests:
               - 'ElementPickerViewModel_SetCandidates_AvailableTypeLabels_IsDistinctAndSorted'
 

@@ -11,6 +11,7 @@ sections:
             children:
               - 'SysML2Workbench-LayoutRenderingSubsystem-LayoutInvoker-BuildPredefinedViewLayout'
               - 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-DisplayRenderedSvg'
+              - 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-ClearStaleDiagram'
             tests:
               - 'RenderPredefinedView_DisplaysSvgDiagram'
 

@@ -1,0 +1,58 @@
+---
+# Quality/process requirements grouping SysML2Workbench's use of off-the-shelf (OTS)
+# UI frameworks, testing tools, and in-house library dependencies. These requirements
+# exist so that OTS-derived requirements (which describe capabilities the desktop
+# application relies on from third-party or sibling-repository components, not
+# user-visible SysML2Workbench functionality) are not reported as orphans by
+# `dotnet reqstream --requirements requirements.yaml --enforce`.
+sections:
+  - title: 'Quality Requirements'
+    requirements:
+      - id: 'SysML2Workbench-Quality-TestInfrastructure'
+        title: 'The repository shall rely on xUnit and Appium to execute and verify automated test evidence.'
+        tags: [quality]
+        justification: |
+          Automated testing depends on xUnit's execution/reporting capabilities and
+          Appium's end-to-end desktop UI automation. This grouping requirement links
+          those OTS requirements to the quality root so they participate in orphan
+          detection without being falsely reported as disconnected from
+          SysML2Workbench functionality.
+        children:
+          - 'XUnit-ExecuteAutomatedVerification'
+          - 'XUnit-ProvideTraceableTestEvidence'
+          - 'Appium-DriveDesktopApplicationEndToEnd'
+          - 'Appium-LocateControlsByAutomationId'
+
+      - id: 'SysML2Workbench-Quality-DesktopShell'
+        title: 'The application shall rely on Avalonia and AvaloniaEdit to host the cross-platform desktop UI shell and syntax-highlighted text views.'
+        tags: [quality]
+        justification: |
+          The desktop shell, diagram surface, and context-menu interactions depend on
+          Avalonia's cross-platform UI hosting, and read-only syntax-highlighted
+          SysML text views depend on AvaloniaEdit. This grouping requirement links
+          those OTS requirements to the quality root so they participate in orphan
+          detection without being falsely reported as disconnected from
+          SysML2Workbench functionality.
+        children:
+          - 'Avalonia-HostDesktopShell'
+          - 'Avalonia-HostInteractiveDiagramSurface'
+          - 'Avalonia-CopyDiagramAsSysmlViaContextMenu'
+          - 'AvaloniaEdit-RenderReadOnlySyntaxHighlightedText'
+          - 'AvaloniaEdit-LoadEmbeddedSysmlHighlighting'
+
+      - id: 'SysML2Workbench-Quality-ModelingEngine'
+        title: 'The application shall rely on the DemaConsulting.SysML2Tools and DemaConsulting.Rendering libraries to load workspaces, resolve impact, and render diagrams.'
+        tags: [quality]
+        justification: |
+          Workspace loading, view-layout generation, and connection-aware impact
+          analysis depend on the SysML2Tools library, and SVG diagram output depends
+          on the Rendering library preserving diagram primitives. This grouping
+          requirement links those OTS requirements to the quality root so they
+          participate in orphan detection without being falsely reported as
+          disconnected from SysML2Workbench functionality.
+        children:
+          - 'SysML2Tools-LoadWorkspaceModels'
+          - 'SysML2Tools-GenerateViewLayouts'
+          - 'SysML2Tools-ConnectionAwareImpactAnalysis'
+          - 'Rendering-ProduceSvgOutput'
+          - 'Rendering-PreserveDiagramPrimitives'

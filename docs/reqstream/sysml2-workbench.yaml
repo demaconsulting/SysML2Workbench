@@ -4,20 +4,24 @@ sections:
     requirements:
       - id: 'SysML2Workbench-ManageWorkspace'
         title: 'The SysML2Workbench shall open a folder as a live workspace, discover SysML model files, resolve imports, and refresh loaded content when workspace files change.'
+        tags: [system]
         justification: |
           Phase 0 is centered on local multi-file model viewing rather than single-file inspection, so users need the desktop application to mirror the SysML2Tools CLI workspace model and stay current with external edits.
         children:
           - 'SysML2Workbench-WorkspaceSubsystem-ManageWorkspace'
           - 'SysML2Workbench-WorkspaceSubsystem-RefreshWorkspaceState'
+          - 'SysML2Workbench-AppShellSubsystem-PresentWorkspaceSources'
         tests:
           - 'OpenWorkspace_LoadsAndRefreshesWorkspace'
 
       - id: 'SysML2Workbench-BrowsePredefinedViews'
         title: 'The SysML2Workbench shall let users browse supported predefined SysML views from the loaded model and render the selected view in the desktop shell.'
+        tags: [system]
         justification: |
           A core value of the application is turning existing model-defined views into an interactive desktop experience without requiring the command-line renderer.
         children:
           - 'SysML2Workbench-ViewCatalogSubsystem-EnumeratePredefinedViews'
+          - 'SysML2Workbench-ViewCatalogSubsystem-SignalActiveViewSelection'
           - 'SysML2Workbench-LayoutRenderingSubsystem-RenderSelectedView'
           - 'SysML2Workbench-AppShellSubsystem-PresentSelectedView'
         tests:
@@ -25,6 +29,7 @@ sections:
 
       - id: 'SysML2Workbench-AuthorCustomViews'
         title: 'The SysML2Workbench shall let users build ad hoc custom views, preview them, and export equivalent SysML view text for promotion into model files.'
+        tags: [system]
         justification: |
           The architecture explicitly adds GUI-driven custom view authoring while avoiding a tool-specific persistence format by exporting standard SysML text.
         children:
@@ -37,22 +42,39 @@ sections:
 
       - id: 'SysML2Workbench-PresentWorkspaceDiagnostics'
         title: 'The SysML2Workbench shall collect parser and reference-resolution diagnostics for the whole workspace and present them in a dedicated diagnostics panel.'
+        tags: [system]
         justification: |
           Users need a consolidated view of workspace problems so they can understand model load failures and broken references without manually inspecting every file.
         children:
           - 'SysML2Workbench-WorkspaceSubsystem-AggregateWorkspaceDiagnostics'
           - 'SysML2Workbench-DiagnosticsPanelSubsystem-DisplayWorkspaceDiagnostics'
+          - 'SysML2Workbench-DiagnosticsPanelSubsystem-RefreshDisplayedDiagnostics'
         tests:
           - 'OpenWorkspace_ShowsWorkspaceDiagnostics'
 
       - id: 'SysML2Workbench-OperateAsDesktopShell'
         title: 'The SysML2Workbench shall provide a cross-platform desktop shell with local rolling logs for navigating workspaces, rendered diagrams, and diagnostics during a user session.'
+        tags: [system]
         justification: |
           The product is a desktop application, so it must provide the shell and operational logging needed for day-to-day use and user-attachable bug reports.
         children:
           - 'SysML2Workbench-LoggingSubsystem-PersistOperationalEvents'
+          - 'SysML2Workbench-LoggingSubsystem-RetainRecentLogHistory'
           - 'SysML2Workbench-AppShellSubsystem-CoordinateSessionWorkspace'
           - 'SysML2Workbench-AppShellSubsystem-DefaultSidebarPanel'
           - 'SysML2Workbench-AppShellSubsystem-ShowActiveDocumentStatus'
+          - 'SysML2Workbench-AppShellSubsystem-PresentAboutDialog'
         tests:
           - 'StartSession_OpensShellAndWritesOperationalLogs'
+
+      - id: 'SysML2Workbench-QueryWorkspaceModel'
+        title: 'The SysML2Workbench shall let users interactively query the loaded workspace model - listing declarations or running any element-scoped SysML2Tools query verb - from the desktop shell, and copy the rendered result to the clipboard.'
+        tags: [system]
+        justification: |
+          Beyond browsing predefined views, users need to interrogate the model's structure and relationships (uses, used-by, dependencies, impact, hierarchy, and similar queries already offered by the SysML2Tools CLI) without leaving the desktop application.
+        children:
+          - 'SysML2Workbench-AppShellSubsystem-HostQueryWorkflow'
+          - 'SysML2Workbench-ElementPickerSubsystem-ProvideReusablePicker'
+          - 'SysML2Workbench-ElementPickerSubsystem-DecoupleFromWorkspace'
+        tests:
+          - 'QueryDialog_SelectDescribeAndCopyAsMarkdown_PlacesRenderedMarkdownOnClipboard'
