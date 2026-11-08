@@ -12,7 +12,7 @@
     <text x="430" y="27" font-size="16" font-family="Consolas, monospace" font-weight="600" fill="#92400e" text-anchor="middle">SysML2Workbench.Desktop (Program)</text>
     <text x="430" y="47" font-size="13" fill="#92400e" text-anchor="middle">cross-platform desktop viewer you open to explore SysML v2 models</text>
     <line x1="430" y1="64" x2="430" y2="100" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
-    <text x="442" y="86" font-size="12" fill="#334155">open a workspace folder</text>
+    <text x="442" y="86" font-size="12" fill="#334155">open a workspace</text>
 
     <rect x="170" y="104" width="520" height="304" rx="14" fill="#f8fafc" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 5"/>
     <text x="186" y="126" font-size="14" font-weight="600" fill="#2563eb">DemaConsulting.SysML2Workbench</text>
@@ -24,8 +24,8 @@
     <g font-size="11" fill="#5b21b6" text-anchor="middle">
       <rect x="190" y="196" width="153" height="64" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
       <text x="266" y="218" font-size="14" font-weight="600" fill="#4c1d95">Workspace</text>
-      <text x="266" y="237">Opens a folder of .sysml</text>
-      <text x="266" y="251">files and watches them</text>
+      <text x="266" y="237">Opens .sysml files or</text>
+      <text x="266" y="251">folders and watches them</text>
       <rect x="353" y="196" width="153" height="64" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
       <text x="429" y="218" font-size="14" font-weight="600" fill="#4c1d95">ViewCatalog</text>
       <text x="429" y="237">Lists the six predefined</text>
@@ -73,7 +73,7 @@
     <text x="70" y="221" font-size="13" font-weight="600" fill="#475569" text-anchor="middle">Inputs</text>
     <rect x="0" y="235" width="140" height="66" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
     <text x="70" y="262" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">Model files</text>
-    <text x="70" y="283" font-size="12" fill="#475569" text-anchor="middle">.sysml folders</text>
+    <text x="70" y="283" font-size="12" fill="#475569" text-anchor="middle">.sysml files / folders</text>
     <line x1="144" y1="268" x2="166" y2="268" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
 
     <rect x="720" y="190" width="165" height="166" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>

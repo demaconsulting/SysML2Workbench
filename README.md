@@ -26,7 +26,7 @@ and reference-resolution problems across the whole workspace, a status bar
 along the bottom of the window summarizes whichever document tab is active,
 and a local rolling log file is written for bug-report attachments.
 
-![SysML2Workbench architecture: .sysml model folders are opened in the desktop app, whose AppShell hosts the Workspace, ViewCatalog, ViewBuilder, LayoutRendering, DiagnosticsPanel, ElementPicker, and Logging subsystems to produce pan and zoom diagrams, exported view text, a diagnostics list, and a log file, built on SysML2Tools, Rendering, and Avalonia](docs/images/architecture.svg)
+![SysML2Workbench architecture: .sysml files or folders are opened in the desktop app, whose AppShell hosts the Workspace, ViewCatalog, ViewBuilder, LayoutRendering, DiagnosticsPanel, ElementPicker, and Logging subsystems to produce pan and zoom diagrams, exported view text, a diagnostics list, and a log file, built on SysML2Tools, Rendering, and Avalonia](docs/images/architecture.svg)
 
 This is a **Phase 0, read-only** release: there is no git integration, no
 text/structural editing, no telemetry, and custom views are session-only until
