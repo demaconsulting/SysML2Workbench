@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="570" viewBox="0 0 960 570" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect x="14" y="16" width="935" height="545" rx="28" fill="#d5dce6"/>
+  <rect x="10" y="10" width="935" height="545" rx="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+
+  <g transform="translate(30,30)">
+    <rect x="170" y="0" width="520" height="60" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+    <text x="430" y="27" font-size="16" font-family="Consolas, monospace" font-weight="600" fill="#92400e" text-anchor="middle">SysML2Workbench.Desktop (Program)</text>
+    <text x="430" y="47" font-size="13" fill="#92400e" text-anchor="middle">cross-platform desktop viewer you open to explore SysML v2 models</text>
+    <line x1="430" y1="64" x2="430" y2="100" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+    <text x="442" y="86" font-size="12" fill="#334155">open a workspace folder</text>
+
+    <rect x="170" y="104" width="520" height="304" rx="14" fill="#f8fafc" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="186" y="126" font-size="14" font-weight="600" fill="#2563eb">DemaConsulting.SysML2Workbench</text>
+
+    <rect x="190" y="136" width="480" height="48" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="430" y="157" font-size="16" font-weight="600" fill="#166534" text-anchor="middle">AppShell</text>
+    <text x="430" y="175" font-size="12" fill="#166534" text-anchor="middle">Window, workspace tree, tabbed views, and dialogs</text>
+
+    <g font-size="11" fill="#5b21b6" text-anchor="middle">
+      <rect x="190" y="196" width="153" height="64" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+      <text x="266" y="218" font-size="14" font-weight="600" fill="#4c1d95">Workspace</text>
+      <text x="266" y="237">Opens a folder of .sysml</text>
+      <text x="266" y="251">files and watches them</text>
+      <rect x="353" y="196" width="153" height="64" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+      <text x="429" y="218" font-size="14" font-weight="600" fill="#4c1d95">ViewCatalog</text>
+      <text x="429" y="237">Lists the six predefined</text>
+      <text x="429" y="251">views in the model</text>
+      <rect x="516" y="196" width="153" height="64" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+      <text x="592" y="218" font-size="14" font-weight="600" fill="#4c1d95">ViewBuilder</text>
+      <text x="592" y="237">Builds custom views and</text>
+      <text x="592" y="251">exports SysML view text</text>
+    </g>
+
+    <rect x="190" y="272" width="480" height="56" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text x="430" y="296" font-size="14" font-weight="600" fill="#4c1d95" text-anchor="middle">LayoutRendering</text>
+    <text x="430" y="315" font-size="12" fill="#5b21b6" text-anchor="middle">Renders the selected view to SVG for the pan and zoom viewer</text>
+
+    <g font-size="11" fill="#1e40af" text-anchor="middle">
+      <rect x="190" y="340" width="153" height="56" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+      <text x="266" y="361" font-size="14" font-weight="600" fill="#1e3a8a">DiagnosticsPanel</text>
+      <text x="266" y="377">Lists parser and</text>
+      <text x="266" y="389">reference problems</text>
+      <rect x="353" y="340" width="153" height="56" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+      <text x="429" y="361" font-size="14" font-weight="600" fill="#1e3a8a">ElementPicker</text>
+      <text x="429" y="377">Chip and search</text>
+      <text x="429" y="389">element selection</text>
+      <rect x="516" y="340" width="153" height="56" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+      <text x="592" y="361" font-size="14" font-weight="600" fill="#1e3a8a">Logging</text>
+      <text x="592" y="377">Writes a local rolling</text>
+      <text x="592" y="389">log file</text>
+    </g>
+
+    <line x1="430" y1="412" x2="430" y2="436" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+    <text x="442" y="428" font-size="12" fill="#334155">built on</text>
+
+    <g text-anchor="middle">
+      <rect x="170" y="440" width="166" height="60" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+      <text x="253" y="466" font-size="15" font-weight="600" fill="#334155">SysML2Tools</text>
+      <text x="253" y="486" font-size="12" fill="#475569">Parser, model, layout</text>
+      <rect x="347" y="440" width="166" height="60" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+      <text x="430" y="466" font-size="15" font-weight="600" fill="#334155">Rendering</text>
+      <text x="430" y="486" font-size="12" fill="#475569">SVG output</text>
+      <rect x="524" y="440" width="166" height="60" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+      <text x="607" y="466" font-size="15" font-weight="600" fill="#334155">Avalonia</text>
+      <text x="607" y="486" font-size="12" fill="#475569">UI framework</text>
+    </g>
+
+    <text x="70" y="221" font-size="13" font-weight="600" fill="#475569" text-anchor="middle">Inputs</text>
+    <rect x="0" y="235" width="140" height="66" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+    <text x="70" y="262" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">Model files</text>
+    <text x="70" y="283" font-size="12" fill="#475569" text-anchor="middle">.sysml folders</text>
+    <line x1="144" y1="268" x2="166" y2="268" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+
+    <rect x="720" y="190" width="165" height="166" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="802" y="216" font-size="16" font-weight="600" fill="#166534" text-anchor="middle">Outputs</text>
+    <g font-size="13" fill="#14532d" text-anchor="middle">
+      <rect x="734" y="228" width="137" height="26" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="802" y="246">Pan/zoom diagrams</text>
+      <rect x="734" y="258" width="137" height="26" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="802" y="276">Exported view text</text>
+      <rect x="734" y="288" width="137" height="26" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="802" y="306">Diagnostics list</text>
+      <rect x="734" y="318" width="137" height="26" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="802" y="336">Log file</text>
+    </g>
+    <line x1="694" y1="273" x2="716" y2="273" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+  </g>
+</svg>
