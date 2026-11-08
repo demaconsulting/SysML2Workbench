@@ -8,6 +8,8 @@ current phase-0 scope, the product is focused on read-only model viewing,
 
 predefined diagram browsing, custom view construction, and workspace diagnostics.
 
+![SysML2Workbench architecture: .sysml files or folders are opened in the desktop app, whose AppShell hosts the Workspace, ViewCatalog, ViewBuilder, LayoutRendering, DiagnosticsPanel, ElementPicker, and Logging subsystems to produce pan and zoom diagrams, exported view text, a diagnostics list, and a log file, built on SysML2Tools, Rendering, and Avalonia](architecture.svg)
+
 ## Purpose
 
 The purpose of this guide is to help users and integrators understand what
