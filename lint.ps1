@@ -57,17 +57,26 @@ if (-not $skipPython) {
     deactivate
 }
 
-# --- Spelling and Markdown ---
-Write-Host "Linting: spelling and markdown..."
+# --- Dotnet tools restore ---
+$skipDotnetTools = $false
+dotnet tool restore > $null
+if ($LASTEXITCODE -ne 0) { $lintError = $true; $skipDotnetTools = $true }
+
+# --- Spelling ---
+Write-Host "Linting: spelling..."
+if (-not $skipDotnetTools) {
+    dotnet textlint
+    if ($LASTEXITCODE -ne 0) { $lintError = $true }
+}
+
+# --- Markdown ---
+Write-Host "Linting: markdown..."
 $skipNpm = $false
 $env:PUPPETEER_SKIP_DOWNLOAD = "true"
 npm install --silent
 if ($LASTEXITCODE -ne 0) { $lintError = $true; $skipNpm = $true }
 
 if (-not $skipNpm) {
-    npx cspell --no-progress --no-color --quiet "**/*.{md,yaml,yml,json,cs,cpp,hpp,h,txt}"
-    if ($LASTEXITCODE -ne 0) { $lintError = $true }
-
     npx markdownlint-cli2 "**/*.md"
     if ($LASTEXITCODE -ne 0) { $lintError = $true }
 }
@@ -76,9 +85,6 @@ if (-not $skipNpm) {
 
 # --- Compliance Tools ---
 Write-Host "Linting: compliance tools..."
-$skipDotnetTools = $false
-dotnet tool restore > $null
-if ($LASTEXITCODE -ne 0) { $lintError = $true; $skipDotnetTools = $true }
 
 if (-not $skipDotnetTools) {
     dotnet reqstream --lint --requirements requirements.yaml

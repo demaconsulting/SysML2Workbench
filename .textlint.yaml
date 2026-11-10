@@ -1,105 +1,92 @@
 ---
-# Spell-Checking
+# Spell-Checking with TextLint
 #
 # PURPOSE:
 # - Maintain professional documentation and code quality
 # - Catch spelling errors before publication
 # - Support consistent technical terminology usage
-# - NEVER add a misspelled word - fix the typo in the source instead
+# - Misspelled words should be fixed in the source
+# - NEVER add a misspelled word to the 'words' list
 # - NEVER add a British-English spelling - correct to US-English in the source
 # - PROPOSE only genuine technical terms/names as needed
 version: '0.2'
 language: en
+# The files to spell-check
+files:
+  - '**/*.{md,yaml,yml,json,cs,cpp,hpp,h,txt}'
+# Also check hidden paths such as .github/ and .*.yaml
+enableGlobDot: true
+# Project-specific technical terms and tool names
 words:
   - APFS
   - Argb
   - assertable
+  - atspi
+  - automatable
+  - avaloniaedit
+  - avares
+  - AXAML
   - axaml
   - BGRA
   - Blockquotes
   - bursty
-  - buildmark
-  - canvasnet
+  - communitytoolkit
   - dcterms
   - Dema
+  - DEMA
+  - demaconsulting
+  - distributables
+  - DISTRIBUTABLES
+  - dockable
+  - Dockable
+  - dockables
+  - Dockables
   - doctitle
   - docversion
-  - Dedupe
-  - dedupe
-  - Dockable
-  - Dockables
-  - fileassert
   - Hmmssfff
-  - LOCALAPPDATA
+  - mvvm
   - Mvvm
+  - MVVM
+  - ncipollo
+  - nestings
+  - netstandard
+  - NOSONAR
+  - novawindows
   - ordinally
-  - Pandoc
   - pagetitle
   - pasteable
-  - postconditions
   - renderable
   - reparsed
   - reparses
-  - reqstream
   - retarget
   - retargeted
   - retargets
-  - reviewmark
+  - Retargets
   - sarif
-  - sarifmark
-  - Skia
+  - shopt
   - slnx
-  - sonar
-  - sonarmark
-  - Stdlib
-  - Subfolders
-  - subfolders
-  - sysml
+  - sonarscanner
+  - startable
+  - thirdparty
   - timeslice
   - TOCTOU
   - unautomatable
   - uncontended
+  - unidirectionality
   - unioned
   - unsupplied
-  - Unwatch
-  - unwatch
-  - Unwatches
   - unwatches
+  - Unwatches
   - Unwatching
   - unwatching
-  - versionmark
-  - vstest
-  - Weasyprint
+  - venv
+  - winapi
   - Winlogon
-  - xunit
-  - Xunit
-  - yamlfix
-  - Avalonia
-  - Collapsable
-  - CommunityToolkit
-  - DemaConsulting
-  - SysML2
-  - SysML2Tools
-  - SysML2Workbench
-  - Antlr
-  - Xshd
+  - wixproj
   - XSHD
   - xshd
-  - avaloniaedit
-  - avares
-  - Appium
-  - appium
-  - NOSONAR
-  - NovaWindows
-  - WinAppDriver
-  - WebDriver
-  - webdriver
-  - novawindows
-  - winapi
-  - atspi
-  - automatable
-  - startable
-  - unvalidated
+  - Xshd
+  - yamlfix
 ignorePaths:
   - '**/.git/**'
   - '**/node_modules/**'
@@ -107,8 +94,8 @@ ignorePaths:
   - '**/thirdparty/**'
   - '**/third-party/**'
   - '**/3rd-party/**'
+  - '**/generated/**'
   - '**/.agent-logs/**'
   - '**/bin/**'
   - '**/obj/**'
-  - '**/generated/**'
   - package-lock.json

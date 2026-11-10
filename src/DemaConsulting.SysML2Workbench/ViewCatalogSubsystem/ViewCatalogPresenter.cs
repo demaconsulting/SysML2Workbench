@@ -66,7 +66,7 @@ public sealed class ViewCatalogPresenter
     ///     Rebuilds the catalog from the latest workspace snapshot.
     /// </summary>
     /// <param name="workspace">Loaded model content.</param>
-    /// <param name="workspaceRevision">Opaque revision token identifying the snapshot being catalogued.</param>
+    /// <param name="workspaceRevision">Opaque revision token identifying the snapshot being cataloged.</param>
     /// <returns>Updated view descriptors.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace" /> is null.</exception>
     /// <exception cref="InvalidOperationException">

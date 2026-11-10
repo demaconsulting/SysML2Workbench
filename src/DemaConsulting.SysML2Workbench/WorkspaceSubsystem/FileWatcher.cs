@@ -239,7 +239,7 @@ public sealed class FileWatcher : IDisposable
     ///     Records a changed path from an operating-system event.
     /// </summary>
     /// <remarks>
-    ///     A source's OS-level watcher callback runs on a background thread and is only marshalled onto
+    ///     A source's OS-level watcher callback runs on a background thread and is only marshaled onto
     ///     <see cref="_dispatcher" /> via a posted continuation, so there is always a small window between the
     ///     event firing and this method actually running. If the owning source is unwatched (its
     ///     <see cref="FileSystemWatcher" /> disposed and removed) during that window - most commonly by the user
