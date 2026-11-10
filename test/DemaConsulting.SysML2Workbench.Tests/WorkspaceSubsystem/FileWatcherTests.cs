@@ -128,7 +128,7 @@ public sealed class FileWatcherTests : IDisposable
     /// <summary>
     ///     Regression test: reproduces a change notification for a source's watcher arriving after that source has
     ///     already been unwatched (e.g. the user removed the last remaining workspace source between the OS event
-    ///     firing and the dispatcher-marshalled callback actually running). Previously this threw an unhandled
+    ///     firing and the dispatcher-marshaled callback actually running). Previously this threw an unhandled
     ///     <see cref="InvalidOperationException" /> on the dispatcher; it must now be a harmless no-op.
     /// </summary>
     [Fact]
