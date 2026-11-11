@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Hosts the main window, navigation, and tabbed view shell. */
 
             metadata info : SoftwareInfo {
-                description = "Hosts the main window, navigation, and tabbed view shell.";
                 sourceFiles = ("src/DemaConsulting.SysML2Workbench/AppShellSubsystem/MainWindowShell.cs");
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/AppShellSubsystem/MainWindowShellTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/app-shell-subsystem/main-window-shell.md");

@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Turns a selected view into pixels via SysML2Tools layout and DemaConsulting.Rendering SVG output. */
 
             metadata info : SoftwareInfo {
-                description = "Turns a selected view into pixels via SysML2Tools layout and DemaConsulting.Rendering SVG output.";
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/LayoutRenderingSubsystemTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/layout-rendering-subsystem.md");
                 verificationFiles = ("docs/verification/sysml2-workbench/layout-rendering-subsystem.md");

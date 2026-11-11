@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* GUI for constructing custom views (view type, multi-target expose selection, filter expression). */
 
             metadata info : SoftwareInfo {
-                description = "GUI for constructing custom views (view type, multi-target expose selection, filter expression).";
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/ViewBuilderSubsystemTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/view-builder-subsystem.md");
                 verificationFiles = ("docs/verification/sysml2-workbench/view-builder-subsystem.md");

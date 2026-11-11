@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Displays workspace diagnostics in the UI list panel. */
 
             metadata info : SoftwareInfo {
-                description = "Displays workspace diagnostics in the UI list panel.";
                 sourceFiles = ("src/DemaConsulting.SysML2Workbench/DiagnosticsPanelSubsystem/DiagnosticsListView.cs");
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/DiagnosticsPanelSubsystem/DiagnosticsListViewTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/diagnostics-panel-subsystem/diagnostics-list-view.md");
