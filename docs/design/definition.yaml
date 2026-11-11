@@ -1,10 +1,12 @@
 ---
 resource-path:
   - docs/design
+  - docs/design/generated
   - docs/design/sysml2-workbench
   - docs/design/ots
   - docs/template
   - docs/images
+embed-resources: true
 
 input-files:
   - docs/design/title.txt
