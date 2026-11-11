@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Collects workspace diagnostics into a unified view. */
 
             metadata info : SoftwareInfo {
-                description = "Collects workspace diagnostics into a unified view.";
                 sourceFiles = ("src/DemaConsulting.SysML2Workbench/WorkspaceSubsystem/DiagnosticsAggregator.cs");
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/WorkspaceSubsystem/DiagnosticsAggregatorTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/workspace-subsystem/diagnostics-aggregator.md");

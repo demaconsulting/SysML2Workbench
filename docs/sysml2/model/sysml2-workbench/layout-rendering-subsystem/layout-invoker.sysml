@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Invokes SysML2Tools layout strategies for the selected view. */
 
             metadata info : SoftwareInfo {
-                description = "Invokes SysML2Tools layout strategies for the selected view.";
                 sourceFiles = ("src/DemaConsulting.SysML2Workbench/LayoutRenderingSubsystem/LayoutInvoker.cs");
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/LayoutRenderingSubsystem/LayoutInvokerTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/layout-rendering-subsystem/layout-invoker.md");

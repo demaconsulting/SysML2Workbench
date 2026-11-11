@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Lists and selects predefined views defined in the model. */
 
             metadata info : SoftwareInfo {
-                description = "Lists and selects predefined views defined in the model.";
                 sourceFiles = ("src/DemaConsulting.SysML2Workbench/ViewCatalogSubsystem/ViewCatalogPresenter.cs");
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/ViewCatalogSubsystem/ViewCatalogPresenterTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/view-catalog-subsystem/view-catalog-presenter.md");

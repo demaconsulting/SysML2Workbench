@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Detects external file changes and triggers incremental reload. */
 
             metadata info : SoftwareInfo {
-                description = "Detects external file changes and triggers incremental reload.";
                 sourceFiles = ("src/DemaConsulting.SysML2Workbench/WorkspaceSubsystem/FileWatcher.cs");
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/WorkspaceSubsystem/FileWatcherTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/workspace-subsystem/file-watcher.md");

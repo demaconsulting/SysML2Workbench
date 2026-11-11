@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Dock tool panel presenting workspace sources as a tree, with Add File/Add Folder/Remove and drag-and-drop. */
 
             metadata info : SoftwareInfo {
-                description = "Dock tool panel presenting workspace sources as a tree, with Add File/Add Folder/Remove and drag-and-drop.";
                 sourceFiles = ("src/DemaConsulting.SysML2Workbench/AppShellSubsystem/WorkspacePanelToolViewModel.cs");
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/AppShellSubsystem/WorkspacePanelToolViewModelTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/app-shell-subsystem/workspace-panel.md");

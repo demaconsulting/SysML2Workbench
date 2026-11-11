@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Hosts rendered SVG output in the Avalonia diagram canvas. */
 
             metadata info : SoftwareInfo {
-                description = "Hosts rendered SVG output in the Avalonia diagram canvas.";
                 sourceFiles = ("src/DemaConsulting.SysML2Workbench/LayoutRenderingSubsystem/SvgCanvasHost.cs");
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/LayoutRenderingSubsystem/SvgCanvasHostTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/layout-rendering-subsystem/svg-canvas-host.md");

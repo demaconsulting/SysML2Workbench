@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Cross-platform desktop viewer and IDE shell for SysML v2 textual models. */
 
             metadata info : SoftwareInfo {
-                description = "Cross-platform desktop viewer and IDE shell for SysML v2 textual models.";
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/SysML2WorkbenchTests.cs");
                 designFiles = ("docs/design/sysml2-workbench.md");
                 verificationFiles = ("docs/verification/sysml2-workbench.md");

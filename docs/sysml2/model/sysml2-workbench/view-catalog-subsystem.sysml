@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Renders the six predefined view kinds (General, Interconnection, State Transition, Action Flow, Sequence, Grid). */
 
             metadata info : SoftwareInfo {
-                description = "Renders the six predefined view kinds (General, Interconnection, State Transition, Action Flow, Sequence, Grid).";
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/ViewCatalogSubsystemTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/view-catalog-subsystem.md");
                 verificationFiles = ("docs/verification/sysml2-workbench/view-catalog-subsystem.md");

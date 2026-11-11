@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Captures custom view type, expose targets, and filter expression. */
 
             metadata info : SoftwareInfo {
-                description = "Captures custom view type, expose targets, and filter expression.";
                 sourceFiles = ("src/DemaConsulting.SysML2Workbench/ViewBuilderSubsystem/ViewDefinitionModel.cs");
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/ViewBuilderSubsystem/ViewDefinitionModelTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/view-builder-subsystem/view-definition-model.md");

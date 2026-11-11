@@ -6,7 +6,6 @@ package SysML2WorkbenchArchitecture {
             doc /* Main window, navigation, tabbed views (Avalonia 12 desktop shell). */
 
             metadata info : SoftwareInfo {
-                description = "Main window, navigation, tabbed views (Avalonia 12 desktop shell).";
                 testFiles = ("test/DemaConsulting.SysML2Workbench.Tests/AppShellSubsystemTests.cs");
                 designFiles = ("docs/design/sysml2-workbench/app-shell-subsystem.md");
                 verificationFiles = ("docs/verification/sysml2-workbench/app-shell-subsystem.md");
