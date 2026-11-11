@@ -31,6 +31,7 @@ reviews:
     context: [README.md, docs/user_guide/**/*.md]
     paths:
       - requirements.yaml
+      - docs/reqstream/quality.yaml
       - docs/design/introduction.md
       - docs/sysml2/**/*.sysml
   - id: SysML2Workbench-Architecture

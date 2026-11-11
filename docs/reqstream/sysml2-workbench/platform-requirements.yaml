@@ -28,10 +28,10 @@ sections:
             tests:
               - 'macos@StartSession_OpensShellAndWritesOperationalLogs'
 
-          - id: 'SysML2Workbench-Platform-DotNet9'
-            title: 'The SysML2Workbench shall support the .NET 9.0 runtime.'
+          - id: 'SysML2Workbench-Platform-DotNet10'
+            title: 'The SysML2Workbench shall support the .NET 10.0 runtime.'
             tags: [system]
             justification: |
-              The project is expected to run on modern .NET desktop runtimes, and explicit runtime requirements keep compatibility evidence separate from operating-system support evidence.
+              The project is expected to run on a supported long-term-support .NET desktop runtime, and explicit runtime requirements keep compatibility evidence separate from operating-system support evidence.
             tests:
-              - 'net9.0@OpenWorkspace_LoadsAndRefreshesWorkspace'
+              - 'net10.0@OpenWorkspace_LoadsAndRefreshesWorkspace'

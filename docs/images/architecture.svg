@@ -28,8 +28,8 @@
       <text x="266" y="251">folders and watches them</text>
       <rect x="353" y="196" width="153" height="64" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
       <text x="429" y="218" font-size="14" font-weight="600" fill="#4c1d95">ViewCatalog</text>
-      <text x="429" y="237">Lists the six predefined</text>
-      <text x="429" y="251">views in the model</text>
+      <text x="429" y="237">Lists the predefined views</text>
+      <text x="429" y="251">declared in the model</text>
       <rect x="516" y="196" width="153" height="64" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
       <text x="592" y="218" font-size="14" font-weight="600" fill="#4c1d95">ViewBuilder</text>
       <text x="592" y="237">Builds custom views and</text>
