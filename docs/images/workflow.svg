@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1156" height="400" viewBox="0 0 1156 400" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <!-- Transparent canvas; a white rounded card keeps the diagram readable in light and dark themes -->
+  <rect x="14" y="16" width="1130" height="378" rx="28" fill="#d5dce6"/>
+  <rect x="10" y="10" width="1130" height="378" rx="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+
+  <g transform="translate(30,34)">
+    <!-- Step 1: open -->
+    <rect x="0" y="0" width="250" height="306" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="125" y="30" font-size="16" font-weight="600" fill="#1e3a8a" text-anchor="middle">1. Open a workspace</text>
+    <rect x="14" y="46" width="222" height="54" rx="6" fill="#ffffff" stroke="#2563eb"/>
+    <text x="125" y="68" font-size="14" font-weight="600" fill="#1e3a8a" text-anchor="middle">File &gt; Open Folder...</text>
+    <text x="125" y="88" font-size="12" fill="#1e40af" text-anchor="middle">discovers every .sysml file</text>
+    <rect x="14" y="110" width="222" height="54" rx="6" fill="#ffffff" stroke="#2563eb"/>
+    <text x="125" y="132" font-size="14" font-weight="600" fill="#1e3a8a" text-anchor="middle">File &gt; Open File...</text>
+    <text x="125" y="152" font-size="12" fill="#1e40af" text-anchor="middle">adds a single .sysml file</text>
+    <rect x="14" y="174" width="222" height="54" rx="6" fill="#ffffff" stroke="#2563eb"/>
+    <text x="125" y="196" font-size="14" font-weight="600" fill="#1e3a8a" text-anchor="middle">Drag and drop</text>
+    <text x="125" y="216" font-size="12" fill="#1e40af" text-anchor="middle">files and folders onto the window</text>
+    <rect x="14" y="238" width="222" height="54" rx="6" fill="#ffffff" stroke="#2563eb"/>
+    <text x="125" y="260" font-size="14" font-weight="600" fill="#1e3a8a" text-anchor="middle">Live reload</text>
+    <text x="125" y="280" font-size="12" fill="#1e40af" text-anchor="middle">refreshes on external file changes</text>
+
+    <line x1="254" y1="153" x2="276" y2="153" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+
+    <!-- Step 2: browse -->
+    <rect x="280" y="0" width="250" height="306" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+    <text x="405" y="30" font-size="16" font-weight="600" fill="#92400e" text-anchor="middle">2. Browse the model</text>
+    <rect x="294" y="46" width="222" height="54" rx="6" fill="#ffffff" stroke="#d97706"/>
+    <text x="405" y="68" font-size="14" font-weight="600" fill="#92400e" text-anchor="middle">Workspace panel</text>
+    <text x="405" y="88" font-size="12" fill="#92400e" text-anchor="middle">tree of added files and folders</text>
+    <rect x="294" y="110" width="222" height="54" rx="6" fill="#ffffff" stroke="#d97706"/>
+    <text x="405" y="132" font-size="14" font-weight="600" fill="#92400e" text-anchor="middle">Predefined Views</text>
+    <text x="405" y="152" font-size="12" fill="#92400e" text-anchor="middle">every view usage in the workspace</text>
+    <rect x="294" y="174" width="222" height="54" rx="6" fill="#ffffff" stroke="#d97706"/>
+    <text x="405" y="196" font-size="14" font-weight="600" fill="#92400e" text-anchor="middle">Raw source text</text>
+    <text x="405" y="216" font-size="12" fill="#92400e" text-anchor="middle">double-click a file, read-only</text>
+    <rect x="294" y="238" width="222" height="54" rx="6" fill="#ffffff" stroke="#d97706"/>
+    <text x="405" y="260" font-size="14" font-weight="600" fill="#92400e" text-anchor="middle">Query &gt; Run Query...</text>
+    <text x="405" y="280" font-size="12" fill="#92400e" text-anchor="middle">List, Uses, Impact, Hierarchy, ...</text>
+
+    <line x1="534" y1="153" x2="556" y2="153" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+
+    <!-- Step 3: render -->
+    <rect x="560" y="0" width="250" height="306" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text x="685" y="30" font-size="16" font-weight="600" fill="#5b21b6" text-anchor="middle">3. Render diagrams</text>
+    <rect x="574" y="46" width="222" height="54" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+    <text x="685" y="68" font-size="14" font-weight="600" fill="#4c1d95" text-anchor="middle">Diagram tabs</text>
+    <text x="685" y="88" font-size="12" fill="#5b21b6" text-anchor="middle">the six SysML2Tools view kinds</text>
+    <rect x="574" y="110" width="222" height="54" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+    <text x="685" y="132" font-size="14" font-weight="600" fill="#4c1d95" text-anchor="middle">Pan and zoom</text>
+    <text x="685" y="152" font-size="12" fill="#5b21b6" text-anchor="middle">drag to pan, mouse wheel to zoom</text>
+    <rect x="574" y="174" width="222" height="54" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+    <text x="685" y="196" font-size="14" font-weight="600" fill="#4c1d95" text-anchor="middle">Custom View Builder</text>
+    <text x="685" y="216" font-size="12" fill="#5b21b6" text-anchor="middle">kind, expose targets, filter</text>
+    <rect x="574" y="238" width="222" height="54" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+    <text x="685" y="260" font-size="14" font-weight="600" fill="#4c1d95" text-anchor="middle">Element picker</text>
+    <text x="685" y="280" font-size="12" fill="#5b21b6" text-anchor="middle">type chips and name search</text>
+
+    <line x1="814" y1="153" x2="836" y2="153" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+
+    <!-- Step 4: check and export -->
+    <rect x="840" y="0" width="250" height="306" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="965" y="30" font-size="16" font-weight="600" fill="#166534" text-anchor="middle">4. Check and export</text>
+    <rect x="854" y="46" width="222" height="54" rx="6" fill="#ffffff" stroke="#16a34a"/>
+    <text x="965" y="68" font-size="14" font-weight="600" fill="#14532d" text-anchor="middle">Diagnostics panel</text>
+    <text x="965" y="88" font-size="12" fill="#166534" text-anchor="middle">parser and reference problems</text>
+    <rect x="854" y="110" width="222" height="54" rx="6" fill="#ffffff" stroke="#16a34a"/>
+    <text x="965" y="132" font-size="14" font-weight="600" fill="#14532d" text-anchor="middle">Copy as SysML</text>
+    <text x="965" y="152" font-size="12" fill="#166534" text-anchor="middle">view text to paste into a model</text>
+    <rect x="854" y="174" width="222" height="54" rx="6" fill="#ffffff" stroke="#16a34a"/>
+    <text x="965" y="196" font-size="14" font-weight="600" fill="#14532d" text-anchor="middle">Copy as Markdown / JSON</text>
+    <text x="965" y="216" font-size="12" fill="#166534" text-anchor="middle">query results for reviews</text>
+    <rect x="854" y="238" width="222" height="54" rx="6" fill="#ffffff" stroke="#16a34a"/>
+    <text x="965" y="260" font-size="14" font-weight="600" fill="#14532d" text-anchor="middle">Local log file</text>
+    <text x="965" y="280" font-size="12" fill="#166534" text-anchor="middle">attach to bug reports</text>
+
+    <text x="545" y="336" font-size="13" font-style="italic" fill="#475569" text-anchor="middle">Phase 0 is read-only: custom views are session-only until copied as SysML text into a model file</text>
+  </g>
+</svg>

@@ -12,7 +12,9 @@ running a local build or a published desktop package when one is provided.
 
 - Access to the SysML2Workbench build or release artifacts
 
-- A compatible .NET environment when running an unpublished local build
+- The .NET 10 SDK when building and running an unpublished local build (the published
+
+  desktop packages are self-contained and do not require a separate .NET runtime)
 
 ## Current Installation Model
 

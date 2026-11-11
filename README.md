@@ -26,7 +26,11 @@ and reference-resolution problems across the whole workspace, a status bar
 along the bottom of the window summarizes whichever document tab is active,
 and a local rolling log file is written for bug-report attachments.
 
-![SysML2Workbench architecture: .sysml files or folders are opened in the desktop app, whose AppShell hosts the Workspace, ViewCatalog, ViewBuilder, LayoutRendering, DiagnosticsPanel, ElementPicker, and Logging subsystems to produce pan and zoom diagrams, exported view text, a diagnostics list, and a log file, built on SysML2Tools, Rendering, and Avalonia](docs/images/architecture.svg)
+The diagram below shows how you use SysML2Workbench end to end: open a
+workspace, browse the model, render diagrams, then check diagnostics and
+export view text, query results, or the log file.
+
+![SysML2Workbench workflow in four steps: 1. open a workspace with File > Open Folder, File > Open File, or drag and drop, with live reload on external changes; 2. browse the model in the Workspace panel, Predefined Views list, read-only raw source text, and Query > Run Query; 3. render diagrams in tabs with pan and zoom, or build custom views with the Custom View Builder and element picker; 4. check the Diagnostics panel and export with Copy as SysML, Copy as Markdown or JSON, and the local log file for bug reports](https://raw.githubusercontent.com/demaconsulting/SysML2Workbench/main/docs/images/workflow.png)
 
 This is a **Phase 0, read-only** release: there is no git integration, no
 text/structural editing, no telemetry, and custom views are session-only until
@@ -36,7 +40,7 @@ instructions.
 
 ## Getting Started
 
-Requires the [.NET 9 SDK](https://dotnet.microsoft.com/download).
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
 ```powershell
 dotnet run --project src/DemaConsulting.SysML2Workbench.Desktop

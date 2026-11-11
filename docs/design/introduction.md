@@ -54,6 +54,13 @@ relationships.
 
 ![Software Structure](SoftwareStructureView.svg)
 
+The architecture overview below shows how the desktop entry point hosts the
+shared application's subsystems, which turn opened `.sysml` files or folders
+into diagrams, exported view text, diagnostics, and a log file on top of the
+SysML2Tools, Rendering, and Avalonia OTS libraries.
+
+![SysML2Workbench architecture: .sysml files or folders are opened in the desktop app, whose AppShell hosts the Workspace, ViewCatalog, ViewBuilder, LayoutRendering, DiagnosticsPanel, ElementPicker, and Logging subsystems to produce pan and zoom diagrams, exported view text, a diagnostics list, and a log file, built on SysML2Tools, Rendering, and Avalonia](architecture.svg)
+
 The system decomposes as follows. `Desktop` is the platform-head entry point
 project under `AppShellSubsystem` — it hosts `MainWindowShell` for the
 desktop target but is not itself a separately documented unit, since it is a

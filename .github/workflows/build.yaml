@@ -28,7 +28,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.x
 
       - name: Restore Tools
         run: >
@@ -117,7 +117,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.x
 
       - name: Restore Tools
         run: >
@@ -383,7 +383,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.x
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -486,7 +486,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.x
 
       - name: Restore Tools
         run: >
@@ -566,7 +566,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.x
 
       - name: Install npm dependencies
         env:
