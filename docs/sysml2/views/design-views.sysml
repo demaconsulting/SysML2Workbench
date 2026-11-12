@@ -1,7 +1,8 @@
 package SysML2WorkbenchArchitecture {
-        view SoftwareStructureView {
+        private import StandardViewDefinitions::*;
+
+        view SoftwareStructureView : InterconnectionView {
             expose SysML2Workbench::**;
-            render asInterconnectionDiagram;
         }
 
         view SysML2WorkbenchView {
