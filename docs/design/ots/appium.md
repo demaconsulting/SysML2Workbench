@@ -103,6 +103,16 @@ part of the sequence instead of duplicating it inline. The cross-platform
 `[Trait("Category", "Integration")]` and require a running Appium server
 that those invocations do not start.
 
+### Server version pin
+
+Both `build.ps1 -IntegrationTest` and the `appium-windows-integration-tests` CI job install the Appium server as
+`appium@3` rather than the latest release. Appium 4.0.0 was published while `appium-novawindows-driver` 1.5.0 (its
+latest release) still declares a peer dependency on `appium ^3`, so on Appium 4 the driver install fails before any
+test runs ("cannot be installed because the server version it requires (^3.0.0-rc.2) does not meet the currently
+installed one (4.0.0)"). The pin is temporary: it waits on an `appium-novawindows-driver` release that supports
+Appium 4, after which both install sites should move to that Appium major version together. The Mac2 driver used by
+local macOS runs supports Appium 3, so the same pin applies there.
+
 ### Troubleshooting: "Failed to locate window of the app." on Windows
 
 If every NovaWindows test in `IntegrationTests` fails identically with
@@ -137,4 +147,5 @@ unlocked, check the installed `appium-novawindows-driver` version and its
 changelog for `trySetForegroundWindow`/foreground-window regressions before
 assuming an application code change is at fault - `build.ps1
 -IntegrationTest` and `.github/workflows/build.yaml` always install the
-latest release via unpinned `appium driver install`.
+latest release via unpinned `appium driver install` (the Appium server itself is pinned to 3.x; see
+"Server version pin").
