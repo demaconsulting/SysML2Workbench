@@ -80,7 +80,9 @@ if ($IntegrationTest) {
     } else {
         if ($IsWindows -or $IsMacOS) {
             Write-Host "Installing Appium..."
-            npm install -g appium
+            # Pinned to Appium 3.x until appium-novawindows-driver supports Appium 4 (its latest release,
+            # 1.5.0, requires appium ^3); see docs/design/ots/appium.md, "Server version pin".
+            npm install -g appium@3
             if ($LASTEXITCODE -ne 0) { $buildError = $true }
 
             $driverName = $IsWindows ? "appium-novawindows-driver" : "mac2"

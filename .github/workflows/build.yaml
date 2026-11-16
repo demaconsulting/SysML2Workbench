@@ -391,8 +391,11 @@ jobs:
           node-version: 24.x
 
       - name: Install Appium and the NovaWindows driver
+        # Appium is pinned to the 3.x line: appium-novawindows-driver (1.5.0, the latest release) declares a
+        # peer dependency on appium ^3 and refuses to install on Appium 4. Raise the pin once a NovaWindows
+        # release supports Appium 4 (see docs/design/ots/appium.md, "Server version pin").
         run: |
-          npm install -g appium
+          npm install -g appium@3
           appium driver install --source=npm appium-novawindows-driver
 
       # === BUILD AND PUBLISH THE DESKTOP APPLICATION ===
