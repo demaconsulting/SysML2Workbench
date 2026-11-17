@@ -6,21 +6,30 @@
 
 SysML2Workbench is a thin desktop shell over the SysML2Tools parser, semantic
 model, and layout engine, plus the DemaConsulting.Rendering SVG pipeline. The
-system is organized into seven subsystems. WorkspaceSubsystem owns folder
+system is organized into eight subsystems. WorkspaceSubsystem owns folder
 discovery, import-aware loading, and live reload. ViewCatalogSubsystem exposes
 the predefined model views already authored in the workspace. ViewBuilderSubsystem
 captures session-only custom view intent and converts it into copy-pasteable
 SysML text. LayoutRenderingSubsystem turns a selected predefined or custom view
 into rendered SVG. DiagnosticsPanelSubsystem presents workspace diagnostics to
 the user. LoggingSubsystem persists a local rolling log for troubleshooting.
-AppShellSubsystem coordinates the main window, navigation, tab lifecycle, and
-cross-subsystem user interactions.
+ElementPickerSubsystem provides the reusable, dialog-agnostic element filter
+(type-label chips plus substring search) and single-select element picker
+controls shared by the modal dialogs. AppShellSubsystem coordinates the main
+window, navigation, tab lifecycle, modal dialogs, and cross-subsystem user
+interactions.
 
 The collaboration pattern is intentionally one-directional. AppShellSubsystem
 accepts user commands, WorkspaceSubsystem produces the authoritative loaded
 model and diagnostics, the catalog or custom-view builder selects the view to
 render, LayoutRenderingSubsystem produces the diagram payload, and
-DiagnosticsPanelSubsystem and LoggingSubsystem present secondary outputs. The
+DiagnosticsPanelSubsystem and LoggingSubsystem present secondary outputs.
+ElementPickerSubsystem is a leaf used only by AppShellSubsystem's dialogs: the
+Custom View Builder dialog hosts an `ElementPicker` to choose expose targets,
+and the Query dialog hosts an `ElementPicker` for element-scoped queries and an
+`ElementFilter` for the filter-only "List" query. The dialogs build the
+candidate list from the loaded workspace model and hand it to the picker, so
+ElementPickerSubsystem depends on no other local subsystem. The
 system does not reimplement parsing, semantic resolution, or diagram layout;
 those concerns stay inside the OTS dependencies so the local code remains
 focused on orchestration and presentation.
@@ -88,6 +97,7 @@ flowchart LR
     D --> E[LayoutRenderingSubsystem]
     C --> F[DiagnosticsPanelSubsystem]
     C --> G[LoggingSubsystem]
+    B <--> H[ElementPickerSubsystem]
     E --> B
     F --> B
 ```
@@ -98,7 +108,9 @@ flowchart LR
    aggregates parser and semantic diagnostics for the currently known files.
 3. ViewCatalogSubsystem derives the set of predefined views from the loaded
    model, or ViewBuilderSubsystem produces an ephemeral custom-view definition
-   from UI input.
+   from UI input; when the user chooses expose targets, the Custom View Builder
+   dialog in AppShellSubsystem passes candidates from the loaded model to
+   ElementPickerSubsystem and reads back the selected element.
 4. LayoutRenderingSubsystem invokes `DiagramRenderer.RenderWorkspace` for the
    selected definition and uses DemaConsulting.Rendering to produce SVG for
    display.
