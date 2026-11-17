@@ -34,6 +34,14 @@ OTS items:
   test host behavior.
 - **XUnit**: planned verification of the repository test harness configuration and execution
   behavior.
+- **Dock**: integration verification of the dockable panel layout composition and its Avalonia
+  hosting behavior.
+- **CommunityToolkit.Mvvm**: indirect verification of the observable-property source generator
+  through the Dock and Avalonia OTS integration tests that exercise the generated properties.
+- **AvaloniaEdit**: integration verification of the read-only, syntax-highlighted text editor
+  control and its SysML highlighting definition.
+- **Appium**: system-level UI automation verification that drives the compiled desktop
+  application through its real accessibility tree.
 
 Out of scope: the test projects themselves as software items, build-pipeline configuration,
 future editing features outside Phase 0, and the internal implementation details of OTS

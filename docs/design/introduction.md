@@ -31,8 +31,11 @@ OTS items:
   semantic model, layout engine).
 - **DemaConsulting.Rendering**: integration and usage design (SVG rendering).
 - **Avalonia**: integration and usage design (UI framework).
-- **AvaloniaEdit**: integration and usage design (read-only syntax-highlighted text editor control).
 - **xUnit**: integration and usage design (test framework).
+- **Dock**: integration and usage design (dockable panel layout for the application shell).
+- **CommunityToolkit.Mvvm**: integration and usage design (observable-property source generator
+  for the Dock panel view models).
+- **AvaloniaEdit**: integration and usage design (read-only syntax-highlighted text editor control).
 - **Appium**: integration and usage design (end-to-end desktop UI automation
   driver for the compiled application; cross-platform in `build.ps1`, but
   Windows-only in CI today).
