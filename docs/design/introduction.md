@@ -5,7 +5,7 @@ for SysML v2 textual models. It is built as a thin shell over the
 `DemaConsulting.SysML2Tools` OTS libraries (parser, semantic model, layout
 engine) and the `DemaConsulting.Rendering` OTS library, all consumed as
 published NuGet packages. Local design coverage is organized as one system,
-eight subsystems (no nesting), and fifteen units. There are no Shared Packages
+eight subsystems (no nesting), and eighteen units. There are no Shared Packages
 in this repository; OTS items are documented under the parallel `ots/`
 folders.
 
@@ -68,6 +68,7 @@ thin bootstrap/entry-point project with no independent design of its own.
 
 - **SysML2Workbench** (System)
   - **WorkspaceSubsystem** — folder-based workspace, live file watching, glob/import resolution
+    - **WorkspaceSourceSet** (Unit) — ordered file/folder source list resolved to a merged, deduplicated file set with per-source attribution
     - **WorkspaceModel** (Unit) — in-memory folder/file tree and per-file parse state
     - **FileWatcher** (Unit) — detects external file changes, triggers incremental reload
     - **DiagnosticsAggregator** (Unit) — collects `SysmlDiagnostic` across the workspace

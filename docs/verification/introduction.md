@@ -18,11 +18,12 @@ Local items:
 
 - **SysML2Workbench**: planned system verification for the Phase 0 read-only desktop viewer.
 - **WorkspaceSubsystem, ViewCatalogSubsystem, ViewBuilderSubsystem, LayoutRenderingSubsystem,
-  DiagnosticsPanelSubsystem, LoggingSubsystem, ElementPickerSubsystem, and AppShellSubsystem**: planned subsystem
-  integration verification.
-- **WorkspaceModel, FileWatcher, DiagnosticsAggregator, ViewCatalogPresenter,
-  ViewDefinitionModel, SysmlSnippetGenerator, LayoutInvoker, SvgCanvasHost,
-  DiagnosticsListView, RollingFileLogger, and MainWindowShell**: planned unit verification.
+  DiagnosticsPanelSubsystem, LoggingSubsystem, ElementPickerSubsystem, and AppShellSubsystem**:
+  planned subsystem integration verification.
+- **WorkspaceSourceSet, WorkspaceModel, FileWatcher, DiagnosticsAggregator, ViewCatalogPresenter,
+  ViewDefinitionModel, SysmlSnippetGenerator, LayoutInvoker, SvgCanvasHost, DiagnosticsListView,
+  RollingFileLogger, ElementFilter, ElementPicker, MainWindowShell, WorkspacePanel, AboutDialog,
+  ViewBuilderDialog, and QueryDialog**: planned unit verification.
 
 OTS items:
 
