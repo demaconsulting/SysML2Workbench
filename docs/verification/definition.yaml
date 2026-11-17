@@ -7,6 +7,7 @@ input-files:
   - docs/verification/introduction.md
   - docs/verification/sysml2-workbench.md
   - docs/verification/sysml2-workbench/workspace-subsystem.md
+  - docs/verification/sysml2-workbench/workspace-subsystem/workspace-source-set.md
   - docs/verification/sysml2-workbench/workspace-subsystem/workspace-model.md
   - docs/verification/sysml2-workbench/workspace-subsystem/file-watcher.md
   - docs/verification/sysml2-workbench/workspace-subsystem/diagnostics-aggregator.md
@@ -22,13 +23,24 @@ input-files:
   - docs/verification/sysml2-workbench/diagnostics-panel-subsystem/diagnostics-list-view.md
   - docs/verification/sysml2-workbench/logging-subsystem.md
   - docs/verification/sysml2-workbench/logging-subsystem/rolling-file-logger.md
+  - docs/verification/sysml2-workbench/element-picker-subsystem.md
+  - docs/verification/sysml2-workbench/element-picker-subsystem/element-filter.md
+  - docs/verification/sysml2-workbench/element-picker-subsystem/element-picker.md
   - docs/verification/sysml2-workbench/app-shell-subsystem.md
   - docs/verification/sysml2-workbench/app-shell-subsystem/main-window-shell.md
+  - docs/verification/sysml2-workbench/app-shell-subsystem/workspace-panel.md
+  - docs/verification/sysml2-workbench/app-shell-subsystem/about-dialog.md
+  - docs/verification/sysml2-workbench/app-shell-subsystem/view-builder-dialog.md
+  - docs/verification/sysml2-workbench/app-shell-subsystem/query-dialog.md
   - docs/verification/ots.md
   - docs/verification/ots/sysml2-tools.md
   - docs/verification/ots/rendering.md
   - docs/verification/ots/avalonia.md
   - docs/verification/ots/xunit.md
+  - docs/verification/ots/dock.md
+  - docs/verification/ots/communitytoolkit-mvvm.md
+  - docs/verification/ots/avaloniaedit.md
+  - docs/verification/ots/appium.md
 template: template.html
 table-of-contents: true
 number-sections: true
