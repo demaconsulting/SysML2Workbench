@@ -14,7 +14,12 @@ input-files:
   - docs/design/sysml2-workbench.md
   - docs/design/sysml2-workbench/app-shell-subsystem.md
   - docs/design/sysml2-workbench/app-shell-subsystem/main-window-shell.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/workspace-panel.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/about-dialog.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/view-builder-dialog.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/query-dialog.md
   - docs/design/sysml2-workbench/workspace-subsystem.md
+  - docs/design/sysml2-workbench/workspace-subsystem/workspace-source-set.md
   - docs/design/sysml2-workbench/workspace-subsystem/workspace-model.md
   - docs/design/sysml2-workbench/workspace-subsystem/file-watcher.md
   - docs/design/sysml2-workbench/workspace-subsystem/diagnostics-aggregator.md
@@ -30,8 +35,13 @@ input-files:
   - docs/design/sysml2-workbench/diagnostics-panel-subsystem/diagnostics-list-view.md
   - docs/design/sysml2-workbench/logging-subsystem.md
   - docs/design/sysml2-workbench/logging-subsystem/rolling-file-logger.md
+  - docs/design/sysml2-workbench/element-picker-subsystem.md
+  - docs/design/sysml2-workbench/element-picker-subsystem/element-filter.md
+  - docs/design/sysml2-workbench/element-picker-subsystem/element-picker.md
   - docs/design/ots.md
+  - docs/design/ots/appium.md
   - docs/design/ots/avalonia.md
+  - docs/design/ots/avaloniaedit.md
   - docs/design/ots/communitytoolkit-mvvm.md
   - docs/design/ots/dock.md
   - docs/design/ots/rendering.md
