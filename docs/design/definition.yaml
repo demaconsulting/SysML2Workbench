@@ -12,12 +12,6 @@ input-files:
   - docs/design/title.txt
   - docs/design/introduction.md
   - docs/design/sysml2-workbench.md
-  - docs/design/sysml2-workbench/app-shell-subsystem.md
-  - docs/design/sysml2-workbench/app-shell-subsystem/main-window-shell.md
-  - docs/design/sysml2-workbench/app-shell-subsystem/workspace-panel.md
-  - docs/design/sysml2-workbench/app-shell-subsystem/about-dialog.md
-  - docs/design/sysml2-workbench/app-shell-subsystem/view-builder-dialog.md
-  - docs/design/sysml2-workbench/app-shell-subsystem/query-dialog.md
   - docs/design/sysml2-workbench/workspace-subsystem.md
   - docs/design/sysml2-workbench/workspace-subsystem/workspace-source-set.md
   - docs/design/sysml2-workbench/workspace-subsystem/workspace-model.md
@@ -38,6 +32,12 @@ input-files:
   - docs/design/sysml2-workbench/element-picker-subsystem.md
   - docs/design/sysml2-workbench/element-picker-subsystem/element-filter.md
   - docs/design/sysml2-workbench/element-picker-subsystem/element-picker.md
+  - docs/design/sysml2-workbench/app-shell-subsystem.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/main-window-shell.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/workspace-panel.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/about-dialog.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/view-builder-dialog.md
+  - docs/design/sysml2-workbench/app-shell-subsystem/query-dialog.md
   - docs/design/ots.md
   - docs/design/ots/appium.md
   - docs/design/ots/avalonia.md

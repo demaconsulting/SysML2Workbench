@@ -54,7 +54,7 @@ building a custom view.
 
 - `src/DemaConsulting.SysML2Workbench/` - shared application project (all
   subsystems: workspace, view catalog, view builder, layout/rendering,
-  diagnostics panel, logging, app shell).
+  diagnostics panel, logging, element picker, app shell).
 - `src/DemaConsulting.SysML2Workbench.Desktop/` - desktop platform head
   (Windows/Linux/macOS entry point).
 - `test/DemaConsulting.SysML2Workbench.Tests/` - unit and subsystem-level
