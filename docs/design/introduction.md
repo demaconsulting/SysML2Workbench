@@ -71,7 +71,8 @@ thin bootstrap/entry-point project with no independent design of its own.
 
 - **SysML2Workbench** (System)
   - **WorkspaceSubsystem** — folder-based workspace, live file watching, glob/import resolution
-    - **WorkspaceSourceSet** (Unit) — ordered file/folder source list resolved to a merged, deduplicated file set with per-source attribution
+    - **WorkspaceSourceSet** (Unit) — ordered file/folder source list resolved to a merged, deduplicated file set
+      with per-source attribution
     - **WorkspaceModel** (Unit) — in-memory folder/file tree and per-file parse state
     - **FileWatcher** (Unit) — detects external file changes, triggers incremental reload
     - **DiagnosticsAggregator** (Unit) — collects `SysmlDiagnostic` across the workspace
