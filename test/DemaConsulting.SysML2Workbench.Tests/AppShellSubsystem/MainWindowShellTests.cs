@@ -148,12 +148,11 @@ public sealed class MainWindowShellTests : IDisposable
         shell.SelectPredefinedView(view.QualifiedName);
         Assert.NotNull(shell.ActivePredefinedView);
 
-        // Act: simulate an external edit and a debounce-window flush, then refresh
+        // Act: simulate an external edit, then refresh
         await File.WriteAllTextAsync(
             PathHelpers.SafePathCombine(_tempRoot, "Extra.sysml"),
             "package Extra {\n    part def Bracket;\n}\n",
             TestContext.Current.CancellationToken);
-        await Task.Delay(5, TestContext.Current.CancellationToken);
         var refreshed = await shell.RefreshFromExternalChangesAsync();
 
         // Assert: the refreshed workspace now includes the new file and prior active-view state was reset

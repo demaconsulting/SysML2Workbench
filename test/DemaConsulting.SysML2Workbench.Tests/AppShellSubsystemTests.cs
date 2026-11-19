@@ -102,7 +102,6 @@ public sealed class AppShellSubsystemTests : IDisposable
             PathHelpers.SafePathCombine(_tempRoot, "Extra.sysml"),
             "package Extra {\n    part def Bracket;\n    view ExtraView {\n        expose Bracket;\n        render asGridDiagram;\n    }\n}\n",
             TestContext.Current.CancellationToken);
-        await Task.Delay(5, TestContext.Current.CancellationToken);
         await shell.RefreshFromExternalChangesAsync();
 
         // Assert: the catalog now reflects the additional view
