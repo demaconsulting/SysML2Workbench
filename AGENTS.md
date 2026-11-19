@@ -174,3 +174,19 @@ requires it and the modification preserves the documented design intent:
 This repository follows the [Continuous Compliance](https://github.com/demaconsulting/ContinuousCompliance)
 approach. Tools: **ReqStream** (requirements traceability), **ReviewMark** (file review enforcement),
 **BuildMark** (tool versions), **VersionMark** (version tracking).
+
+# Repository-Specific Standards Exceptions
+
+- **`testing-principles.md` "Assert Observable Behavior"**: the following existing tests predate this rule
+  and are kept unchanged; do not use them as a pattern for new tests:
+  - `GenerateResults_ProvideReqStreamEvidence` (`test/OtsSoftwareTests/XUnitTests.cs`, linked from
+    `docs/reqstream/ots/xunit.yaml`) asserts on the text of the checked-in `build.ps1` (TRX logger and
+    results-directory arguments).
+  - `EmbeddedXshd_Loads_AndKeywordRuleMatchesSysmlKeyword` (`test/OtsSoftwareTests/AvaloniaEditTests.cs`,
+    linked from `docs/reqstream/ots/avaloniaedit.yaml`) reads the lexer's private `_LiteralNames` field
+    via reflection, mirroring the production highlighting loader.
+  - `MainWindowView_TabsChangedFromBackgroundThread_MarshalsDiagramDockMutationsOntoUiThread`
+    (`test/OtsSoftwareTests/DockTests.cs`) compares managed thread IDs to prove UI-thread marshaling.
+  - `DiagramContextMenu_CopyAsSysml_TwoCustomViewTabs_EachCopiesItsOwnSnippet`
+    (`test/OtsSoftwareTests/AvaloniaTests.cs`) reaches private `MainWindowView` fields via reflection to
+    select a tab.
