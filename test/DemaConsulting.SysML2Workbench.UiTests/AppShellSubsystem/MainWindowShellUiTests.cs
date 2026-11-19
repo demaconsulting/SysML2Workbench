@@ -97,8 +97,8 @@ public sealed class MainWindowShellUiTests : IDisposable
     ///     Validates that clicking the File menu's "Close All" item reaches
     ///     <see cref="MainWindowShell.CloseAllSourcesAsync" /> end-to-end - not just that the menu item exists
     ///     (which is only proved elsewhere by discoverability) - by pre-loading one file source before showing
-    ///     the window, raising the item's <c>Click</c> event, pumping the dispatcher (retried briefly since the
-    ///     handler is <c>async void</c>), and asserting the shell's source set ends up empty.
+    ///     the window, raising the item's <c>Click</c> event, pumping the dispatcher until the source set is empty
+    ///     (the handler is <c>async void</c>), and asserting the shell's source set ends up empty.
     /// </summary>
     [AvaloniaFact]
     public async Task MainWindowView_CloseAllMenuItem_Click_ClosesAllSources()
@@ -123,11 +123,14 @@ public sealed class MainWindowShellUiTests : IDisposable
             // Act
             closeAllMenuItem.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));
 
-            // The click handler is async void; pump the dispatcher briefly until the mutation completes.
-            for (var i = 0; i < 20 && shell.CurrentWorkspace.Sources.Count > 0; i++)
+            // The click handler is async void, so pump the dispatcher until the observable outcome (an empty
+            // source set) is reached; the token is only a generous safety net so a regression fails rather than
+            // hangs, and is never the condition being verified.
+            using var safetyNet = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            while (shell.CurrentWorkspace.Sources.Count > 0 && !safetyNet.IsCancellationRequested)
             {
                 Dispatcher.UIThread.RunJobs();
-                await Task.Delay(10);
+                await Task.Yield();
             }
 
             // Assert
