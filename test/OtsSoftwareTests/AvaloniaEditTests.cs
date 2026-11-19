@@ -1,17 +1,17 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
 using AvaloniaEdit.Highlighting;
-using AvaloniaEdit.Highlighting.Xshd;
 
 namespace OtsSoftwareTests;
 
 /// <summary>
 ///     Verifies the OTS AvaloniaEdit requirements in docs/reqstream/ots/avaloniaedit.yaml: that a real,
-///     headless-hosted <see cref="TextEditor" /> genuinely enforces read-only behavior, and that the embedded
-///     SysML v2 <c>Assets/SysML.xshd</c> highlighting definition loads without throwing and defines a rule
-///     matching a real SysML v2 keyword, using Avalonia's headless test platform
+///     headless-hosted <see cref="TextEditor" /> genuinely enforces read-only behavior, and that the real
+///     <c>SourceTextDocumentView</c> loads the embedded SysML v2 <c>Assets/SysML.xshd</c> highlighting definition
+///     and highlights real SysML v2 keywords, using Avalonia's headless test platform
 ///     (<see cref="AvaloniaFactAttribute" />) rather than a mocked or hand-rolled harness.
 /// </summary>
 public sealed class AvaloniaEditTests
@@ -48,38 +48,35 @@ public sealed class AvaloniaEditTests
     }
 
     /// <summary>
-    ///     Validates that the embedded <c>Assets/SysML.xshd</c> resource loads via <c>HighlightingLoader.Load</c>
-    ///     without throwing, and that a keyword-highlighting rule built the same way SourceTextDocumentView does
-    ///     (reflecting <c>DemaConsulting.SysML2Tools.Parser.Antlr.SysMLv2Lexer</c>'s literal-token table) matches
-    ///     a real SysML v2 keyword (<c>part</c>).
+    ///     Validates that the real <c>SourceTextDocumentView</c> loads the embedded <c>Assets/SysML.xshd</c>
+    ///     resource through AvaloniaEdit's <c>HighlightingLoader</c>, registers it as the "SysML" definition, and
+    ///     that the definition it assigns to its hosted editor highlights SysML v2 keywords with the Keyword color:
+    ///     both a common keyword (<c>part</c>) and a keyword (<c>occurrence</c>) that is absent from the view's
+    ///     small hard-coded fallback list, so the highlighted keyword set is observably derived from the real
+    ///     SysML v2 lexer rather than a hand-copied list.
     /// </summary>
     [AvaloniaFact]
     public void EmbeddedXshd_Loads_AndKeywordRuleMatchesSysmlKeyword()
     {
-        // Arrange
-        using var stream = Avalonia.Platform.AssetLoader.Open(
-            new Uri("avares://DemaConsulting.SysML2Workbench/Assets/SysML.xshd"));
-        using var reader = System.Xml.XmlReader.Create(stream);
+        // Arrange: the production view, which loads and registers the embedded highlighting definition
+        var view = new DemaConsulting.SysML2Workbench.AppShellSubsystem.SourceTextDocumentView();
+        var editor = view.GetLogicalDescendants().OfType<TextEditor>().Single();
 
         // Act
-        var definition = HighlightingLoader.Load(reader, HighlightingManager.Instance);
+        var definition = editor.SyntaxHighlighting;
 
-        // Assert: the definition loaded with the expected named colors, proving it is a genuine, well-formed
-        // XSHD definition rather than an empty/broken stub.
+        // Assert: the definition is the registered, well-formed XSHD definition with its expected named colors
         Assert.NotNull(definition);
-        Assert.NotNull(definition.GetNamedColor("Keyword"));
+        Assert.Same(definition, HighlightingManager.Instance.GetDefinition("SysML"));
+        var keywordColor = definition.GetNamedColor("Keyword");
+        Assert.NotNull(keywordColor);
         Assert.NotNull(definition.GetNamedColor("Comment"));
         Assert.NotNull(definition.GetNamedColor("String"));
         Assert.NotNull(definition.GetNamedColor("Number"));
 
-        // Act: build the same reflection-derived keyword rule SourceTextDocumentView adds at runtime, and add
-        // it to this independently loaded definition.
-        var keywords = GetSysmlKeywords();
-        var pattern = new System.Text.RegularExpressions.Regex($@"\b(?:{string.Join("|", keywords)})\b");
-
-        // Assert: the resulting pattern matches a real SysML v2 keyword.
-        Assert.Contains("part", keywords);
-        Assert.Matches(pattern, "part def Engine;");
+        // Assert: highlighting real SysML v2 text colors both keywords with the Keyword color
+        Assert.True(IsHighlightedAs(definition, "part def Engine;", "part", keywordColor));
+        Assert.True(IsHighlightedAs(definition, "occurrence def Flight;", "occurrence", keywordColor));
     }
 
     /// <summary>
@@ -112,22 +109,20 @@ public sealed class AvaloniaEditTests
     }
 
     /// <summary>
-    ///     Independently reflects <c>SysMLv2Lexer._LiteralNames</c> the same way
-    ///     <c>SourceTextDocumentView.LoadSysMlHighlighting</c> does, so this test verifies the real reflected
-    ///     keyword set rather than a hand-copied duplicate.
+    ///     Highlights a single line of text with <paramref name="definition" /> through AvaloniaEdit's own
+    ///     <see cref="DocumentHighlighter" />, and reports whether the whole <paramref name="word" /> is covered by
+    ///     a section colored <paramref name="expectedColor" />.
     /// </summary>
-    private static List<string> GetSysmlKeywords()
+    private static bool IsHighlightedAs(IHighlightingDefinition definition, string text, string word, HighlightingColor expectedColor)
     {
-        var field = typeof(DemaConsulting.SysML2Tools.Parser.Antlr.SysMLv2Lexer).GetField(
-            "_LiteralNames",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var literalNames = (string[])field!.GetValue(null)!;
+        var document = new AvaloniaEdit.Document.TextDocument(text);
+        var highlighter = new DocumentHighlighter(document, definition);
+        var line = highlighter.HighlightLine(1);
+        var start = text.IndexOf(word, StringComparison.Ordinal);
 
-        return literalNames
-            .Where(name => name is not null)
-            .Select(name => name.Trim('\''))
-            .Where(name => name.Length > 0 && char.IsLetter(name[0]))
-            .Distinct()
-            .ToList();
+        return line.Sections.Any(section =>
+            section.Offset <= start
+            && section.Offset + section.Length >= start + word.Length
+            && expectedColor.Equals(section.Color));
     }
 }

@@ -1,5 +1,3 @@
-using DemaConsulting.SysML2Workbench;
-
 namespace OtsSoftwareTests;
 
 /// <summary>
@@ -33,46 +31,21 @@ public sealed class XUnitTests
     }
 
     /// <summary>
-    ///     Validates that xUnit v3's per-test context is available during execution (the mechanism
-    ///     <see cref="Xunit.TestContext" />-aware test code relies on for structured output) and that the
-    ///     repository's build script wires xUnit's TRX logger to a results directory, which is the concrete
-    ///     mechanism that turns xUnit results into evidence files ReqStream can link from requirement records.
+    ///     Validates that xUnit v3 identifies the executing test by its method name through its per-test context
+    ///     (<see cref="Xunit.TestContext" />), which is the name xUnit writes into the TRX results that ReqStream
+    ///     matches against requirement test links. This test's own pass result in those TRX results is the
+    ///     traceable evidence; no repository script text is inspected.
     /// </summary>
     [Fact]
     public void GenerateResults_ProvideReqStreamEvidence()
     {
-        // Assert: the xUnit v3 test context is present and usable for structured, traceable test output
-        Assert.NotNull(Xunit.TestContext.Current);
-        Xunit.TestContext.Current.TestOutputHelper?.WriteLine("GenerateResults_ProvideReqStreamEvidence executed under xUnit v3.");
+        // Act
+        var context = Xunit.TestContext.Current;
+        context.TestOutputHelper?.WriteLine($"{nameof(GenerateResults_ProvideReqStreamEvidence)} executed under xUnit v3.");
 
-        // Assert: the repository's build script actually configures xUnit's TRX logger and results directory,
-        // which is what makes xUnit results consumable as ReqStream-linked evidence artifacts
-        var buildScriptPath = FindRepositoryFile("build.ps1");
-        var buildScriptContent = File.ReadAllText(buildScriptPath);
-        Assert.Contains("--logger trx", buildScriptContent);
-        Assert.Contains("--results-directory", buildScriptContent);
-    }
-
-    /// <summary>
-    ///     Walks upward from the test assembly's output directory to find a named file at the repository root.
-    /// </summary>
-    /// <param name="fileName">Repository-root-relative file name to locate.</param>
-    /// <returns>Absolute path to the located file.</returns>
-    /// <exception cref="FileNotFoundException">Thrown when the file cannot be located within a reasonable number of parent directories.</exception>
-    private static string FindRepositoryFile(string fileName)
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            var candidate = PathHelpers.SafePathCombine(directory.FullName, fileName);
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new FileNotFoundException($"Could not locate '{fileName}' above {AppContext.BaseDirectory}.");
+        // Assert: xUnit reports this test under the exact method name requirement records link to
+        Assert.NotNull(context.TestMethod);
+        Assert.Equal(nameof(GenerateResults_ProvideReqStreamEvidence), context.TestMethod.MethodName);
+        Assert.Equal(Xunit.TestPipelineStage.TestExecution, context.PipelineStage);
     }
 }

@@ -1,4 +1,3 @@
-using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
@@ -275,21 +274,16 @@ public sealed class AvaloniaTests : IDisposable
     ///     <c>SetActiveDockable</c>/<c>SetFocusedDockable</c> - exactly what Dock's own tab-header click handler
     ///     invokes - so the resulting <see cref="MainWindowShell.NotifyActiveDocumentTab" /> notification (raised
     ///     through <see cref="MainWindowView" />'s <c>FocusedDockableChanged</c> forwarding) faithfully reflects a
-    ///     real user tab click rather than only updating shell-side bookkeeping. Reached via reflection since
-    ///     <see cref="MainWindowView" />'s Dock factory and per-tab view-model tracking are private implementation
-    ///     details not otherwise exposed to tests.
+    ///     real user tab click rather than only updating shell-side bookkeeping. The factory and the tab's document
+    ///     are reached through the window's public visual tree and Dock's public layout model.
     /// </summary>
     private static void SelectDiagramTab(MainWindowView window, string tabId)
     {
-        var windowType = typeof(MainWindowView);
-        var dockFactoryField = windowType.GetField("_dockFactory", BindingFlags.NonPublic | BindingFlags.Instance);
-        var tabViewModelsField = windowType.GetField("_tabViewModelsByTabId", BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.NotNull(dockFactoryField);
-        Assert.NotNull(tabViewModelsField);
-
-        var dockFactory = (WorkbenchDockFactory)dockFactoryField!.GetValue(window)!;
-        var tabViewModels = (Dictionary<string, Dock.Model.Mvvm.Controls.Document>)tabViewModelsField!.GetValue(window)!;
-        var tabViewModel = tabViewModels[tabId];
+        var dockControl = window.GetVisualDescendants().OfType<Dock.Avalonia.Controls.DockControl>().First();
+        var dockFactory = (WorkbenchDockFactory)dockControl.Layout!.Factory!;
+        var tabViewModel = dockFactory.DiagramDock.VisibleDockables!
+            .OfType<DiagramDocumentViewModel>()
+            .Single(document => document.TabId == tabId);
 
         dockFactory.SetActiveDockable(tabViewModel);
         dockFactory.SetFocusedDockable(dockFactory.DiagramDock, tabViewModel);

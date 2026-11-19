@@ -3,8 +3,8 @@
 ### Verification Approach
 
 OTS integration tests in `test/OtsSoftwareTests/XUnitTests.cs` qualify the repository test harness by confirming that
-xUnit v3 discovers, executes, and reports pass/fail results for parameterized cases, and that the repository's build
-script wires xUnit's results into a form ReqStream can use as traceable evidence.
+xUnit v3 discovers, executes, and reports pass/fail results for parameterized cases, and that xUnit identifies each test
+by the method name ReqStream links from requirement records.
 
 ### Test Scenarios
 
@@ -13,6 +13,6 @@ production behavior (`SvgCanvasHost`'s zoom clamping) so xUnit v3 must discover,
 parameterized case, demonstrating the mechanics the repository relies on to run its whole verification suite.
 
 **GenerateResults_ProvideReqStreamEvidence**: The test confirms xUnit v3's per-test context
-(`Xunit.TestContext.Current`) is available during execution, and reads `build.ps1` to confirm it configures
-`dotnet test --logger trx --results-directory artifacts/tests` - the concrete mechanism that turns xUnit results into
-evidence files ReqStream can link from requirement records.
+(`Xunit.TestContext.Current`) is available during test execution and reports the executing test under its exact
+method name - the name xUnit writes into the TRX results that ReqStream matches against requirement test links. The
+test's own passing result in the CI TRX results is the traceable evidence.
