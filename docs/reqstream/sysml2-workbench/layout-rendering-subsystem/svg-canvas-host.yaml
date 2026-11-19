@@ -21,9 +21,7 @@ sections:
                   - 'UserInteraction_PansAndZoomsDiagram'
 
               - id: 'SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost-ClearStaleDiagram'
-                title: 'The SvgCanvasHost shall let a caller discard the currently displayed diagram and reset
-                  zoom and pan to their defaults, so a stale, previously-rendered diagram is never left on screen
-                  once it no longer corresponds to the current configuration.'
+                title: 'The SvgCanvasHost shall let a caller discard the currently displayed diagram and reset zoom and pan to their defaults, so a stale, previously-rendered diagram is never left on screen once it no longer corresponds to the current configuration.'
                 justification: |
                   Callers whose current configuration becomes invalid after a successful render (for example an
                   edited custom-view definition) need a way to blank the canvas rather than leave a misleading,

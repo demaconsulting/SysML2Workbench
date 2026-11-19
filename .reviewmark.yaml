@@ -78,8 +78,7 @@ reviews:
       - docs/verification/sysml2-workbench/workspace-subsystem.md
       - test/**/WorkspaceSubsystemTests.cs
   - id: SysML2Workbench-WorkspaceSubsystem-WorkspaceModel
-    title: Review that SysML2Workbench WorkspaceSubsystem WorkspaceModel Implementation
-      is Correct
+    title: Review that SysML2Workbench WorkspaceSubsystem WorkspaceModel Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -92,8 +91,7 @@ reviews:
       - src/**/WorkspaceSubsystem/WorkspaceModel.cs
       - test/**/WorkspaceSubsystem/WorkspaceModelTests.cs
   - id: SysML2Workbench-WorkspaceSubsystem-FileWatcher
-    title: Review that SysML2Workbench WorkspaceSubsystem FileWatcher Implementation
-      is Correct
+    title: Review that SysML2Workbench WorkspaceSubsystem FileWatcher Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -106,8 +104,7 @@ reviews:
       - src/**/WorkspaceSubsystem/FileWatcher.cs
       - test/**/WorkspaceSubsystem/FileWatcherTests.cs
   - id: SysML2Workbench-WorkspaceSubsystem-DiagnosticsAggregator
-    title: Review that SysML2Workbench WorkspaceSubsystem DiagnosticsAggregator Implementation
-      is Correct
+    title: Review that SysML2Workbench WorkspaceSubsystem DiagnosticsAggregator Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -120,8 +117,7 @@ reviews:
       - src/**/WorkspaceSubsystem/DiagnosticsAggregator.cs
       - test/**/WorkspaceSubsystem/DiagnosticsAggregatorTests.cs
   - id: SysML2Workbench-WorkspaceSubsystem-WorkspaceSourceSet
-    title: Review that SysML2Workbench WorkspaceSubsystem WorkspaceSourceSet Implementation
-      is Correct
+    title: Review that SysML2Workbench WorkspaceSubsystem WorkspaceSourceSet Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -144,8 +140,7 @@ reviews:
       - docs/verification/sysml2-workbench/view-catalog-subsystem.md
       - test/**/ViewCatalogSubsystemTests.cs
   - id: SysML2Workbench-ViewCatalogSubsystem-ViewCatalogPresenter
-    title: Review that SysML2Workbench ViewCatalogSubsystem ViewCatalogPresenter Implementation
-      is Correct
+    title: Review that SysML2Workbench ViewCatalogSubsystem ViewCatalogPresenter Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -168,8 +163,7 @@ reviews:
       - docs/verification/sysml2-workbench/view-builder-subsystem.md
       - test/**/ViewBuilderSubsystemTests.cs
   - id: SysML2Workbench-ViewBuilderSubsystem-ViewDefinitionModel
-    title: Review that SysML2Workbench ViewBuilderSubsystem ViewDefinitionModel Implementation
-      is Correct
+    title: Review that SysML2Workbench ViewBuilderSubsystem ViewDefinitionModel Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -182,8 +176,7 @@ reviews:
       - src/**/ViewBuilderSubsystem/ViewDefinitionModel.cs
       - test/**/ViewBuilderSubsystem/ViewDefinitionModelTests.cs
   - id: SysML2Workbench-ViewBuilderSubsystem-SysmlSnippetGenerator
-    title: Review that SysML2Workbench ViewBuilderSubsystem SysmlSnippetGenerator
-      Implementation is Correct
+    title: Review that SysML2Workbench ViewBuilderSubsystem SysmlSnippetGenerator Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -196,8 +189,7 @@ reviews:
       - src/**/ViewBuilderSubsystem/SysmlSnippetGenerator.cs
       - test/**/ViewBuilderSubsystem/SysmlSnippetGeneratorTests.cs
   - id: SysML2Workbench-LayoutRenderingSubsystem
-    title: Review that SysML2Workbench LayoutRenderingSubsystem Satisfies Subsystem
-      Requirements
+    title: Review that SysML2Workbench LayoutRenderingSubsystem Satisfies Subsystem Requirements
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -207,8 +199,7 @@ reviews:
       - docs/verification/sysml2-workbench/layout-rendering-subsystem.md
       - test/**/LayoutRenderingSubsystemTests.cs
   - id: SysML2Workbench-LayoutRenderingSubsystem-LayoutInvoker
-    title: Review that SysML2Workbench LayoutRenderingSubsystem LayoutInvoker Implementation
-      is Correct
+    title: Review that SysML2Workbench LayoutRenderingSubsystem LayoutInvoker Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -221,8 +212,7 @@ reviews:
       - src/**/LayoutRenderingSubsystem/LayoutInvoker.cs
       - test/**/LayoutRenderingSubsystem/LayoutInvokerTests.cs
   - id: SysML2Workbench-LayoutRenderingSubsystem-SvgCanvasHost
-    title: Review that SysML2Workbench LayoutRenderingSubsystem SvgCanvasHost Implementation
-      is Correct
+    title: Review that SysML2Workbench LayoutRenderingSubsystem SvgCanvasHost Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -235,8 +225,7 @@ reviews:
       - src/**/LayoutRenderingSubsystem/SvgCanvasHost.cs
       - test/**/LayoutRenderingSubsystem/SvgCanvasHostTests.cs
   - id: SysML2Workbench-DiagnosticsPanelSubsystem
-    title: Review that SysML2Workbench DiagnosticsPanelSubsystem Satisfies Subsystem
-      Requirements
+    title: Review that SysML2Workbench DiagnosticsPanelSubsystem Satisfies Subsystem Requirements
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -246,8 +235,7 @@ reviews:
       - docs/verification/sysml2-workbench/diagnostics-panel-subsystem.md
       - test/**/DiagnosticsPanelSubsystemTests.cs
   - id: SysML2Workbench-DiagnosticsPanelSubsystem-DiagnosticsListView
-    title: Review that SysML2Workbench DiagnosticsPanelSubsystem DiagnosticsListView
-      Implementation is Correct
+    title: Review that SysML2Workbench DiagnosticsPanelSubsystem DiagnosticsListView Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -270,8 +258,7 @@ reviews:
       - docs/verification/sysml2-workbench/logging-subsystem.md
       - test/**/LoggingSubsystemTests.cs
   - id: SysML2Workbench-LoggingSubsystem-RollingFileLogger
-    title: Review that SysML2Workbench LoggingSubsystem RollingFileLogger Implementation
-      is Correct
+    title: Review that SysML2Workbench LoggingSubsystem RollingFileLogger Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -294,8 +281,7 @@ reviews:
       - docs/verification/sysml2-workbench/app-shell-subsystem.md
       - test/**/AppShellSubsystemTests.cs
   - id: SysML2Workbench-AppShellSubsystem-MainWindowShell
-    title: Review that SysML2Workbench AppShellSubsystem MainWindowShell Implementation
-      is Correct
+    title: Review that SysML2Workbench AppShellSubsystem MainWindowShell Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -315,8 +301,7 @@ reviews:
       - test/DemaConsulting.SysML2Workbench.UiTests/GlobalUsings.cs
       - test/DemaConsulting.SysML2Workbench.UiTests/TestAppBuilder.cs
   - id: SysML2Workbench-AppShellSubsystem-WorkspacePanel
-    title: Review that SysML2Workbench AppShellSubsystem WorkspacePanel Implementation
-      is Correct
+    title: Review that SysML2Workbench AppShellSubsystem WorkspacePanel Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -332,8 +317,7 @@ reviews:
       - test/**/AppShellSubsystem/WorkspacePanelToolViewModelTests.cs
       - test/**/AppShellSubsystem/WorkspacePanelUiTests.cs
   - id: SysML2Workbench-AppShellSubsystem-AboutDialog
-    title: Review that SysML2Workbench AppShellSubsystem AboutDialog Implementation
-      is Correct
+    title: Review that SysML2Workbench AppShellSubsystem AboutDialog Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -348,8 +332,7 @@ reviews:
       - src/**/AppShellSubsystem/AboutDialogView.axaml.cs
       - test/**/AppShellSubsystem/AboutDialogViewModelTests.cs
   - id: SysML2Workbench-AppShellSubsystem-ViewBuilderDialog
-    title: Review that SysML2Workbench AppShellSubsystem ViewBuilderDialog Implementation
-      is Correct
+    title: Review that SysML2Workbench AppShellSubsystem ViewBuilderDialog Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -364,8 +347,7 @@ reviews:
       - src/**/AppShellSubsystem/ViewBuilderDialogView.axaml.cs
       - test/**/AppShellSubsystem/ViewBuilderDialogViewModelTests.cs
   - id: SysML2Workbench-AppShellSubsystem-QueryDialog
-    title: Review that SysML2Workbench AppShellSubsystem QueryDialog Implementation
-      is Correct
+    title: Review that SysML2Workbench AppShellSubsystem QueryDialog Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -392,8 +374,7 @@ reviews:
       - src/**/ElementPickerSubsystem/**
       - test/**/ElementPickerSubsystem/**
   - id: SysML2Workbench-ElementPickerSubsystem-ElementPicker
-    title: Review that SysML2Workbench ElementPickerSubsystem ElementPicker Implementation
-      is Correct
+    title: Review that SysML2Workbench ElementPickerSubsystem ElementPicker Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
@@ -410,8 +391,7 @@ reviews:
       - test/**/ElementPickerSubsystem/ElementPickerViewModelTests.cs
       - test/**/ElementPickerSubsystem/ElementTypeLabelerTests.cs
   - id: SysML2Workbench-ElementPickerSubsystem-ElementFilter
-    title: Review that SysML2Workbench ElementPickerSubsystem ElementFilter Implementation
-      is Correct
+    title: Review that SysML2Workbench ElementPickerSubsystem ElementFilter Implementation is Correct
     context:
       - docs/design/sysml2-workbench.md
       - docs/reqstream/sysml2-workbench.yaml
