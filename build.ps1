@@ -8,7 +8,7 @@
 #
 # USAGE:
 #   ./build.ps1 [-Build] [-Test] [-IntegrationTest] [-All]
-#   Run with no switches to print usage and exit non-zero.
+#   Run with no switches to build and run the unit/headless tests (same as -Build -Test).
 
 param(
     [switch]$Build,
@@ -24,13 +24,15 @@ function Show-Usage {
     Write-Host "  -IntegrationTest  Publish the Desktop app and run the Appium/AT-SPI integration tests (Windows/macOS/Linux)"
     Write-Host "  -All              Equivalent to -Build -Test -IntegrationTest"
     Write-Host "Multiple switches may be combined, e.g.: ./build.ps1 -Build -Test"
+    Write-Host "With no switches it runs -Build -Test."
 }
 
 if ($All) { $Build = $true; $Test = $true; $IntegrationTest = $true }
 
 if (-not ($Build -or $Test -or $IntegrationTest)) {
+    # No switches: build and run the unit/headless tests, as the reference template's build.ps1 does
     Show-Usage
-    exit 1
+    $Build = $true; $Test = $true
 }
 
 $buildError = $false

@@ -77,7 +77,7 @@ building a custom view.
 
 ```powershell
 pwsh ./build.ps1 -Build -Test   # restore, build, and run the unit/headless test suite
-pwsh ./build.ps1                # no switches: prints usage and exits non-zero
+pwsh ./build.ps1                # no switches: same as -Build -Test
 pwsh ./fix.ps1                  # auto-fix formatting
 pwsh ./lint.ps1                 # lint and compliance checks
 ```
