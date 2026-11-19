@@ -34,8 +34,8 @@ platform-specific UI stacks.
 ### Integration Pattern
 
 MainWindowShell and the other UI-facing units consume Avalonia directly through
-the shared application project, while the desktop head supplies the platform-
-specific host bootstrap. The framework is initialized once during process
+the shared application project, while the desktop head supplies the
+platform-specific host bootstrap. The framework is initialized once during process
 startup and remains active for the application's lifetime. UI-affecting
 callbacks from file watching or rendering are marshaled back onto the Avalonia
 dispatcher before mutating bound state or controls.

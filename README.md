@@ -9,6 +9,8 @@
 [![Security][badge-security]][link-security]
 [![Release][badge-release]][link-release]
 
+![SysML2Workbench banner: the SysML2Workbench name with the tagline 'Every model, opened. Every view, drawn.' and the menu command 'File > Open Folder... models/'. SysML v2 files, model folders, element picks from the element picker, and external file changes such as a git pull flow on curved arrows into the SysML2Workbench desktop app, and arrows lead out to pan-and-zoom block diagrams, SysML view text from Copy as SysML, a diagnostics list of unresolved references and other problems, and query results copied as Markdown or JSON][hero]
+
 A cross-platform desktop viewer and GUI custom-view builder for SysML v2
 models, built on the SysML2Tools rendering engine.
 
@@ -75,7 +77,7 @@ building a custom view.
 
 ```powershell
 pwsh ./build.ps1 -Build -Test   # restore, build, and run the unit/headless test suite
-pwsh ./build.ps1                # no switches: prints usage and exits non-zero
+pwsh ./build.ps1                # no switches: same as -Build -Test
 pwsh ./fix.ps1                  # auto-fix formatting
 pwsh ./lint.ps1                 # lint and compliance checks
 ```
@@ -113,3 +115,5 @@ Desktop application and delegates the whole test run to the pre-installed
 [link-quality]: https://sonarcloud.io/dashboard?id=demaconsulting_SysML2Workbench
 [link-security]: https://sonarcloud.io/dashboard?id=demaconsulting_SysML2Workbench
 [link-release]: https://github.com/demaconsulting/SysML2Workbench/releases/latest
+
+[hero]: https://raw.githubusercontent.com/demaconsulting/SysML2Workbench/main/docs/images/hero.png

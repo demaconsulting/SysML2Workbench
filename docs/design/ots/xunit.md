@@ -16,8 +16,8 @@ integration without affecting runtime architecture.
 - **Fact and theory tests** — express deterministic unit and subsystem
   scenarios.
 - **Assertion APIs** — validate rendered, diagnostic, and stateful outcomes.
-- **Fixture support** — shares setup for integration-style verification of OTS-
-  backed workflows.
+- **Fixture support** — shares setup for integration-style verification of
+  OTS-backed workflows.
 - **Test discovery and execution** — runs the repository's verification suite
   through the .NET test toolchain.
 

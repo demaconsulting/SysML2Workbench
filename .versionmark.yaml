@@ -67,6 +67,11 @@ tools:
     command: dotnet tool list
     regex: (?i)demaconsulting\.textlint\.tool\s+(?<version>\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?)
 
+  # LintMark (DemaConsulting.LintMark from dotnet tool list)
+  lintmark:
+    command: dotnet tool list
+    regex: (?i)demaconsulting\.lintmark\s+(?<version>\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?)
+
   # DictionaryMark (DemaConsulting.DictionaryMark from dotnet tool list)
   dictionarymark:
     command: dotnet tool list

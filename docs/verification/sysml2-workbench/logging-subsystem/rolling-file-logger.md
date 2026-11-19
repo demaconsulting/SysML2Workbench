@@ -3,8 +3,8 @@
 #### Verification Approach
 
 Tests in `test/DemaConsulting.SysML2Workbench.Tests/LoggingSubsystem/RollingFileLoggerTests.cs` exercise
-`RollingFileLogger` directly. The suite writes and rotates real log files in temporary folders, then asserts
-timestamp formatting, exception-detail capture, flush safety, and constructor guards. The scenario list below follows the
+`RollingFileLogger` directly. The suite writes and rotates real log files in temporary folders, then asserts timestamp
+formatting, exception-detail capture, flush safety, and constructor guards. The scenario list below follows the
 authoritative mappings in `docs/reqstream/sysml2-workbench/logging-subsystem/rolling-file-logger.yaml` and describes the
 implemented tests in present tense.
 

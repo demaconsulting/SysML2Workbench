@@ -5,8 +5,8 @@
 Tests in `test/DemaConsulting.SysML2Workbench.Tests/AppShellSubsystemTests.cs` exercise AppShellSubsystem's unit
 (MainWindowShell) composed with real units from every subsystem it depends on. The suite composes MainWindowShell with
 real units from dependent subsystems and drives startup, refresh, and custom-view workflows through temporary
-workspaces. The scenario list below follows the authoritative mappings in `docs/reqstream/sysml2-workbench/app-shell-
-subsystem.yaml` and describes the implemented tests in present tense.
+workspaces. The scenario list below follows the authoritative mappings in
+`docs/reqstream/sysml2-workbench/app-shell-subsystem.yaml` and describes the implemented tests in present tense.
 
 ### Test Environment
 

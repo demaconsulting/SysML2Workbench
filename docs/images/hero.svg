@@ -1,0 +1,289 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="640" viewBox="0 0 1600 640">
+  <!-- The README hero banner. SysML v2 files, model folders, element picks, and external file changes flow into
+       the SysML2Workbench desktop app and come out as pan-and-zoom diagrams, SysML view text (Copy as SysML), a
+       diagnostics list, and query results as Markdown or JSON.
+       The definitions and the left panel follow the shared DEMA Consulting hero (CanvasNet and BuildMark).
+       This file is docs/images/hero.svg, beside its rendered docs/images/hero.png (matching base names, per the
+       diagram documentation standard); the files it embeds are in docs/images/hero/. -->
+  <defs>
+    <style>
+      .word { font: bold 92px sans-serif; fill: #ffffff; }
+      .eyebrow { font: bold 25px sans-serif; fill: #a5b4fc; }
+      .tag { font: bold 40px sans-serif; fill: #f8fafc; }
+      .body { font: 25px sans-serif; fill: #cbd5e1; }
+      .cmd { font: 25px monospace; fill: #e2e8f0; }
+      .prompt { fill: #5eead4; }
+      .file { fill: #f9a8d4; }
+      .brandText { fill: url(#brand); }
+      .note { font: italic 25px sans-serif; fill: #94a3b8; }
+      .label { font: bold 25px sans-serif; fill: #f1f5f9; text-anchor: middle; }
+      .engine { font: bold 32px monospace; fill: #ffffff; }
+      .api { font: bold 25px sans-serif; fill: #c4b5fd; }
+      .card { fill: url(#glass); stroke: url(#rim); stroke-width: 1.5; filter: url(#shadow); }
+      .panel { fill: #0a1022; stroke: #ffffff; stroke-opacity: 0.06; }
+      .flow { fill: none; stroke-width: 3; stroke-linecap: round; }
+      .page { fill: #ffffff; filter: url(#paper); }
+    </style>
+
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070b1f"/>
+      <stop offset="0.55" stop-color="#130f3b"/>
+      <stop offset="1" stop-color="#071a2e"/>
+    </linearGradient>
+    <radialGradient id="glowViolet" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7c3aed" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowCyan" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#06b6d4" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowPink" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#db2777" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#db2777" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1.2" fill="#a5b4fc" fill-opacity="0.16"/>
+    </pattern>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="0.5" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#f472b6"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="engineFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e1b4b"/>
+      <stop offset="1" stop-color="#0b1022"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="paper" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="blur" x="-30%" y="-150%" width="160%" height="400%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="heat" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+
+    <marker id="headPink" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#f472b6"/>
+    </marker>
+    <marker id="headAmber" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#fbbf24"/>
+    </marker>
+    <marker id="headCyan" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#22d3ee"/>
+    </marker>
+    <marker id="headViolet" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#a78bfa"/>
+    </marker>
+    <marker id="headBlue" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#60a5fa"/>
+    </marker>
+    <marker id="headMint" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#5eead4"/>
+    </marker>
+
+    <!-- The text and shapes inside the mini illustrations -->
+    <style>
+      .mini { font: bold 22px sans-serif; }
+      .miniMono { font: bold 22px monospace; }
+      .bar { fill: #cbd5e1; }
+      .ink { fill: #1e293b; }
+      .code { font: bold 22px monospace; fill: #e2e8f0; }
+    </style>
+  </defs>
+
+  <!-- Background: deep gradient, soft glows, and a dot grid -->
+  <rect width="1600" height="640" fill="url(#bg)"/>
+  <ellipse cx="250" cy="170" rx="420" ry="300" fill="url(#glowViolet)"/>
+  <ellipse cx="1070" cy="294" rx="420" ry="220" fill="url(#glowCyan)"/>
+  <ellipse cx="1480" cy="620" rx="380" ry="260" fill="url(#glowPink)"/>
+  <rect width="1600" height="640" fill="url(#dots)"/>
+
+  <!-- Wordmark and tagline -->
+  <image href="hero/dc-logo-dark.svg" x="46" y="54" width="50" height="50"/>
+  <text class="eyebrow" x="100" y="90">DEMA Consulting</text>
+  <!-- "SysML2" is 3779 units and "Workbench" 5445 (9224 in all), so the name uses the adaptive size 52px -->
+  <text class="word" x="52" y="176" style="font-size:52px">SysML2</text>
+  <text class="word brandText" x="248.5" y="176" style="font-size:52px">Workbench</text>
+  <rect x="58" y="200" width="132" height="6" rx="3" fill="url(#brand)"/>
+  <text class="tag" x="56" y="266">Every model, opened.</text>
+  <text class="tag brandText" x="56" y="316">Every view, drawn.</text>
+  <text class="body" x="58" y="368">A desktop workbench for SysML v2:</text>
+  <text class="body" x="58" y="402">browse, query, build custom views,</text>
+  <text class="body" x="58" y="436">and pan live diagrams of your model.</text>
+  <rect x="56" y="468" width="480" height="54" rx="12" fill="#0a1022" fill-opacity="0.8" stroke="#a78bfa" stroke-opacity="0.45" stroke-width="1.5"/>
+  <text class="cmd" x="78" y="503">File &gt; Open Folder...</text>
+  <text class="cmd file" x="408" y="503">models/</text>
+  <text class="note" x="58" y="568">Built on SysML2Tools and Avalonia.</text>
+
+  <!-- Input cards -->
+  <g>
+    <!-- Input one: a SysML v2 source file -->
+    <rect class="card" x="580" y="40" width="236" height="160" rx="16"/>
+    <rect x="642" y="40" width="112" height="3" rx="1.5" fill="#fbbf24"/>
+    <rect class="panel" x="588" y="48" width="220" height="112" rx="10"/>
+    <g transform="translate(588 48)">
+      <path class="page" d="M24 12 L68 12 L84 28 L84 100 L24 100 Z"/>
+      <path d="M68 12 L68 28 L84 28 Z" fill="#cbd5e1"/>
+      <rect x="34" y="40" width="40" height="5" rx="2.5" fill="#fbbf24"/>
+      <rect class="bar" x="34" y="52" width="40" height="5" rx="2.5"/>
+      <rect class="bar" x="34" y="64" width="30" height="5" rx="2.5"/>
+      <rect class="bar" x="34" y="76" width="36" height="5" rx="2.5"/>
+      <rect x="100" y="18" width="100" height="32" rx="7" fill="#fbbf24" fill-opacity="0.16" stroke="#fbbf24" stroke-width="1.5"/>
+      <text class="mini" x="150" y="42" fill="#fde68a" text-anchor="middle">.sysml</text>
+      <rect class="bar" x="100" y="66" width="100" height="8" rx="4" fill-opacity="0.75"/>
+      <rect class="bar" x="100" y="84" width="70" height="8" rx="4" fill-opacity="0.75"/>
+    </g>
+    <text class="label" x="698" y="190">SysML v2 files</text>
+
+    <!-- Input two: a folder tree of model files -->
+    <rect class="card" x="828" y="40" width="236" height="160" rx="16"/>
+    <rect x="890" y="40" width="112" height="3" rx="1.5" fill="#22d3ee"/>
+    <rect class="panel" x="836" y="48" width="220" height="112" rx="10"/>
+    <g transform="translate(836 48)">
+      <path d="M16 14 L36 14 L42 20 L64 20 L64 44 L16 44 Z" fill="#22d3ee"/>
+      <text class="miniMono" x="74" y="38" fill="#a5f3fc">models/</text>
+      <path d="M38 50 L38 92 M38 66 L56 66 M38 92 L56 92" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2" fill="none"/>
+      <path d="M60 56 L74 56 L80 62 L80 78 L60 78 Z" fill="#ffffff"/>
+      <rect class="bar" x="92" y="62" width="96" height="8" rx="4" fill-opacity="0.75"/>
+      <path d="M60 82 L74 82 L80 88 L80 104 L60 104 Z" fill="#ffffff"/>
+      <rect class="bar" x="92" y="88" width="72" height="8" rx="4" fill-opacity="0.75"/>
+    </g>
+    <text class="label" x="946" y="190">Model folders</text>
+
+    <!-- Input three: the element picker's search box and chips -->
+    <rect class="card" x="1076" y="40" width="236" height="160" rx="16"/>
+    <rect x="1138" y="40" width="112" height="3" rx="1.5" fill="#f472b6"/>
+    <rect class="panel" x="1084" y="48" width="220" height="112" rx="10"/>
+    <g transform="translate(1084 48)">
+      <rect x="12" y="12" width="196" height="34" rx="17" fill="#ffffff" fill-opacity="0.08" stroke="#f472b6" stroke-opacity="0.7" stroke-width="1.5"/>
+      <circle cx="32" cy="28" r="7" fill="none" stroke="#fbcfe8" stroke-width="2.5"/>
+      <path d="M37 33 L43 39" stroke="#fbcfe8" stroke-width="2.5" stroke-linecap="round"/>
+      <rect class="bar" x="54" y="25" width="90" height="7" rx="3.5" fill-opacity="0.6"/>
+      <rect x="12" y="62" width="66" height="34" rx="17" fill="#f472b6" fill-opacity="0.22" stroke="#f472b6" stroke-width="1.5"/>
+      <text class="mini" x="45" y="86" fill="#fbcfe8" text-anchor="middle">Car</text>
+      <rect x="88" y="62" width="104" height="34" rx="17" fill="#f472b6" fill-opacity="0.22" stroke="#f472b6" stroke-width="1.5"/>
+      <text class="mini" x="140" y="86" fill="#fbcfe8" text-anchor="middle">Engine</text>
+    </g>
+    <text class="label" x="1194" y="190">Element picks</text>
+
+    <!-- Input four: external changes picked up by the file watcher -->
+    <rect class="card" x="1324" y="40" width="236" height="160" rx="16"/>
+    <rect x="1386" y="40" width="112" height="3" rx="1.5" fill="#60a5fa"/>
+    <rect class="panel" x="1332" y="48" width="220" height="112" rx="10"/>
+    <g transform="translate(1332 48)">
+      <path d="M56 32 A24 24 0 1 0 64 56" fill="none" stroke="#60a5fa" stroke-width="5" stroke-linecap="round"/>
+      <path d="M48 22 L62 32 L48 40 Z" fill="#60a5fa"/>
+      <text class="miniMono" x="92" y="50" fill="#bfdbfe">git pull</text>
+      <rect class="bar" x="92" y="66" width="104" height="8" rx="4" fill-opacity="0.75"/>
+      <rect class="bar" x="92" y="84" width="76" height="8" rx="4" fill-opacity="0.75"/>
+    </g>
+    <text class="label" x="1442" y="190">File changes</text>
+  </g>
+
+  <!-- Flows into the engine -->
+  <g class="flow">
+    <path d="M698,206 C698,236 950,226 950,253" stroke="#fbbf24" marker-end="url(#headAmber)"/>
+    <path d="M946,206 C946,236 1030,226 1030,253" stroke="#22d3ee" marker-end="url(#headCyan)"/>
+    <path d="M1194,206 C1194,236 1110,226 1110,253" stroke="#f472b6" marker-end="url(#headPink)"/>
+    <path d="M1442,206 C1442,236 1190,226 1190,253" stroke="#60a5fa" marker-end="url(#headBlue)"/>
+  </g>
+  <g stroke="#0a1022" stroke-width="2">
+    <circle cx="698" cy="206" r="5" fill="#fbbf24"/>
+    <circle cx="946" cy="206" r="5" fill="#22d3ee"/>
+    <circle cx="1194" cy="206" r="5" fill="#f472b6"/>
+    <circle cx="1442" cy="206" r="5" fill="#60a5fa"/>
+  </g>
+  <!-- The engine: the desktop application, with a window glyph -->
+  <rect x="786" y="262" width="568" height="64" rx="32" fill="url(#brand)" opacity="0.55" filter="url(#blur)"/>
+  <rect x="786" y="262" width="568" height="64" rx="32" fill="url(#engineFill)" stroke="url(#brand)" stroke-width="2.5"/>
+  <rect x="810" y="276" width="36" height="36" rx="9" fill="url(#brand)"/>
+  <rect x="817" y="283" width="22" height="22" rx="3" fill="#ffffff"/>
+  <g fill="#7c3aed">
+    <rect x="817" y="283" width="22" height="5" rx="2"/>
+    <rect x="820" y="291" width="6" height="11" rx="1.2"/>
+    <rect x="829" y="291" width="7" height="11" rx="1.2"/>
+  </g>
+  <text class="engine" x="862" y="305">SysML2Workbench</text>
+  <line x1="1162" y1="278" x2="1162" y2="310" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5"/>
+  <text class="api" x="1182" y="303">desktop app</text>
+
+  <!-- Flows out of the engine -->
+  <g class="flow" stroke="#5eead4">
+    <path d="M980,330 C980,356 728,356 728,381" marker-end="url(#headMint)"/>
+    <path d="M1040,330 C1040,356 999,356 999,381" marker-end="url(#headMint)"/>
+    <path d="M1100,330 C1100,356 1232,356 1232,381" marker-end="url(#headMint)"/>
+    <path d="M1160,330 C1160,356 1457,356 1457,381" marker-end="url(#headMint)"/>
+  </g>
+  <g fill="#5eead4" stroke="#0a1022" stroke-width="2">
+    <circle cx="980" cy="330" r="5"/>
+    <circle cx="1040" cy="330" r="5"/>
+    <circle cx="1100" cy="330" r="5"/>
+    <circle cx="1160" cy="330" r="5"/>
+  </g>
+
+  <!-- Output tiles -->
+  <g>
+    <!-- Output one: a rendered block diagram with pan and zoom controls -->
+    <rect class="card" x="580" y="390" width="296" height="210" rx="16"/>
+    <rect class="panel" x="588" y="398" width="280" height="152" rx="10"/>
+    <rect x="600" y="408" width="206" height="132" rx="8" fill="#ffffff" filter="url(#paper)"/>
+    <text class="mini ink" x="703" y="436" text-anchor="middle">Car</text>
+    <line x1="600" y1="446" x2="806" y2="446" stroke="#7c3aed" stroke-width="2"/>
+    <rect x="612" y="462" width="88" height="52" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text class="mini ink" x="656" y="495" text-anchor="middle">Engine</text>
+    <rect x="718" y="462" width="80" height="52" rx="6" fill="#cffafe" stroke="#0891b2" stroke-width="2"/>
+    <text class="mini ink" x="758" y="495" text-anchor="middle">Wheel</text>
+    <line x1="700" y1="488" x2="718" y2="488" stroke="#1e293b" stroke-width="2.5"/>
+    <rect x="818" y="414" width="40" height="84" rx="8" fill="#ffffff" fill-opacity="0.08" stroke="#5eead4" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text class="mini" x="838" y="446" fill="#e2e8f0" text-anchor="middle">+</text>
+    <line x1="824" y1="456" x2="852" y2="456" stroke="#ffffff" stroke-opacity="0.2"/>
+    <text class="mini" x="838" y="486" fill="#e2e8f0" text-anchor="middle">&#8722;</text>
+    <text class="label" x="728" y="585">Pan &amp; zoom diagrams</text>
+
+    <!-- Output two: the SysML view text copied with Copy as SysML -->
+    <rect class="card" x="889" y="390" width="220" height="210" rx="16"/>
+    <rect class="panel" x="897" y="398" width="204" height="152" rx="10"/>
+    <text class="code" x="913" y="442" style="fill:#a78bfa">view</text>
+    <text class="code" x="979" y="442">v {</text>
+    <text class="code" x="939" y="480" style="fill:#a78bfa">expose</text>
+    <text class="code" x="1031.4" y="480">Car;</text>
+    <text class="code" x="913" y="518">}</text>
+    <text class="label" x="999" y="585">Copy as SysML</text>
+
+    <!-- Output three: the diagnostics list -->
+    <rect class="card" x="1122" y="390" width="220" height="210" rx="16"/>
+    <rect class="panel" x="1130" y="398" width="204" height="152" rx="10"/>
+    <circle cx="1154" cy="430" r="11" fill="#f87171"/>
+    <text class="mini" x="1154" y="438" fill="#0a1022" text-anchor="middle">!</text>
+    <text class="mini" x="1174" y="438" fill="#fecaca">unresolved</text>
+    <line x1="1146" y1="456" x2="1318" y2="456" stroke="#ffffff" stroke-opacity="0.15"/>
+    <circle cx="1154" cy="480" r="7" fill="#fbbf24"/>
+    <rect class="bar" x="1172" y="476" width="130" height="8" rx="4" fill-opacity="0.75"/>
+    <circle cx="1154" cy="516" r="7" fill="#60a5fa"/>
+    <rect class="bar" x="1172" y="512" width="104" height="8" rx="4" fill-opacity="0.75"/>
+    <text class="label" x="1232" y="585">Diagnostics</text>
+
+    <!-- Output four: query results copied as Markdown or JSON -->
+    <rect class="card" x="1355" y="390" width="205" height="210" rx="16"/>
+    <rect class="panel" x="1363" y="398" width="189" height="152" rx="10"/>
+    <circle cx="1457" cy="448" r="24" fill="url(#brand)"/>
+    <circle cx="1454" cy="445" r="9" fill="none" stroke="#ffffff" stroke-width="3"/>
+    <path d="M1461 452 L1469 460" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+    <rect x="1385" y="494" width="144" height="38" rx="8" fill="#ffffff" fill-opacity="0.08" stroke="#5eead4" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text class="miniMono" x="1457" y="520" fill="#e2e8f0" text-anchor="middle">.md .json</text>
+    <text class="label" x="1457" y="585">Query results</text>
+  </g>
+</svg>

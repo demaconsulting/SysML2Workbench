@@ -7,10 +7,7 @@ sections:
           - title: 'ElementFilter Requirements'
             requirements:
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-AcceptCallerBuiltCandidates'
-                title: 'The ElementFilter shall accept a caller-built list of (qualified name, type label)
-                  candidates through SetCandidates, replace its master state on each call, recompute the
-                  available type-label set, and pre-populate the active chip row with the caller-requested
-                  default label when present in the new candidates (empty otherwise).'
+                title: 'The ElementFilter shall accept a caller-built list of (qualified name, type label) candidates through SetCandidates, replace its master state on each call, recompute the available type-label set, and pre-populate the active chip row with the caller-requested default label when present in the new candidates (empty otherwise).'
                 justification: |
                   Callers own the candidate list (which reflects domain-specific exclusions like stdlib names
                   or disallowed node kinds); the filter must faithfully replace its whole state on every
@@ -24,9 +21,7 @@ sections:
                   - 'ElementFilterViewModel_SetCandidates_SecondCall_ReplacesState'
 
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-FilterByTypeAndText'
-                title: 'The ElementFilter shall combine one or more type-label chips (OR semantics; empty
-                  means no type restriction) with an AND-combined case-insensitive substring search over
-                  qualified names, preserving the caller-supplied candidate order in DisplayedItems.'
+                title: 'The ElementFilter shall combine one or more type-label chips (OR semantics; empty means no type restriction) with an AND-combined case-insensitive substring search over qualified names, preserving the caller-supplied candidate order in DisplayedItems.'
                 justification: |
                   Realistic workspaces contain far more candidate elements than fit comfortably in one list;
                   narrowing by kind (part def / part / package / ...) and/or by name substring is what makes
@@ -40,9 +35,7 @@ sections:
                   - 'ElementFilterViewModel_DisplayedItems_SearchText_IsCaseInsensitive'
 
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-ManageChipsWithoutDuplicates'
-                title: 'The ElementFilter shall add and remove type-filter chips through AddTypeFilter and
-                  RemoveTypeFilter, reject duplicate additions (so a label appears at most once), and no-op
-                  gracefully when asked to remove a chip that is not currently active.'
+                title: 'The ElementFilter shall add and remove type-filter chips through AddTypeFilter and RemoveTypeFilter, reject duplicate additions (so a label appears at most once), and no-op gracefully when asked to remove a chip that is not currently active.'
                 justification: |
                   A dedupe-safe chip API keeps the OR-filter semantics predictable regardless of how the "+"
                   add-flyout is driven; graceful removal keeps the view model tolerant of view-side event
@@ -53,12 +46,7 @@ sections:
                   - 'ElementFilterViewModel_GetAddableTypeLabels_ExcludesActiveChips'
 
               - id: 'SysML2Workbench-ElementPickerSubsystem-ElementFilter-SearchAndCommitAddableTypeFilter'
-                title: 'The ElementFilter shall support a type-ahead search over the addable (not yet
-                  active) type labels: BeginAddableTypeFilterSearch resets the search text and populates
-                  the full addable candidate set, AddableTypeFilterSearchText narrows that set to labels
-                  containing the search text case-insensitively, and TryCommitAddableTypeFilterSearch adds
-                  the top matching label as a new chip (returning true) or leaves the chip set unchanged
-                  (returning false) when no candidate matches.'
+                title: 'The ElementFilter shall support a type-ahead search over the addable (not yet active) type labels: BeginAddableTypeFilterSearch resets the search text and populates the full addable candidate set, AddableTypeFilterSearchText narrows that set to labels containing the search text case-insensitively, and TryCommitAddableTypeFilterSearch adds the top matching label as a new chip (returning true) or leaves the chip set unchanged (returning false) when no candidate matches.'
                 justification: |
                   A pointer click into the "+" add-flyout''s open list races the flyout''s own light-dismiss
                   overlay under UI-automation drivers (confirmed by direct observation under NovaWindows),

@@ -50,7 +50,7 @@ notable integration faults are logged through the local rolling logger.
 OTS items are qualified through a combination of upstream maturity evidence and
 local verification targeted at the actually consumed features. Before accepting
 an upgrade, maintainers review breaking-change notes, security advisories, and
-any behavioral areas directly exercised by the repository's tests. Runtime-
-facing dependencies are further qualified by exercising representative
+any behavioral areas directly exercised by the repository's tests.
+Runtime-facing dependencies are further qualified by exercising representative
 workspace load, rendering, and UI flows, while xUnit is qualified by continued
 successful execution of the repository's verification suite.

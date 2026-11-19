@@ -42,9 +42,7 @@ sections:
                   - 'RemoveSelectedCommand_NoSelection_IsNoOp'
 
               - id: 'SysML2Workbench-AppShellSubsystem-WorkspacePanel-ResolveOpenableFile'
-                title: 'The WorkspacePanel shall resolve a selected tree node to the SysML file it opens, treating
-                  both a file source node and a file node beneath a folder source as openable, and treating folder
-                  sources, folder groupings, non-SysML files, and no selection as not openable.'
+                title: 'The WorkspacePanel shall resolve a selected tree node to the SysML file it opens, treating both a file source node and a file node beneath a folder source as openable, and treating folder sources, folder groupings, non-SysML files, and no selection as not openable.'
                 justification: |
                   Opening a file is driven by the selected node, but the two node types that can denote a file are
                   produced by different tree-building paths - a file added directly is a childless source node,

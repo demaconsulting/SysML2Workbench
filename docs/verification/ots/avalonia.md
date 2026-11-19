@@ -2,12 +2,26 @@
 
 ### Verification Approach
 
-OTS integration tests in `test/OtsSoftwareTests/AvaloniaTests.cs` verify the real desktop shell hosting behavior using Avalonia's headless test platform (`Avalonia.Headless.XUnit`'s `[AvaloniaFact]`), which runs the actual `App`/`MainWindowView` composition under a headless windowing platform rather than a mocked UI harness, because the framework itself is the integration boundary being qualified.
+OTS integration tests in `test/OtsSoftwareTests/AvaloniaTests.cs` verify the real desktop shell hosting behavior using
+Avalonia's headless test platform (`Avalonia.Headless.XUnit`'s `[AvaloniaFact]`), which runs the actual
+`App`/`MainWindowView` composition under a headless windowing platform rather than a mocked UI harness, because the
+framework itself is the integration boundary being qualified.
 
 ### Test Scenarios
 
-**Startup_HostsDesktopShellControls**: A real `MainWindowView` is constructed over a fully composed `MainWindowShell` and shown under the headless platform. The dependency proves it hosts the menu and the workspace tree - the sidebar's leading, initially-active tab - as real, discoverable Avalonia controls attached to the window's visual tree.
+**Startup_HostsDesktopShellControls**: A real `MainWindowView` is constructed over a fully composed `MainWindowShell`
+and shown under the headless platform. The dependency proves it hosts the menu and the workspace tree - the sidebar's
+leading, initially-active tab - as real, discoverable Avalonia controls attached to the window's visual tree.
 
-**MainWindow_HostsDiagramAndDiagnosticsPanels**: The same window's diagram `Image` control and diagnostics `ListBox` are confirmed present before any workspace is opened; after opening a workspace and selecting a predefined view through the shell, the shared canvas state backing the diagram control reports loaded content, proving Avalonia genuinely hosts the interactive diagram surface alongside the diagnostics panel.
+**MainWindow_HostsDiagramAndDiagnosticsPanels**: The same window's diagram `Image` control and diagnostics `ListBox` are
+confirmed present before any workspace is opened; after opening a workspace and selecting a predefined view through the
+shell, the shared canvas state backing the diagram control reports loaded content, proving Avalonia genuinely hosts the
+interactive diagram surface alongside the diagnostics panel.
 
-**DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard**: After opening a workspace and rendering a predefined view, the real diagram tab's `ContextMenu` is opened on its `Border`, and the "Copy as SysML" `MenuItem` is clicked, both discovered as genuine Avalonia controls in the visual tree rather than invoked programmatically. The headless platform's own `TopLevel.Clipboard` is then read back via `TryGetTextAsync`, and its text is asserted to match the snippet `MainWindowShell.ExportTabAsSysmlSnippet` independently generates for the same tab - proving the whole click-to-clipboard path (context menu, view-model command, `IClipboardService` seam, and the real Avalonia clipboard) works end-to-end through the actual framework, not a mock.
+**DiagramContextMenu_CopyAsSysml_CopiesSnippetToClipboard**: After opening a workspace and rendering a predefined view,
+the real diagram tab's `ContextMenu` is opened on its `Border`, and the "Copy as SysML" `MenuItem` is clicked, both
+discovered as genuine Avalonia controls in the visual tree rather than invoked programmatically. The headless platform's
+own `TopLevel.Clipboard` is then read back via `TryGetTextAsync`, and its text is asserted to match the snippet
+`MainWindowShell.ExportTabAsSysmlSnippet` independently generates for the same tab - proving the whole
+click-to-clipboard path (context menu, view-model command, `IClipboardService` seam, and the real Avalonia clipboard)
+works end-to-end through the actual framework, not a mock.
