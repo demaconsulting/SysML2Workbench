@@ -6,8 +6,8 @@ UI.
 
 ### Purpose
 
-`DemaConsulting.Rendering` was chosen because it already provides the SVG-
-oriented rendering behavior needed by the existing SysML2Tools output pipeline.
+`DemaConsulting.Rendering` was chosen because it already provides the
+SVG-oriented rendering behavior needed by the existing SysML2Tools output pipeline.
 Reusing it avoids building a second renderer inside the workbench and preserves
 consistency with the batch CLI diagrams users already know.
 

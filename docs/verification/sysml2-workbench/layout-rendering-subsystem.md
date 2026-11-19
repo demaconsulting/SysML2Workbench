@@ -3,9 +3,9 @@
 ### Verification Approach
 
 Tests in `test/DemaConsulting.SysML2Workbench.Tests/LayoutRenderingSubsystemTests.cs` exercise
-LayoutRenderingSubsystem's units (LayoutInvoker, SvgCanvasHost) together. The suite renders both predefined and GUI-
-built custom views, then loads the SVG into the canvas host to verify displayed behavior end to end. The scenario list
-below follows the authoritative mappings in `docs/reqstream/sysml2-workbench/layout-rendering-subsystem.yaml` and
+LayoutRenderingSubsystem's units (LayoutInvoker, SvgCanvasHost) together. The suite renders both predefined and
+GUI-built custom views, then loads the SVG into the canvas host to verify displayed behavior end to end. The scenario
+list below follows the authoritative mappings in `docs/reqstream/sysml2-workbench/layout-rendering-subsystem.yaml` and
 describes the implemented tests in present tense.
 
 ### Test Environment

@@ -3,8 +3,8 @@
 #### Verification Approach
 
 Tests in `test/DemaConsulting.SysML2Workbench.Tests/WorkspaceSubsystem/FileWatcherTests.cs` exercise `FileWatcher`
-directly. The suite drives the unit with deterministic timestamps and queued change notifications so debounce and guard-
-path behavior remain repeatable. The scenario list below follows the authoritative mappings in
+directly. The suite drives the unit with deterministic timestamps and queued change notifications so debounce and
+guard-path behavior remain repeatable. The scenario list below follows the authoritative mappings in
 `docs/reqstream/sysml2-workbench/workspace-subsystem/file-watcher.yaml` and describes the implemented tests in present
 tense.
 

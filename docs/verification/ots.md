@@ -11,8 +11,8 @@ SysML2Workbench actually depends on.
 ## Qualification Evidence
 
 Each OTS item will be considered fit for purpose when the repository holds current integration
-and usage design documentation, the planned OTS integration tests pass, and any dependency-
-specific release notes or vendor documentation have been reviewed for the features used by
+and usage design documentation, the planned OTS integration tests pass, and any
+dependency-specific release notes or vendor documentation have been reviewed for the features used by
 SysML2Workbench. For `XUnit`, qualification evidence will focus on successful test discovery,
 execution, and reporting in the repository test harness rather than business-function behavior.
 

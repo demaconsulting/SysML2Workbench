@@ -82,14 +82,16 @@ thin bootstrap/entry-point project with no independent design of its own.
     - **ViewDefinitionModel** (Unit) — view type, multi-target expose selection, filter expression (session-only)
     - **SysmlSnippetGenerator** (Unit) — emits copy-pasteable `view ... expose ...` SysML text
   - **LayoutRenderingSubsystem** — turns a selected view into pixels
-    - **LayoutInvoker** (Unit) — wraps `DemaConsulting.SysML2Tools.Rendering.DiagramRenderer.RenderWorkspace` to render a predefined or GUI-authored custom view directly to SVG
+    - **LayoutInvoker** (Unit) — wraps `DemaConsulting.SysML2Tools.Rendering.DiagramRenderer.RenderWorkspace` to render
+      a predefined or GUI-authored custom view directly to SVG
     - **SvgCanvasHost** (Unit) — hosts DemaConsulting.Rendering SVG output in an Avalonia SVG control, with pan/zoom
   - **DiagnosticsPanelSubsystem** — UI list of diagnostics
     - **DiagnosticsListView** (Unit) — structured for future click-to-navigate
   - **LoggingSubsystem**
     - **RollingFileLogger** (Unit) — local rolling log file for user-attachable bug reports
   - **ElementPickerSubsystem** — reusable dialog-agnostic element-picker control
-    - **ElementFilter** (Unit) — chip/search filter-only view model + view, composed by ElementPicker for selection-bearing callers
+    - **ElementFilter** (Unit) — chip/search filter-only view model + view, composed by ElementPicker for
+      selection-bearing callers
     - **ElementPicker** (Unit) — chip/search/list view model + view for a caller-built candidate list
   - **AppShellSubsystem** — window, navigation, tabbed views
     - **MainWindowShell** (Unit)
@@ -147,7 +149,8 @@ server.
 - **test/** - test projects
   - **DemaConsulting.SysML2Workbench.Tests/** - unit and subsystem-level tests mirroring `src/`
   - **DemaConsulting.SysML2Workbench.UiTests/** - headless, in-process Avalonia UI tests
-  - **DemaConsulting.SysML2Workbench.IntegrationTests/** - Appium-driven end-to-end tests against the compiled Desktop application
+  - **DemaConsulting.SysML2Workbench.IntegrationTests/** - Appium-driven end-to-end tests against the compiled Desktop
+    application
   - **OtsSoftwareTests/** - integration tests qualifying the OTS dependencies themselves
 
 ## Companion Artifact Structure

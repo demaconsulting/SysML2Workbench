@@ -30,12 +30,12 @@ source from a recursively-globbed folder source.
 source's discovery pass. `WorkspaceLoadOptions.Default` is `(["**/*.sysml"], [])`
 and is not configurable per source.
 
-**WorkspaceSourceResolution**: `record(IReadOnlyList<string> MergedFiles, IReadOnlyDictionary<string, string> FileToSourceId, IReadOnlyDictionary<string, IReadOnlyList<string>> SourceIdToFiles)`
-— the deduplicated union of every source's files (`MergedFiles`), the owning
-source id per file (`FileToSourceId`, first-registered-source-wins on
-overlap), and the per-source file list used to build the Workspace panel's
-tree (`SourceIdToFiles`; a `File` source maps to a singleton list containing
-itself, a `Folder` source maps to its discovered files).
+**WorkspaceSourceResolution**:
+`record(IReadOnlyList<string> MergedFiles, IReadOnlyDictionary<string, string> FileToSourceId, IReadOnlyDictionary<string, IReadOnlyList<string>> SourceIdToFiles)`
+— the deduplicated union of every source's files (`MergedFiles`), the owning source id per file (`FileToSourceId`,
+first-registered-source-wins on overlap), and the per-source file list used to build the Workspace panel's tree
+(`SourceIdToFiles`; a `File` source maps to a singleton list containing itself, a `Folder` source maps to its discovered
+files).
 
 #### Key Methods
 
