@@ -81,7 +81,6 @@ public sealed class SysML2WorkbenchTests : IDisposable
             PathHelpers.SafePathCombine(_tempRoot, "Extra.sysml"),
             "package Extra {\n    part def Bracket;\n}\n",
             TestContext.Current.CancellationToken);
-        await Task.Delay(5, TestContext.Current.CancellationToken);
         var refreshed = await shell.RefreshFromExternalChangesAsync();
 
         // Assert
