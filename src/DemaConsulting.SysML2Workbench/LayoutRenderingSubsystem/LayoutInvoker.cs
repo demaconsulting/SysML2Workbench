@@ -15,7 +15,7 @@ namespace DemaConsulting.SysML2Workbench.LayoutRenderingSubsystem;
 /// <remarks>
 ///     Deviation from the original design sketch: the drafted <c>BuildPredefinedLayout</c>/<c>BuildCustomLayout</c>
 ///     (returning a <c>LayoutGraph</c>) plus a separate <c>RenderToSvg</c> step do not match the real
-///     SysML2Tools API. <see cref="DemaConsulting.SysML2Tools.Rendering.DiagramRenderer.RenderWorkspace" /> fuses
+///     SysML2Tools API. <see cref="DemaConsulting.SysML2Tools.Rendering.DiagramRenderer.RenderWorkspace(DemaConsulting.SysML2Tools.Semantic.SysmlWorkspace, DemaConsulting.Rendering.Abstractions.IRenderer, DemaConsulting.Rendering.Abstractions.RenderOptions, string)" /> fuses
 ///     layout and rendering into a single call that returns finished <c>RenderOutput</c> SVG bytes directly - the
 ///     library's <c>ILayoutStrategy</c>/<c>LayoutTree</c> types are internal plumbing this unit never touches.
 ///     This unit therefore exposes <see cref="RenderPredefinedView" /> and <see cref="RenderCustomView" />, both
@@ -54,7 +54,7 @@ public sealed class LayoutInvoker
     private readonly DiagramRenderer _diagramRenderer = new();
 
     /// <summary>
-    ///     SVG output renderer supplied to <see cref="DiagramRenderer.RenderWorkspace" />.
+    ///     SVG output renderer supplied to <see cref="DiagramRenderer.RenderWorkspace(DemaConsulting.SysML2Tools.Semantic.SysmlWorkspace, DemaConsulting.Rendering.Abstractions.IRenderer, DemaConsulting.Rendering.Abstractions.RenderOptions, string)" />.
     /// </summary>
     private readonly IRenderer _svgRenderer = new SvgRenderer();
 
@@ -165,7 +165,7 @@ public sealed class LayoutInvoker
     /// <summary>
     ///     Reads the full text of a rendered SVG output stream.
     /// </summary>
-    /// <param name="output">Render output produced by <see cref="DiagramRenderer.RenderWorkspace" />.</param>
+    /// <param name="output">Render output produced by <see cref="DiagramRenderer.RenderWorkspace(DemaConsulting.SysML2Tools.Semantic.SysmlWorkspace, DemaConsulting.Rendering.Abstractions.IRenderer, DemaConsulting.Rendering.Abstractions.RenderOptions, string)" />.</param>
     /// <returns>Complete SVG markup.</returns>
     private static string ReadSvgText(RenderOutput output)
     {

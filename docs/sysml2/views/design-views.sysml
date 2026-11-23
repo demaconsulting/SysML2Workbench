@@ -1,43 +1,44 @@
-package SysML2WorkbenchArchitecture {
+package SysML2WorkbenchDesignViews {
         private import StandardViewDefinitions::*;
+        private import SysML2Workbench::*;
 
         view SoftwareStructureView : InterconnectionView {
-            expose SysML2Workbench::**;
+            expose SysML2Workbench::SysML2WorkbenchSystem;
         }
 
         view SysML2WorkbenchView {
-            expose SysML2Workbench::SysML2Workbench;
+            expose SysML2Workbench::SysML2WorkbenchSystem;
         }
 
         view WorkspaceSubsystemView {
-            expose SysML2Workbench::WorkspaceSubsystem;
+            expose WorkspaceSubsystem;
         }
 
         view ViewCatalogSubsystemView {
-            expose SysML2Workbench::ViewCatalogSubsystem;
+            expose ViewCatalogSubsystem;
         }
 
         view ViewBuilderSubsystemView {
-            expose SysML2Workbench::ViewBuilderSubsystem;
+            expose ViewBuilderSubsystem;
         }
 
         view LayoutRenderingSubsystemView {
-            expose SysML2Workbench::LayoutRenderingSubsystem;
+            expose LayoutRenderingSubsystem;
         }
 
         view DiagnosticsPanelSubsystemView {
-            expose SysML2Workbench::DiagnosticsPanelSubsystem;
+            expose DiagnosticsPanelSubsystem;
         }
 
         view LoggingSubsystemView {
-            expose SysML2Workbench::LoggingSubsystem;
+            expose LoggingSubsystem;
         }
 
         view AppShellSubsystemView {
-            expose SysML2Workbench::AppShellSubsystem;
+            expose AppShellSubsystem;
         }
 
         view ElementPickerSubsystemView {
-            expose SysML2Workbench::ElementPickerSubsystem;
+            expose ElementPickerSubsystem;
         }
 }
