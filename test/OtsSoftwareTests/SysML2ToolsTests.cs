@@ -68,7 +68,7 @@ public sealed class SysML2ToolsTests : IDisposable
     ///     Deviation from the reqstream-mandated test name: this test predates the empirical discovery (recorded
     ///     in the planning report's Assumption #1) that SysML2Tools 0.1.0-beta.7 has no public
     ///     <c>LayoutGraph</c> type or layout-strategy registry -
-    ///     <see cref="DemaConsulting.SysML2Tools.Rendering.DiagramRenderer.RenderWorkspace" /> fuses layout and
+    ///     <see cref="DemaConsulting.SysML2Tools.Rendering.DiagramRenderer.RenderWorkspace(DemaConsulting.SysML2Tools.Semantic.SysmlWorkspace, DemaConsulting.Rendering.Abstractions.IRenderer, DemaConsulting.Rendering.Abstractions.RenderOptions, string)" /> fuses layout and
     ///     SVG rendering into one call. The test name is kept unchanged to preserve ReqStream traceability; the
     ///     assertions instead verify the real, single-call contract: that the OTS package can turn a named view
     ///     usage into concrete rendered diagram output.

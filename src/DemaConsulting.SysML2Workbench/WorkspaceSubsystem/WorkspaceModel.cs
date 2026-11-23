@@ -88,7 +88,7 @@ public sealed class WorkspaceModel
     ///     Loads the SysML standard library symbols needed by the parser pipeline, parses and resolves imports
     ///     across <paramref name="resolution" />'s merged file set via <see cref="WorkspaceLoader" />, and records
     ///     diagnostics per file before publishing the snapshot. A zero-source, zero-file resolution is a
-    ///     first-class, valid input: <see cref="WorkspaceLoader.LoadAsync" /> called with an empty file list does
+    ///     first-class, valid input: <see cref="WorkspaceLoader.LoadAsync(System.Collections.Generic.IEnumerable{string}, DemaConsulting.SysML2Tools.Semantic.Model.SymbolTable)" /> called with an empty file list does
     ///     not throw and produces a valid, diagnostic-free, standard-library-only workspace.
     /// </remarks>
     /// <param name="sources">Ordered file/folder sources the resolution was computed from.</param>

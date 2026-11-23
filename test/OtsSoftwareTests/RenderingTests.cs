@@ -55,7 +55,7 @@ public sealed class RenderingTests : IDisposable
 
     /// <summary>
     ///     Validates that <see cref="DemaConsulting.Rendering.Svg.SvgRenderer" />, invoked through
-    ///     <see cref="DiagramRenderer.RenderWorkspace" />, produces a well-formed, self-contained SVG document.
+    ///     <see cref="DiagramRenderer.RenderWorkspace(DemaConsulting.SysML2Tools.Semantic.SysmlWorkspace, DemaConsulting.Rendering.Abstractions.IRenderer, DemaConsulting.Rendering.Abstractions.RenderOptions, string)" />, produces a well-formed, self-contained SVG document.
     /// </summary>
     [Fact]
     public async Task RenderLayout_ProducesSvgDocument()
