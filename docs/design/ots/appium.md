@@ -98,7 +98,7 @@ GitHub Actions UI), then delegates to the same `run-under-appium.ps1` script
 `build.ps1 -IntegrationTest` uses locally to start Appium, run
 `IntegrationTests`, and stop Appium - sharing one tested code path for that
 part of the sequence instead of duplicating it inline. The cross-platform
-`build` job's `Test` step and `build.ps1 -Test` both exclude this tier with
+`build` job's `Test` step and `build.ps1 -All` both exclude this tier with
 `--filter "Category!=Integration"`, since `IntegrationTests`' tests carry
 `[Trait("Category", "Integration")]` and require a running Appium server
 that those invocations do not start.

@@ -130,7 +130,7 @@ NSAccessibility (Appium's Mac2 driver) and Linux's AT-SPI2 (via KDE's
 correct OS-branching code for all three platforms, so a developer can run
 this tier locally on macOS or Linux too - but neither has a provisioned CI
 runner today, so only Windows is validated in CI - see
-`docs/design/ots/appium.md` for the integration pattern. `build.ps1 -Test`
+`docs/design/ots/appium.md` for the integration pattern. `build.ps1 -All`
 and the cross-platform `build` job's `Test` step both exclude
 `IntegrationTests`' tests carrying the `Integration` trait via
 `--filter "Category!=Integration"`, so adding `IntegrationTests` to
