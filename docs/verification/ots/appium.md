@@ -12,7 +12,7 @@ real in `.github/workflows/build.yaml`'s `appium-windows-integration-tests`
 job (and locally via `build.ps1 -IntegrationTest`/`run-under-appium.ps1`,
 which is cross-platform but only validated on Windows), where an Appium
 server and the NovaWindows driver are actually running; elsewhere (the
-cross-platform `build` job's `Test` step and `build.ps1 -Test`) they are
+cross-platform `build` job's `Test` step and `build.ps1 -All`) they are
 excluded via `--filter "Category!=Integration"`, since no Appium/AT-SPI
 server is started in those runs.
 

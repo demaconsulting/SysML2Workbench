@@ -76,22 +76,23 @@ building a custom view.
 ## Building and Testing
 
 ```powershell
-pwsh ./build.ps1 -Build -Test   # restore, build, and run the unit/headless test suite
-pwsh ./build.ps1                # no switches: same as -Build -Test
-pwsh ./fix.ps1                  # auto-fix formatting
-pwsh ./lint.ps1                 # lint and compliance checks
+pwsh ./build.ps1 -All       # restore, build, and run the unit/headless test suite
+pwsh ./build.ps1 -Changed   # only the test projects the changes affect
+pwsh ./fix.ps1 -All         # auto-fix formatting
+pwsh ./lint.ps1 -All        # lint and compliance checks (what CI runs)
 ```
 
-`build.ps1` accepts combinable switches: `-Build` (restore + build),
-`-Test` (build if needed, then run the unit/headless suite), `-IntegrationTest`
-(build if needed, then run the Appium/AT-SPI suite), and `-All`
-(equivalent to all three). `build.ps1 -Test` and CI's cross-platform build
+Each script requires a scope: with no arguments it prints its usage and exits 1, and
+`-Help` prints the usage and exits 0. `-Changed` and `-Project` (build) or `-Check`
+(lint and fix) focus a run, and `-DryRun` prints the selection without running anything.
+`build.ps1 -All` and CI's cross-platform build
 job both run `dotnet test --filter "Category!=Integration"`, so
 `test/DemaConsulting.SysML2Workbench.IntegrationTests`' Appium-driven tests
 are excluded from that default test run. That tier runs for real in CI's
 dedicated `appium-windows-integration-tests` job (`windows-latest`), and can
-now also be run locally on Windows, macOS, or Linux via
-`pwsh ./build.ps1 -IntegrationTest`, which delegates to `run-under-appium.ps1`:
+also be run locally on Windows, macOS, or Linux by opting in with
+`pwsh ./build.ps1 -IntegrationTest` (alone, or added to a scope, for example
+`-All -IntegrationTest`), which delegates to `run-under-appium.ps1`:
 on Windows/macOS it installs Appium and the NovaWindows/Mac2 driver, publishes
 the Desktop application, starts and polls a local Appium server, runs the
 tests, and always stops the server afterward; on Linux it publishes the
