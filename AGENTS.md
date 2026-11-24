@@ -209,9 +209,11 @@ that copy: never edit it in a repository. Repository-specific
 behavior belongs in the scripts' `[PROJECT-SPECIFIC]` blocks. See `project-scripts.md`.
 
 SysML2Workbench has several source and test projects, so `build.ps1 -Project` and `-Changed` select the test projects a
-change affects through the project reference graph; the headless tests read no repository files at run time
-(`$RuntimeReads` is empty). The Appium/AT-SPI integration tier drives a real desktop, so it is the opt-in
-`build.ps1 -IntegrationTest` (alone or added to a scope, e.g. `-All -IntegrationTest`); CI runs it in its dedicated job.
+change affects through the project reference graph; the headless tests read no repository files at run time, so
+`$RuntimeReads` only maps the root `Icon.png` and `Icon.ico`, which the projects link through item types the shared
+module does not follow (keep it in step with such links). The Appium/AT-SPI integration tier drives a real desktop,
+so it is the opt-in `build.ps1 -IntegrationTest` (alone or added to a scope, e.g. `-All -IntegrationTest`); CI runs
+it in its dedicated job.
 
 # Continuous Compliance Overview
 
