@@ -12,9 +12,9 @@
 #   pwsh ./build.ps1 -Changed [-Base <ref>]    Only the test projects affected by the changes since <ref>
 #                                              (default origin/main, else main) plus uncommitted changes
 #   pwsh ./build.ps1 -Project UiTests          Only the test projects affected by the named projects (full or short
-#                                              names: Core is the core library, other short names are relative to it,
-#                                              so UiTests is DemaConsulting.SysML2Workbench.UiTests here; -Help lists
-#                                              this repository's)
+#                                              names: UiTests finds DemaConsulting.SysML2Workbench.UiTests, Core is the
+#                                              core library, aliases from $ProjectAliases also work; -Help lists this
+#                                              repository's names)
 #   pwsh ./build.ps1 -IntegrationTest          Opt in to the Appium/AT-SPI integration tier: publish the Desktop app
 #                                              and drive it through a real desktop session (alone, or added to any
 #                                              scope above, e.g. -All -IntegrationTest for everything)
@@ -22,12 +22,16 @@
 #   With no arguments the usage text is printed and the script exits 1 (a scope must be chosen).
 #
 #   A changed project selects every project that references it, directly or transitively, from the
-#   ProjectReference graph, and files linked into another project (Compile/None/EmbeddedResource items
-#   that point outside the project folder) select that project too. Changes that affect the whole
+#   ProjectReference graph, and files linked into another project (any item or file property that
+#   points outside the project folder) select that project too. Changes that affect the whole
 #   build (solution, project, props/targets, global.json, .editorconfig, nuget.config, tool manifest,
 #   this script, scripts/ProjectScripts.psm1) fall back to the full build; repository files tests read
 #   at run time select their test projects through $RuntimeReads; other changes the build does not
 #   read select nothing. This works unchanged for a solution with one project pair or many.
+#
+#   The test platform is detected from global.json: "test": { "runner": "Microsoft.Testing.Platform" } runs
+#   'dotnet test --project <path> --report-trx', anything else runs VSTest 'dotnet test <path> --logger trx';
+#   results go to artifacts/tests either way. This repository uses VSTest and adds the Category filter below.
 #
 # EXTENSION POINTS:
 #   Search for "[PROJECT-SPECIFIC]" comments to find the designated locations
@@ -71,14 +75,42 @@ Import-Module (Join-Path $PSScriptRoot 'scripts/ProjectScripts.psm1') -Force
 
 # [PROJECT-SPECIFIC] Repository files that tests read at run time (through the repository root, not through a
 # project item), mapped to the test project that reads them. Keep in step with the tests. The headless tests
-# build their own temporary workspaces and read no repository files. The map instead covers the root icons that
-# the projects pull in from outside their folders through item types the shared module does not treat as linked
-# files (AvaloniaResource, ApplicationIcon): a change to one selects the owning project and, through the
-# reference graph, everything that depends on it. Example:
+# build their own temporary workspaces and read no repository files. Example:
 #   '^docs/user_guide/tool\.md$' = 'SystemName.Tests'
-$RuntimeReads = [ordered]@{
-    '^Icon\.png$' = 'DemaConsulting.SysML2Workbench'          # <AvaloniaResource Include="..\..\Icon.png" />
-    '^Icon\.ico$' = 'DemaConsulting.SysML2Workbench.Desktop'  # <ApplicationIcon>..\..\Icon.ico</ApplicationIcon>
+$RuntimeReads = [ordered]@{}
+
+# [PROJECT-SPECIFIC] Short -Project names that no resolution rule can derive (exact name, unique dot-segment suffix,
+# Core), as data: alias = project name. Empty by default. Example:
+#   $ProjectAliases = @{ Ots = 'OtsSoftwareTests'; App = 'DemaConsulting.Foo' }
+$ProjectAliases = @{}
+
+# [PROJECT-SPECIFIC] Folders scanned for projects. List every root once here when projects live outside src/, test/,
+# and tools/ (for example demo, samples, benchmarks); leave out folders of fixture projects that are test inputs.
+$ProjectRoots = @('src', 'test', 'tools')
+
+# Test platform: global.json selects Microsoft.Testing.Platform with "test": { "runner": "Microsoft.Testing.Platform" };
+# otherwise VSTest is used. The platform decides the 'dotnet test' arguments (see Invoke-DotnetTest).
+$UseTestingPlatform = $false
+if (Test-Path global.json) {
+    try { $UseTestingPlatform = (Get-Content -Raw global.json | ConvertFrom-Json).test.runner -eq 'Microsoft.Testing.Platform' }
+    catch { Write-Host "Warning: global.json could not be read; assuming VSTest." }
+}
+
+function Invoke-DotnetTest {
+    # Runs the tests of one project, or of the whole solution when no path is given, against the existing build
+    param([string]$Path)
+
+    # @(...) keeps a one-element list an array, so the splat passes the path whole and not character by character
+    if ($UseTestingPlatform) {
+        $target = @(if ($Path) { '--project'; $Path })
+        dotnet test @target --no-build --configuration Release --report-trx --results-directory artifacts/tests
+    } else {
+        $target = @(if ($Path) { $Path })
+        # [PROJECT-SPECIFIC] Category!=Integration keeps the Appium tests (which need a running Appium server and
+        # the published app) out of every headless run; -IntegrationTest runs that tier. See
+        # docs/design/introduction.md for the full test strategy.
+        dotnet test @target --no-build --configuration Release --logger trx --results-directory artifacts/tests --filter "Category!=Integration"
+    }
 }
 
 # ==============================================================================
@@ -97,8 +129,8 @@ function Show-Usage {
             '-DryRun'          = 'Print what would be built, tested, and skipped, then exit 0 without running anything.'
             '-Help'            = 'Print this text and exit 0.'
         }) `
-        -ChecksLabel 'Projects (-Project names; Core is the core library)' `
-        -Checks @(try { (Get-ProjectGraph).Keys } catch { }) `
+        -ChecksLabel 'Projects and aliases (-Project names; short names such as Core or UiTests also work)' `
+        -Checks @(try { Get-ProjectNameList (Get-ProjectGraph -Root $ProjectRoots) $ProjectAliases } catch { }) `
         -Examples @('-Changed', '-Project Core', '-Changed -DryRun', '-All', '-All -IntegrationTest')
 }
 
@@ -129,19 +161,21 @@ $buildError = $false
 $scoped = $false          # a scoped selection was made (built and tested, or only printed by -DryRun)
 $solutionBuilt = $false   # the whole solution was restored and built in Release this run
 if ($unitScope -and -not $All) {
-    $graph = Get-ProjectGraph
+    $graph = Get-ProjectGraph -Root $ProjectRoots
     $selected = [System.Collections.Generic.HashSet[string]]::new()
     $fullReason = $null
 
     $names = @($Project | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $known = (Get-ProjectNameList $graph $ProjectAliases) -join ', '
     if ($Project -and $names.Count -eq 0) {
-        Write-Host "Error: no project named in '$($Project -join ' ')'. Known projects: $($graph.Keys -join ', ')"
+        Write-Host "Error: no project named in '$($Project -join ' ')'. Known projects: $known"
         exit 1
     }
     foreach ($single in $names) {
-        $resolved = Resolve-ProjectName $graph $single
+        try { $resolved = Resolve-ProjectName $graph $single $ProjectAliases }
+        catch { Write-Host "Error: $($_.Exception.Message)"; exit 1 }
         if (-not $resolved) {
-            Write-Host "Unknown project '$single'. Known projects: $($graph.Keys -join ', ')"
+            Write-Host "Unknown project '$single'. Known projects: $known"
             exit 1
         }
         [void]$selected.Add($resolved)
@@ -190,9 +224,7 @@ if ($unitScope -and -not $All) {
                 if (-not $buildError) {
                     foreach ($entry in $tests) {
                         Write-Host "Running tests: $($entry.Name)..."
-                        # [PROJECT-SPECIFIC] Category!=Integration keeps the Appium tests (which need a running Appium
-                        # server and the published app) out of every headless run; -IntegrationTest runs that tier.
-                        dotnet test $entry.Path --no-build --configuration Release --logger trx --results-directory artifacts/tests --filter "Category!=Integration"
+                        Invoke-DotnetTest $entry.Path
                         if ($LASTEXITCODE -ne 0) { $buildError = $true }
                     }
                 } else {
@@ -221,23 +253,26 @@ if ($DryRun) {
 
 if ($fullBuild) {
     # Each step runs only if the steps before it succeeded, so tests never run against stale binaries
+    $failedStep = $null   # the step that failed first, so the skip message names the real cause
     Write-Host "Restoring dependencies..."
     dotnet restore
-    if ($LASTEXITCODE -ne 0) { $buildError = $true }
+    if ($LASTEXITCODE -ne 0) { $buildError = $true; $failedStep = 'restore' }
 
     if (-not $buildError) {
         Write-Host "Building..."
         dotnet build --no-restore --configuration Release
-        if ($LASTEXITCODE -ne 0) { $buildError = $true } else { $solutionBuilt = $true }
+        if ($LASTEXITCODE -ne 0) { $buildError = $true; $failedStep = 'build' } else { $solutionBuilt = $true }
     }
 
     if (-not $buildError) {
         Write-Host "Running tests..."
-        # [PROJECT-SPECIFIC] IntegrationTests' Appium-driven tests are excluded (Category!=Integration) because this
-        # step does not start an Appium server; that tier runs via -IntegrationTest below (locally) or CI's dedicated
-        # appium-windows-integration-tests job. See docs/design/introduction.md for the full test strategy.
-        dotnet test --no-build --configuration Release --logger trx --results-directory artifacts/tests --filter "Category!=Integration"
+        # The Appium tests are excluded (Category!=Integration, see Invoke-DotnetTest) because this step does not
+        # start an Appium server; that tier runs via -IntegrationTest below (locally) or CI's dedicated
+        # appium-windows-integration-tests job.
+        Invoke-DotnetTest
         if ($LASTEXITCODE -ne 0) { $buildError = $true }
+    } elseif ($failedStep -eq 'restore') {
+        Write-Host "Skipping build and tests: restore failed."
     } else {
         Write-Host "Skipping tests: the build failed."
     }
