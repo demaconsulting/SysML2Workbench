@@ -71,9 +71,15 @@ Import-Module (Join-Path $PSScriptRoot 'scripts/ProjectScripts.psm1') -Force
 
 # [PROJECT-SPECIFIC] Repository files that tests read at run time (through the repository root, not through a
 # project item), mapped to the test project that reads them. Keep in step with the tests. The headless tests
-# build their own temporary workspaces and read no repository files, so the map is empty. Example:
+# build their own temporary workspaces and read no repository files. The map instead covers the root icons that
+# the projects pull in from outside their folders through item types the shared module does not treat as linked
+# files (AvaloniaResource, ApplicationIcon): a change to one selects the owning project and, through the
+# reference graph, everything that depends on it. Example:
 #   '^docs/user_guide/tool\.md$' = 'SystemName.Tests'
-$RuntimeReads = [ordered]@{}
+$RuntimeReads = [ordered]@{
+    '^Icon\.png$' = 'DemaConsulting.SysML2Workbench'          # <AvaloniaResource Include="..\..\Icon.png" />
+    '^Icon\.ico$' = 'DemaConsulting.SysML2Workbench.Desktop'  # <ApplicationIcon>..\..\Icon.ico</ApplicationIcon>
+}
 
 # ==============================================================================
 # USAGE AND SCOPE VALIDATION
