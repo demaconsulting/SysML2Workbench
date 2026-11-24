@@ -31,7 +31,8 @@
 #
 #   The test platform is detected from global.json: "test": { "runner": "Microsoft.Testing.Platform" } runs
 #   'dotnet test --project <path> --report-trx', anything else runs VSTest 'dotnet test <path> --logger trx';
-#   results go to artifacts/tests either way. This repository uses VSTest and adds the Category filter below.
+#   results go to artifacts/tests either way. $TestArgsVSTest / $TestArgsTestingPlatform add the repository's
+#   Category!=Integration exclusion on whichever platform runs (this repository has no global.json, so VSTest).
 #
 # EXTENSION POINTS:
 #   Search for "[PROJECT-SPECIFIC]" comments to find the designated locations
@@ -96,6 +97,13 @@ if (Test-Path global.json) {
     catch { Write-Host "Warning: global.json could not be read; assuming VSTest." }
 }
 
+# [PROJECT-SPECIFIC] Extra 'dotnet test' arguments appended to every headless test run, one list per test platform
+# (only the list for the detected platform is used). They keep the Appium tests (which need a running Appium server
+# and the published app) out of every headless run; -IntegrationTest runs that tier. See docs/design/introduction.md
+# for the full test strategy. Empty by default.
+$TestArgsVSTest = @('--filter', 'Category!=Integration')
+$TestArgsTestingPlatform = @('--filter-not-trait', 'Category=Integration')   # xUnit v3 on Microsoft.Testing.Platform
+
 function Invoke-DotnetTest {
     # Runs the tests of one project, or of the whole solution when no path is given, against the existing build
     param([string]$Path)
@@ -103,13 +111,10 @@ function Invoke-DotnetTest {
     # @(...) keeps a one-element list an array, so the splat passes the path whole and not character by character
     if ($UseTestingPlatform) {
         $target = @(if ($Path) { '--project'; $Path })
-        dotnet test @target --no-build --configuration Release --report-trx --results-directory artifacts/tests
+        dotnet test @target --no-build --configuration Release --report-trx --results-directory artifacts/tests @TestArgsTestingPlatform
     } else {
         $target = @(if ($Path) { $Path })
-        # [PROJECT-SPECIFIC] Category!=Integration keeps the Appium tests (which need a running Appium server and
-        # the published app) out of every headless run; -IntegrationTest runs that tier. See
-        # docs/design/introduction.md for the full test strategy.
-        dotnet test @target --no-build --configuration Release --logger trx --results-directory artifacts/tests --filter "Category!=Integration"
+        dotnet test @target --no-build --configuration Release --logger trx --results-directory artifacts/tests @TestArgsVSTest
     }
 }
 
